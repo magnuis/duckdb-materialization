@@ -1,0 +1,1 @@
+SELECT DISTINCT r_name FROM test_view;
