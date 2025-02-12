@@ -1,4 +1,5 @@
 TPCH_ORIGINAL_DATA_PATH = './data'
+TPCH_OUTPUT_DATA_PATH = '../data/tpch'
 
 import json
 import os
@@ -236,7 +237,7 @@ def process_table(table, limit_rows, temp_dir):
 
 def main(limit_rows):
     total_start_time = time.time()
-    output_file = os.path.join(TPCH_ORIGINAL_DATA_PATH, 'tpch_json.json')
+    output_file = os.path.join(TPCH_OUTPUT_DATA_PATH, 'tpch_json.json')
 
     if limit_rows:
         print('Limiting output to first 10 rows from each table.')

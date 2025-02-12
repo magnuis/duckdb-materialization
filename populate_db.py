@@ -7,12 +7,12 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 # Initialize file paths
-JSON_FILE_PATH = './tpch/data/tpch_json.json'
+JSON_FILE_PATH = './data/tpch/tpch_json.json'
 
 DB_PATH = 'data/db/tpch.db'
 
 
-PARQUET_FILE_PATH = './tpch/data/tpch_raw_json.parquet'
+PARQUET_FILE_PATH = './data/tpch/tpch_raw_json.parquet'
 
 
 def create_db(con: duckdb.DuckDBPyConnection):
