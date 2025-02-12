@@ -1,5 +1,6 @@
 QUERIES = {
     "q1": ["l_returnflag", "l_linestatus", "l_quantity", "l_extendedprice", "l_discount", "l_shipdate" ,"l_tax"],
+    "q2": [],
 }
 
 TESTS = {

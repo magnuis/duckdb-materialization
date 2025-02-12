@@ -121,37 +121,23 @@ def perform_tests(
 
 def compare_dataframes(dfs: list[pd.DataFrame]):
     """Compare two dataframes column by column."""
-
-    # FIXME Should not be an issue, as we use postgres json extraction for all fields
-    for cols in zip(*dfs):
-
-        print(cols)
-        for col in cols:
-            print(col)
-        print('----------------')
-        pass
-
+    return all(df.equals(dfs[0]) for df in dfs)
 
 def compare_query_results(dfs: list[pd.DataFrame]):
     '''Compare the results of raw and materialized queries'''
-    for i, (results) in enumerate(zip(*dfs), start=1):
-        # Sort dataframes to ensure consistent ordering before comparison
-        sorted_dfs = []
-        try:
-            for result_df in results:
-                sorted_dfs.append(result_df.sort_values(
-                    by=result_df.columns.tolist()).reset_index(drop=True))
-        except Exception as e:
-            # If sorting fails, proceed without sorting
-            print("Sorting failed")
-            sorted_dfs = results
 
-        if compare_dataframes(dfs=sorted_dfs):
+    success = True
+    for i, (results) in enumerate(zip(*dfs), start=1):
+        
+        if compare_dataframes(dfs=results):
             print(f"Query {i}: Results match.")
         else:
             print(f"Query {i}: Results do not match.")
-            for df in sorted_dfs:
+            for df in results:
                 print(f"Query result:\n{df}")
+            success = False
+
+    return success
 
 
 
@@ -221,10 +207,12 @@ def main():
 
         # Compare the results of raw and materialized queries
         print(f"\nComparing query results for dataset: {dataset}")
-        compare_query_results(
+        success = compare_query_results(
             dfs=query_results_dfs.values()
         )
         print('-------')
+
+        
 
 
 if __name__ == "__main__":
