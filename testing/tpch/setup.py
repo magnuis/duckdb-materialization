@@ -1,6 +1,26 @@
 QUERIES = [
     'q1',
     'q2',
+    'q3',
+    'q4',
+    'q5',
+    'q6',
+    'q7',
+    'q8',
+    'q9',
+    'q10',
+    'q11',
+    'q12',
+    'q13',
+    'q14',
+    'q15',
+    'q16',
+    'q17',
+    'q18',
+    'q19',
+    'q20',
+    'q21',
+    'q22',
 ]
 
 TESTS = {
@@ -37,6 +57,26 @@ COLUMN_MAP = {
     "c_mktsegment": {
         'query': "raw_json->>'c_mktsegment'",
         'type': 'VARCHAR'
+    },
+    "c_name": {
+        'query': "raw_json->>'c_name'",
+        'type': 'VARCHAR'
+    },
+    "c_phone": {
+        'query': "raw_json->>'c_phone'",
+        'type': 'VARCHAR'
+    },
+    "c_address": {
+        'query': "raw_json->>'c_address'",
+        'type': 'VARCHAR'
+    },
+    "c_comment": {
+        'query': "raw_json->>'c_comment'",
+        'type': 'VARCHAR'
+    },
+    "c_acctbal": {
+        'query': "CAST(raw_json->>'c_acctbal' AS DECIMAL(12,2))",
+        'type': "DECIMAL(12,2)"
     },
     ########################### L ###########################
     "l_orderkey": {
@@ -87,6 +127,14 @@ COLUMN_MAP = {
         'query': "CAST(raw_json->>'l_shipdate' AS DATE)",
         'type': 'DATE'
     },
+    "l_shipmode": {
+        'query': "raw_json->>'l_shipmode'",
+        'type': 'VARCAHR'
+    },
+    "l_shipinstruct": {
+        'query': "raw_json->>'l_shipinstruct'",
+        'type': 'VARCAHR'
+    },
     ########################### N ###########################
     "n_nationkey": {
         'query': "CAST(raw_json->>'n_nationkey' AS INT)",
@@ -105,6 +153,10 @@ COLUMN_MAP = {
         'query': "CAST(raw_json->>'o_orderdate' AS DATE)",
         'type': 'DATE'
     },
+    "o_totalprice": {
+        'query': "CAST(raw_json->>'o_totalprice' AS DECIMAL(12,2))",
+        'type': 'DECIMAL(12,2)'
+    },
     "o_shippriority": {
         'query': "CAST(raw_json->>'o_shippriority' AS INT)",
         'type': 'INT'
@@ -121,10 +173,21 @@ COLUMN_MAP = {
         'query': "raw_json->>'o_orderpriority'",
         'type': 'VARCHAR'
     },
-
+    "o_comment": {
+        'query': "raw_json->>'o_comment'",
+        'type': 'VARCHAR'
+    },
+    'o_orderstatus': {
+        "query": "CAST(raw_json->>'o_orderstatus' AS CHAR(1))",
+        "type": "CHAR(1)"
+    },
     ########################### P ###########################
     "p_type": {
         'query': "raw_json->>'p_type'",
+        'type': 'VARCHAR'
+    },
+    "p_name": {
+        'query': "raw_json->>'p_name'",
         'type': 'VARCHAR'
     },
     "p_partkey": {
@@ -139,9 +202,21 @@ COLUMN_MAP = {
         'query': "raw_json->>'p_mfgr'",
         'type': 'VARCHAR'
     },
+    "p_brand": {
+        'query': "raw_json->>'p_brand'",
+        'type': 'VARCHAR'
+    },
+    "p_container": {
+        'query': "raw_json->>'p_container'",
+        'type': 'VARCHAR'
+    },
     ########################## PS ###########################
     "ps_suppkey": {
         'query': "CAST(raw_json->>'ps_suppkey' AS INT)",
+        'type': 'INT'
+    },
+    "ps_availqty": {
+        'query': "CAST(raw_json->>'ps_availqty' AS INT)",
         'type': 'INT'
     },
     "ps_partkey": {
