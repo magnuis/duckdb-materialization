@@ -1,15 +1,23 @@
+import shutil
+import tempfile
+from multiprocessing import Process
+import time
+from datetime import datetime
+import argparse
+import os
+import json
+
 TPCH_ORIGINAL_DATA_PATH = './data'
+OUTPUT_DATA_PATH = '../data'
 TPCH_OUTPUT_DATA_PATH = '../data/tpch'
 
-import json
-import os
-import argparse
-from datetime import datetime
-from decimal import Decimal
-import time
-from multiprocessing import Process, Queue
-import tempfile
-import shutil
+# Create data directory if not exists
+if not os.path.isdir(OUTPUT_DATA_PATH):
+    os.mkdir(OUTPUT_DATA_PATH)
+
+if not os.path.isdir(TPCH_OUTPUT_DATA_PATH):
+    os.mkdir(TPCH_OUTPUT_DATA_PATH)
+
 
 # Define the mapping of table names to their column names and data types
 table_definitions = {
@@ -145,12 +153,10 @@ table_definitions = {
 tables = list(table_definitions.keys())
 
 # Define date format used in the data (e.g., 'YYYY-MM-DD')
-date_format = '%Y-%m-%d'
+DATE_FORMAT = '%Y-%m-%d'
+
 
 def process_table(table, limit_rows, temp_dir):
-    import json
-    import os
-    from datetime import datetime
 
     print(f'\nStarting processing table: {table}')
     start_time = time.time()
@@ -159,15 +165,15 @@ def process_table(table, limit_rows, temp_dir):
     types = table_definitions[table]['types']
     filename = f'{table}.tbl'
 
-    filePath = os.path.join(TPCH_ORIGINAL_DATA_PATH, filename)
+    file_path = os.path.join(TPCH_ORIGINAL_DATA_PATH, filename)
 
     # Check if the .tbl file exists
-    if not os.path.exists(filePath):
-        print(f'File {filePath} does not exist. Skipping table {table}.')
+    if not os.path.exists(file_path):
+        print(f'File {file_path} does not exist. Skipping table {table}.')
         return
 
     # Try to get total number of lines in file
-    with open(filePath, 'r') as infile:
+    with open(file_path, 'r') as infile:
         total_lines = sum(1 for line in infile)
     print(f'Table {table} has {total_lines} lines.')
 
@@ -177,7 +183,7 @@ def process_table(table, limit_rows, temp_dir):
     temp_output_file = os.path.join(temp_dir, f'{table}_temp.json')
 
     # Open the .tbl file again to process
-    with open(filePath, 'r') as infile, open(temp_output_file, 'w') as outfile:
+    with open(file_path, 'r') as infile, open(temp_output_file, 'w') as outfile:
         for line_number, line in enumerate(infile, start=1):
             # Break if limit is reached
             if limit_rows and row_count >= 10:
@@ -194,7 +200,8 @@ def process_table(table, limit_rows, temp_dir):
 
             # Check for correct number of columns
             if len(values) != len(columns):
-                print(f'Warning: Line {line_number} in {filename} has {len(values)} values but expected {len(columns)}. Skipping this line.')
+                print(
+                    f'Warning: Line {line_number} in {filename} has {len(values)} values but expected {len(columns)}. Skipping this line.')
                 warning_count += 1
                 continue
 
@@ -208,12 +215,13 @@ def process_table(table, limit_rows, temp_dir):
                         converted_values.append(float(value))
                     elif data_type == 'date':
                         # Convert date string to ISO format
-                        date_obj = datetime.strptime(value, date_format)
+                        date_obj = datetime.strptime(value, DATE_FORMAT)
                         converted_values.append(date_obj.strftime('%Y-%m-%d'))
                     else:  # Assume string
                         converted_values.append(value)
                 except ValueError as e:
-                    print(f'Warning: Type conversion error on table {table}, line {line_number}, column {columns[i]}: {e}. Setting value to None.')
+                    print(
+                        f'Warning: Type conversion error on table {table}, line {line_number}, column {columns[i]}: {e}. Setting value to None.')
                     warning_count += 1
                     converted_values.append(None)  # or handle as appropriate
 
@@ -231,11 +239,14 @@ def process_table(table, limit_rows, temp_dir):
                 print(f'Processed {row_count} rows from table {table}.')
 
     end_time = time.time()
-    print(f'Finished processing {row_count} rows from table {table} in {end_time - start_time:.2f} seconds.')
+    print(
+        f'Finished processing {row_count} rows from table {table} in {end_time - start_time:.2f} seconds.')
     if warning_count > 0:
-        print(f'Encountered {warning_count} warnings while processing table {table}.')
+        print(
+            f'Encountered {warning_count} warnings while processing table {table}.')
 
-def main(limit_rows):
+
+def convert(limit_rows):
     total_start_time = time.time()
     output_file = os.path.join(TPCH_OUTPUT_DATA_PATH, 'tpch_json.json')
 
@@ -272,13 +283,16 @@ def main(limit_rows):
     print(f'Temporary files have been deleted from {temp_dir}')
 
     total_end_time = time.time()
-    print(f'\nConversion completed in {total_end_time - total_start_time:.2f} seconds.')
+    print(
+        f'\nConversion completed in {total_end_time - total_start_time:.2f} seconds.')
     print(f'JSON data is written to {output_file}.')
 
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Convert TPC-H .tbl files to JSON with multiprocessing.')
+    parser = argparse.ArgumentParser(
+        description='Convert TPC-H .tbl files to JSON with multiprocessing.')
     parser.add_argument('--limit', action='store_true',
                         help='Limit output to first 10 rows from each table.')
     args = parser.parse_args()
 
-    main(limit_rows=args.limit)
+    convert(limit_rows=args.limit)

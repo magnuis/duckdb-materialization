@@ -9,10 +9,19 @@ import pyarrow.parquet as pq
 # Initialize file paths
 JSON_FILE_PATH = './data/tpch/tpch_json.json'
 
-DB_PATH = 'data/db/tpch.db'
+TPCH_DB_PATH = 'data/db/tpch.db'
+
+DATA_PATH = './data'
+DB_PATH = './data/db'
 
 
 PARQUET_FILE_PATH = './data/tpch/tpch_raw_json.parquet'
+
+if not os.path.isdir(DATA_PATH):
+    os.mkdir(DATA_PATH)
+
+if not os.path.isdir(DB_PATH):
+    os.mkdir(DB_PATH)
 
 
 def create_db(con: duckdb.DuckDBPyConnection):
@@ -46,7 +55,8 @@ def parse_json_to_parquet(file_path, con: duckdb.DuckDBPyConnection, batch_size=
                         table_batch = pa.Table.from_pandas(df_batch)
                         with pq.ParquetWriter(PARQUET_FILE_PATH, table_batch.schema) as writer:
                             writer.write_table(table_batch)
-                        insert_parquet_into_db(con=con, file_path=PARQUET_FILE_PATH)
+                        insert_parquet_into_db(
+                            con=con, file_path=PARQUET_FILE_PATH)
                         total_rows += len(data_batch)
                         data_batch = []  # Clear batch memory
                         print(
@@ -92,18 +102,14 @@ def insert_parquet_into_db(con: duckdb.DuckDBPyConnection, file_path=str) -> flo
     return total_time
 
 
-
-
 def clean_up():
     os.remove(PARQUET_FILE_PATH)
     print(f"Deleted file {PARQUET_FILE_PATH}")
 
 
-
-
 # Connect to or create the DuckDB instances
-connection = duckdb.connect(DB_PATH)
-# results_connection = duckdb.connect(RESULTS_DB_PATH)
+connection = duckdb.connect(TPCH_DB_PATH)
+# results_connection = duckdb.connect(RESULTS_TPCH_DB_PATH)
 
 # Clear and create required tables
 create_db(con=connection)
