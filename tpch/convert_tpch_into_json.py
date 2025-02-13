@@ -7,6 +7,8 @@ import argparse
 import os
 import json
 
+
+
 TPCH_ORIGINAL_DATA_PATH = './data'
 OUTPUT_DATA_PATH = '../data'
 TPCH_OUTPUT_DATA_PATH = '../data/tpch'
@@ -246,7 +248,62 @@ def process_table(table, limit_rows, temp_dir):
             f'Encountered {warning_count} warnings while processing table {table}.')
 
 
-def convert(limit_rows):
+def analyze_fields_frequency():
+    """
+    For each .tbl file available in TPCH_ORIGINAL_DATA_PATH, count the number of lines.
+    Then, for each table, compute the fraction of documents that come from that table.
+    Each field (column) belonging to the table is assigned that same fraction.
+    The results are written as CSV to a file with columns 'column_name,frequency'.
+    """
+    table_line_counts = {}
+    total_lines = 0
+
+    # Iterate over all tables defined in table_definitions
+    for table in tables:
+        file_path = os.path.join(TPCH_ORIGINAL_DATA_PATH, f"{table}.tbl")
+        if not os.path.exists(file_path):
+            print(f"File {file_path} not found. Skipping table '{table}'.")
+            continue
+
+        # Count the number of lines in the table file
+        with open(file_path, "r") as f:
+            count = sum(1 for _ in f)
+        table_line_counts[table] = count
+        total_lines += count
+        print(f"Table '{table}' has {count} lines.")
+
+    if total_lines == 0:
+        print("No lines found in any table. Frequency analysis will not be generated.")
+        return
+
+    # Prepare the frequency data for each field (column)
+    frequency_entries = []
+    for table, count in table_line_counts.items():
+        fraction = round(count / total_lines, 2)
+        # Get the list of columns for the table
+        columns = table_definitions[table]['columns']
+        types = table_definitions[table]['types']
+        for i, col in enumerate(columns):
+            frequency_entries.append((col, types[i].__name__, fraction))
+
+    
+    frequency_entries.sort(key=lambda x: x[2], reverse=True)
+
+    # Write the frequency data to a CSV file
+    csv_file_path = os.path.join(TPCH_OUTPUT_DATA_PATH, "fields_frequency.csv")
+    try:
+        with open(csv_file_path, "w", newline="") as csv_file:
+            # Write header
+            csv_file.write("column_name,type,frequency\n")
+            # Write each column and its computed frequency
+            for col, type, freq in frequency_entries:
+                csv_file.write(f"{col},{type},{freq}\n")
+        print(f"Field frequency analysis written to {csv_file_path}")
+    except Exception as e:
+        print(f"Error writing frequency CSV file: {e}")
+
+
+def convert(limit_rows, field_frequency):
     total_start_time = time.time()
     output_file = os.path.join(TPCH_OUTPUT_DATA_PATH, 'tpch_json.json')
 
@@ -287,12 +344,18 @@ def convert(limit_rows):
         f'\nConversion completed in {total_end_time - total_start_time:.2f} seconds.')
     print(f'JSON data is written to {output_file}.')
 
+    if field_frequency:
+        analyze_fields_frequency()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Convert TPC-H .tbl files to JSON with multiprocessing.')
     parser.add_argument('--limit', action='store_true',
                         help='Limit output to first 10 rows from each table.')
+    # Optionally, add a flag to trigger frequency analysis
+    parser.add_argument('--field_frequency', action='store_true',
+                        help='Generate CSV file with field frequencies.')
     args = parser.parse_args()
 
-    convert(limit_rows=args.limit)
+    convert(limit_rows=args.limit, field_frequency=args.field_frequency)
