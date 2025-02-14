@@ -176,6 +176,9 @@ def perform_tests():
 
         for test, test_config in tests_map.items():
             materialize_columns = test_config["materialization"]
+            if materialize_columns is None:
+                materialize_columns = column_map.keys()
+                print("running")
 
             # Create the field-materialization setup for this test
             fields = []

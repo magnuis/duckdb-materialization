@@ -28,15 +28,7 @@ TESTS = {
         "materialization": [],
     },
     "full_materialization": {
-        "materialization": [
-            "l_returnflag",
-            "l_linestatus",
-            "l_quantity",
-            "l_extendedprice",
-            "l_discount",
-            "l_shipdate",
-            "l_tax"
-        ],
+        "materialization": None,
     },
     "partly_materialization": {
         "materialization": ["l_returnflag", "l_linestatus"],
@@ -129,11 +121,11 @@ COLUMN_MAP = {
     },
     "l_shipmode": {
         'query': "raw_json->>'l_shipmode'",
-        'type': 'VARCAHR'
+        'type': 'VARCHAR'
     },
     "l_shipinstruct": {
         'query': "raw_json->>'l_shipinstruct'",
-        'type': 'VARCAHR'
+        'type': 'VARCHAR'
     },
     ########################### N ###########################
     "n_nationkey": {
