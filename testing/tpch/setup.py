@@ -47,6 +47,22 @@ TESTS = {
             "l_shipmode",
             "l_shipinstruct"
         ],
+    },
+    "load_based_materialization": {
+        "materialization": [
+            "l_extendedprice",
+            "o_orderkey",
+            "l_discount",
+            "s_suppkey",
+            "l_orderkey",
+            "n_name",
+            "n_nationkey",
+            "c_custkey",
+            "p_partkey",
+            "o_custkey",
+            "s_nationkey",
+            "l_shipdate"
+        ]
     }
 }
 

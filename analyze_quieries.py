@@ -62,7 +62,7 @@ def analyze_queries(data_set: str) -> dict:
                        ascending=False, inplace=True)
 
         df.to_csv(
-            f'data/{data_set}/query_frequency_{data_set}.csv', index=False)
+            f'./results/{data_set}/query_frequency_{data_set}.csv', index=False)
 
         # Optionally print the DataFrame for this dataset
         print(f"DataFrame for dataset '{dataset}':")
