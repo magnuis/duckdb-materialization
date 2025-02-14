@@ -8,7 +8,6 @@ import os
 import json
 
 
-
 TPCH_ORIGINAL_DATA_PATH = './data'
 OUTPUT_DATA_PATH = '../data'
 TPCH_OUTPUT_DATA_PATH = '../data/tpch'
@@ -159,6 +158,23 @@ DATE_FORMAT = '%Y-%m-%d'
 
 
 def process_table(table, limit_rows, temp_dir):
+    """
+    Process a TPCH table by reading its .tbl file, converting each row to JSON, and writing the results to a temporary file.
+
+    Parameters
+    ----------
+    table : str
+        The name of the table to process. The function expects a file named `<table>.tbl` in the TPCH original data path.
+    limit_rows : bool
+        If True, limits the processing to the first 10 valid rows of the table.
+    temp_dir : str
+        Directory where the temporary JSON output file will be stored.
+
+    Returns
+    -------
+    None
+        Writes the processed rows as JSON documents to a temporary file and prints progress and warnings. Does not return a value.
+    """
 
     print(f'\nStarting processing table: {table}')
     start_time = time.time()
@@ -286,7 +302,6 @@ def analyze_fields_frequency():
         for i, col in enumerate(columns):
             frequency_entries.append((col, types[i].__name__, fraction))
 
-    
     frequency_entries.sort(key=lambda x: x[2], reverse=True)
 
     # Write the frequency data to a CSV file
@@ -296,8 +311,8 @@ def analyze_fields_frequency():
             # Write header
             csv_file.write("column_name,type,frequency\n")
             # Write each column and its computed frequency
-            for col, type, freq in frequency_entries:
-                csv_file.write(f"{col},{type},{freq}\n")
+            for col, col_type, freq in frequency_entries:
+                csv_file.write(f"{col},{col_type},{freq}\n")
         print(f"Field frequency analysis written to {csv_file_path}")
     except Exception as e:
         print(f"Error writing frequency CSV file: {e}")
