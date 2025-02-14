@@ -1,6 +1,7 @@
 import argparse
 import time
 import tracemalloc
+import os
 from datetime import datetime
 
 import duckdb
@@ -10,6 +11,9 @@ import pandas as pd
 import testing.tpch.setup as tpch_setup
 # from queries.twitter_queries import
 from prepare_database import prepare_database
+
+if not os.path.isdir("./results"):
+    os.mkdir("./results")
 
 # Paths and queries for different datasets
 DATASETS = {
@@ -152,6 +156,8 @@ def perform_tests():
     datasets_to_test = ['tpch']
 
     for dataset in datasets_to_test:
+        if not os.path.isdir(f"./results/{dataset}"):
+            os.mkdir(f"./results/{dataset}")
 
         config = DATASETS[dataset]
 
@@ -178,7 +184,6 @@ def perform_tests():
             materialize_columns = test_config["materialization"]
             if materialize_columns is None:
                 materialize_columns = column_map.keys()
-                print("running")
 
             # Create the field-materialization setup for this test
             fields = []
@@ -197,6 +202,12 @@ def perform_tests():
                 run_no=run_no,
                 test_time=test_time
             )
+
+            print(test)
+            print(dataset)
+
+            new_results_df.to_csv(
+                f"./results/{dataset}/{test}.csv", index=False)
 
             # Update df dicts
             old_result_dfs[test] = pd.concat(
