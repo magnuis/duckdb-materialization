@@ -155,7 +155,7 @@ def perform_tests():
 
         config = DATASETS[dataset]
 
-        queries: dict = config["queries"]
+        queries: list = config["queries"]
         tests_map: dict = config["tests_map"]
         column_map: dict = config["column_map"]
 
