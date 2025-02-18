@@ -166,6 +166,8 @@ def perform_tests():
         column_map: dict = config["column_map"]
 
         db_connection = duckdb.connect(f"./data/db/{dataset}.db")
+        db_connection.execute(
+            f"ATTACH './data/db/{dataset}.db' AS original_db;")
 
         # Load results dataframes and determine run number
         old_result_dfs, run_no = _results_dfs(
@@ -179,7 +181,7 @@ def perform_tests():
 
         # Extract all fields to be used in these tests
         # all_fields = list(set([field for query in queries_map.values() for field in query]))
-
+        meta_results = []
         for test, test_config in tests_map.items():
             materialize_columns = test_config["materialization"]
             if materialize_columns is None:
@@ -192,7 +194,13 @@ def perform_tests():
                     (field, access_query, field in materialize_columns))
 
             # Prepare database
-            prepare_database(con=db_connection, fields=fields)
+            time_taken, db_size = prepare_database(
+                con=db_connection, dataset=dataset, fields=fields)
+            meta_results.append({
+                "Test": test,
+                "Time taken": time_taken,
+                "DB size": db_size
+            })
 
             # Run test
             new_results_df, query_result_df = _perform_test(
@@ -203,9 +211,6 @@ def perform_tests():
                 test_time=test_time
             )
 
-            print(test)
-            print(dataset)
-
             new_results_df.to_csv(
                 f"./results/{dataset}/{test}.csv", index=False)
 
@@ -215,12 +220,17 @@ def perform_tests():
             new_results_dfs[test] = new_results_df
             query_results_dfs[test] = query_result_df
 
+        meta_results_df = pd.DataFrame(meta_results)
+        meta_results_df.to_csv(
+            f"./results/{dataset}/meta_results.csv", index=False)
+
         # Compare the results of raw and materialized queries
         print(f"\nComparing query results for dataset: {dataset}")
         success = compare_query_results(
             dfs=query_results_dfs.values()
         )
         print('-------')
+        print(query_result_df[:2])
 
 
 if __name__ == "__main__":
