@@ -1,11 +1,11 @@
 import argparse
+import shutil
 import time
 import tracemalloc
 import os
 from datetime import datetime
 
 import duckdb
-import numpy as np
 import pandas as pd
 
 import testing.tpch.setup as tpch_setup
@@ -114,8 +114,11 @@ def _perform_test(
 
         temp_df = pd.DataFrame([df_row])
 
-        results_df = pd.concat([results_df, temp_df],
-                               ignore_index=True).reset_index(drop=True)
+        if results_df.empty:
+            results_df = temp_df
+        else:
+            results_df = pd.concat([results_df, temp_df],
+                                   ignore_index=True).reset_index(drop=True)
         print(f"""Query {i} Average Execution Time (last 4 runs): {
               avg_time:.4f} seconds""")
     return results_df, query_results
@@ -143,6 +146,42 @@ def compare_query_results(dfs: list[pd.DataFrame]):
     return success
 
 
+def _create_fresh_db(dataset: str):
+    db_path = f"./data/db/{dataset}.duckdb"
+    backup_path = f"./data/backup/{dataset}"
+
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        print(f"Removed db at path {db_path}")
+
+    with duckdb.connect(db_path) as con:
+        con.execute("SET default_block_size = '16384'")
+        con.execute(f"IMPORT DATABASE '{backup_path}';")
+
+
+def _create_connection(dataset: str, test: str) -> tuple[duckdb.DuckDBPyConnection, str]:
+    original_db_path = f"./data/db/{dataset}.duckdb"
+    copy_db_path = f"./data/db/{dataset}_{test}.db"
+
+    # Remove any old db
+    if os.path.exists(copy_db_path):
+        os.remove(copy_db_path)
+        print(f"Removed db at path {copy_db_path}")
+
+    # Copy original db
+    shutil.copy(original_db_path, copy_db_path)
+
+    # Reconnect to db
+    con = duckdb.connect(copy_db_path)
+    con.execute("SET default_block_size = '16384'")
+
+    con.execute("CHECKPOINT;")
+    db_size = os.path.getsize(copy_db_path)
+    print(f"Fresh database size: {db_size/1024/1024:.6f} MB")
+
+    return con, copy_db_path
+
+
 def perform_tests():
     # Parse command line arguments
     parser = argparse.ArgumentParser(
@@ -165,9 +204,11 @@ def perform_tests():
         tests_map: dict = config["tests_map"]
         column_map: dict = config["column_map"]
 
-        db_connection = duckdb.connect(f"./data/db/{dataset}.db")
-        db_connection.execute(
-            f"ATTACH './data/db/{dataset}.db' AS original_db;")
+        # Create fresh db
+        _create_fresh_db(dataset=dataset)
+
+        # db_connection.execute(
+        #     f"ATTACH './data/db/{dataset}.db' AS original_db;")
 
         # Load results dataframes and determine run number
         old_result_dfs, run_no = _results_dfs(
@@ -183,6 +224,8 @@ def perform_tests():
         # all_fields = list(set([field for query in queries_map.values() for field in query]))
         meta_results = []
         for test, test_config in tests_map.items():
+            db_connection, db_path = _create_connection(
+                dataset=dataset, test=test)
             materialize_columns = test_config["materialization"]
             if materialize_columns is None:
                 materialize_columns = column_map.keys()
@@ -194,13 +237,8 @@ def perform_tests():
                     (field, access_query, field in materialize_columns))
 
             # Prepare database
-            time_taken, db_size = prepare_database(
+            time_taken = prepare_database(
                 con=db_connection, dataset=dataset, fields=fields)
-            meta_results.append({
-                "Test": test,
-                "Time taken": time_taken,
-                "DB size": db_size
-            })
 
             # Run test
             new_results_df, query_result_df = _perform_test(
@@ -215,10 +253,28 @@ def perform_tests():
                 f"./results/{dataset}/{test}.csv", index=False)
 
             # Update df dicts
-            old_result_dfs[test] = pd.concat(
-                [old_result_dfs[test], new_results_df], ignore_index=True)
+            old_result_df: pd.DataFrame = old_result_dfs[test]
+            if old_result_df.empty:
+                old_result_dfs[test] = new_results_df
+            else:
+                old_result_dfs[test] = pd.concat(
+                    [old_result_dfs[test], new_results_df], ignore_index=True)
             new_results_dfs[test] = new_results_df
             query_results_dfs[test] = query_result_df
+
+            # Close db connection
+            db_connection.execute("CHECKPOINT;")
+            db_connection.close()
+
+            db_size = os.path.getsize(db_path)
+
+            meta_results.append({
+                "Test": test,
+                "Time taken": time_taken,
+                "DB size": db_size
+            })
+
+            os.remove(db_path)
 
         meta_results_df = pd.DataFrame(meta_results)
         meta_results_df.to_csv(

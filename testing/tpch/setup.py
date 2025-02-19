@@ -62,7 +62,21 @@ TESTS = {
             "l_receiptdate",
             "l_shipdate",
             "l_shipmode",
-            "l_shipinstruct"
+            "l_shipinstruct",
+            # "c_mktsegment",
+            # "c_name",
+            # "c_phone",
+            # "c_address",
+            # "c_comment",
+            # "s_name",
+            # "s_phone",
+            # "s_address",
+            # "s_comment",
+            # "p_name",
+            # "p_type",
+            # "p_partkey",
+            # # "p_size",
+            # # "p_mfgr"
         ],
     },
 }

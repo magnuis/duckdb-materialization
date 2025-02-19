@@ -17,12 +17,8 @@ def prepare_database(con: duckdb.DuckDBPyConnection, dataset: str, fields: list[
     """
     time_taken = _alter_table(con=con, fields=fields)
 
-    _create_view_query(con=con, fields=fields)
-    con.execute("CHECKPOINT;")
-    con.execute("VACUUM;")
-    db_size = _check_db_size(con=con, dataset=dataset)
-    print(f"Database size after: {db_size/1024/1024:.6f} MB")
-    return time_taken, db_size
+    _create_view(con=con, fields=fields)
+    return time_taken
 
 
 def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]]) -> float:
@@ -77,9 +73,9 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
     return time_taken
 
 
-def _create_view_query(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]]):
+def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]]):
     """
-    Prepare create view query for provided fields
+    Create view for the provided fields
 
     Parameters
     ----------
@@ -98,11 +94,16 @@ def _create_view_query(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, d
     view_query += " FROM test_table;"
 
     con.execute(view_query)
+    con.execute("CHECKPOINT;")
 
 
 def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 
     temp_db = f"./data/db/temp_{dataset}.db"
+
+    if os.path.exists(temp_db):
+        print("Removed temp_db")
+        os.remove(temp_db)
 
     con.execute(f"""
         ATTACH '{temp_db}' AS temp_db;
@@ -111,10 +112,13 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 
     con.execute("CHECKPOINT temp_db;")
 
-    db_size = os.path.getsize(f"./data/db/temp_{dataset}.db")
+    cols = con.execute('DESCRIBE original_db.test_table').fetchall()
+    for col in cols:
+        print(col)
 
-    print(f"Database size after: {db_size/1024/1024:.6f} MB")
     con.execute('DETACH temp_db;')
+
+    db_size = os.path.getsize(f"./data/db/temp_{dataset}.db")
 
     os.remove(temp_db)
 
