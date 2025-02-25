@@ -21,6 +21,7 @@ QUERIES = [
     'q20',
     'q21',
     'q22',
+    'q23',
 ]
 
 TESTS = {
@@ -121,29 +122,21 @@ COLUMN_MAP = {
         'query': "CAST(raw_json->>'l_orderkey' AS INT)",
         'type': 'INT'
     },
-    "l_suppkey": {
-        'query': "CAST(raw_json->>'l_suppkey' AS INT)",
-        'type': 'INT'
-    },
     "l_partkey": {
         'query': "CAST(raw_json->>'l_partkey' AS INT)",
         'type': 'INT'
     },
-    "l_returnflag": {
-        'query': "CAST(raw_json->>'l_returnflag' AS CHAR(1))",
-        'type': 'CHAR(1)'
-    },
-    'l_linestatus': {
-        "query": "CAST(raw_json->>'l_linestatus' AS CHAR(1))",
-        "type": "CHAR(1)"
-    },
-    "l_quantity": {
-        'query': "CAST(raw_json->>'l_quantity' AS INT)",
+    "l_suppkey": {
+        'query': "CAST(raw_json->>'l_suppkey' AS INT)",
         'type': 'INT'
     },
-    "l_tax": {
-        'query': "CAST(raw_json->>'l_tax' AS DECIMAL(12,2))",
-        'type': "DECIMAL(12,2)"
+    'l_linenumber': {
+        "query": "CAST(raw_json->>'l_linenumber' AS INT)",
+        "type": "INT"
+    },
+    "l_quantity": {
+        'query': "CAST(raw_json->>'l_quantity' AS DECIMAL(12,2))",
+        'type': 'DECIMAL(12,2)'
     },
     "l_extendedprice": {
         'query': "CAST(raw_json->>'l_extendedprice' AS DECIMAL(12,2))",
@@ -153,6 +146,22 @@ COLUMN_MAP = {
         'query': "CAST(raw_json->>'l_discount' AS DECIMAL(12,2))",
         'type': "DECIMAL(12,2)"
     },
+    "l_tax": {
+        'query': "CAST(raw_json->>'l_tax' AS DECIMAL(12,2))",
+        'type': "DECIMAL(12,2)"
+    },
+    "l_returnflag": {
+        'query': "CAST(raw_json->>'l_returnflag' AS CHAR(1))",
+        'type': 'CHAR(1)'
+    },
+    'l_linestatus': {
+        "query": "CAST(raw_json->>'l_linestatus' AS CHAR(1))",
+        "type": "CHAR(1)"
+    },
+    "l_shipdate": {
+        'query': "CAST(raw_json->>'l_shipdate' AS DATE)",
+        'type': 'DATE'
+    },
     "l_commitdate": {
         'query': "CAST(raw_json->>'l_commitdate' AS DATE)",
         'type': 'DATE'
@@ -161,16 +170,16 @@ COLUMN_MAP = {
         'query': "CAST(raw_json->>'l_receiptdate' AS DATE)",
         'type': 'DATE'
     },
-    "l_shipdate": {
-        'query': "CAST(raw_json->>'l_shipdate' AS DATE)",
-        'type': 'DATE'
+    "l_shipinstruct": {
+        'query': "raw_json->>'l_shipinstruct'",
+        'type': 'VARCHAR'
     },
     "l_shipmode": {
         'query': "raw_json->>'l_shipmode'",
         'type': 'VARCHAR'
     },
-    "l_shipinstruct": {
-        'query': "raw_json->>'l_shipinstruct'",
+    "l_comment": {
+        'query': "raw_json->>'l_comment'",
         'type': 'VARCHAR'
     },
     ########################### N ###########################

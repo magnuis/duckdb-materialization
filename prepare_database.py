@@ -47,6 +47,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
     update_query = "UPDATE test_table SET "
 
     materialized = False
+    all_materialized = True
     for field, query, materialize in fields:
         # Drop column if it exists
         con.execute(f"ALTER TABLE test_table DROP COLUMN IF EXISTS {field};")
@@ -56,11 +57,15 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
             update_query += f"{field} = {query['query']}, "
 
         materialized |= materialize
+        all_materialized &= materialize
 
     if materialized:
         update_query = update_query[:-2] + ';'
+        query = alter_query + " " + update_query
 
-        query = alter_query + " " + update_query + " END TRANSACTION;"
+        if all_materialized:
+            query += "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;"
+        query += " END TRANSACTION;"
 
         start_time = time()
         # print(query)
@@ -83,15 +88,28 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         List of tuples of field name, json extraction query, and materialized status
     """
 
-    view_query = "DROP VIEW IF EXISTS test_view; CREATE VIEW test_view AS SELECT"
+    # CAST('{' ||
+    #   rtrim(
+    #       COALESCE(
+    #           CASE WHEN r_name IS NOT NULL THEN '"r_name": ' || to_json(r_name) || ', ' ELSE '' END, '')) || '}')
 
+    view_query = "DROP VIEW IF EXISTS test_view; CREATE VIEW test_view AS SELECT"
+    json_view = "CAST('{' || rtrim("
+    all_materialized = True
     for field, query, materialize in fields:
         if materialize:
-            view_query += f" {field},"
+            view_query += f""" {field},"""
+            json_view += f"""COALESCE(CASE WHEN {field} IS NOT NULL THEN '"{field}": ' || to_json({field}) || ', ' ELSE '' END, '') ||"""
         else:
             view_query += f" {query['query']} AS {field},"
+            all_materialized = False
+    if all_materialized:
+        view_query += json_view + "'', ', ') || '}' AS JSON) AS raw_json"
+    else:
+        view_query += " raw_json"
 
     view_query += " FROM test_table;"
+    print(view_query)
 
     con.execute(view_query)
     con.execute("CHECKPOINT;")
