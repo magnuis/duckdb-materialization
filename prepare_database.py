@@ -87,12 +87,6 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
     fields : list[tuple[str, dict, bool]]
         List of tuples of field name, json extraction query, and materialized status
     """
-
-    # CAST('{' ||
-    #   rtrim(
-    #       COALESCE(
-    #           CASE WHEN r_name IS NOT NULL THEN '"r_name": ' || to_json(r_name) || ', ' ELSE '' END, '')) || '}')
-
     view_query = "DROP VIEW IF EXISTS test_view; CREATE VIEW test_view AS SELECT"
     json_view = "CAST('{' || rtrim("
     all_materialized = True
@@ -109,7 +103,6 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         view_query += " raw_json"
 
     view_query += " FROM test_table;"
-    print(view_query)
 
     con.execute(view_query)
     con.execute("CHECKPOINT;")
