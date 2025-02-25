@@ -1,4 +1,4 @@
--- Select json documents variant of Q2
+-- JSON adaptation of Q2
 SELECT
     s.raw_json,
     n.raw_json,
