@@ -124,8 +124,8 @@ def _perform_test(
         else:
             results_df = pd.concat([results_df, temp_df],
                                    ignore_index=True).reset_index(drop=True)
-        print(f"""Query {i} Average Execution Time (last 4 runs): {
-              avg_time:.4f} seconds""")
+        # print(f"""Query {i} Average Execution Time (last 4 runs): {
+        #       avg_time:.4f} seconds""")
     return results_df, query_results
 
 
@@ -146,6 +146,8 @@ def compare_query_results(dfs: list[pd.DataFrame]):
             print(f"Query {i}: Results do not match.")
             for df in results:
                 print(f"Query result:\n{df}")
+                for col in df.columns:
+                    print(f"Column {col}: {df[col].unique()}")
             success = False
 
     return success
@@ -269,6 +271,20 @@ def perform_tests():
 
             # Close db connection
             db_connection.execute("CHECKPOINT;")
+            results = db_connection.execute(
+                """
+SELECT 
+    'test_table' AS table_name,
+    (SELECT block_size FROM pragma_database_size()) AS block_size,
+    COUNT(DISTINCT block_id) AS num_blocks,
+    COUNT(DISTINCT block_id) * (SELECT block_size FROM pragma_database_size()) AS num_bytes
+FROM pragma_storage_info('test_table')
+GROUP BY all
+""").fetchdf()
+            # print(results)
+            # print("DB size after test:",
+            #       db_connection.execute(
+            #           "CALL pragma_database_size();").fetch_df())
             db_connection.close()
 
             db_size = os.path.getsize(db_path)

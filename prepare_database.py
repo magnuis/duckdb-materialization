@@ -66,12 +66,25 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         query = alter_query + " " + update_query
 
         if all_materialized:
-            query += "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;"
+            pass
+            # query += "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;"
         query += " END TRANSACTION;"
 
         start_time = time()
-        # print(query)
+        con.execute("CHECKPOINT;")
+
+        _print_db_size(con=con)
         con.execute(query)
+        con.execute("CHECKPOINT;")
+
+        if all_materialized:
+            con.execute("CHECKPOINT;")
+            _print_db_size(con=con)
+            con.execute(
+                "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;")
+            con.execute("CHECKPOINT;")
+
+            _print_db_size(con=con)
 
         end_time = time()
         time_taken = end_time - start_time
@@ -109,8 +122,11 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
     view_query += " FROM test_table;"
 
-    con.execute(view_query)
     con.execute("CHECKPOINT;")
+    con.execute(view_query)
+    _print_db_size(con=con)
+    con.execute("CHECKPOINT;")
+    _print_db_size(con=con)
 
 
 def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
@@ -139,3 +155,8 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
     os.remove(temp_db)
 
     return db_size
+
+
+def _print_db_size(con: duckdb.DuckDBPyConnection):
+    print(con.execute(
+        "CALL pragma_database_size();").fetch_df())
