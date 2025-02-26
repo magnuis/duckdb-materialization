@@ -71,14 +71,20 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         query += " END TRANSACTION;"
 
         start_time = time()
+        con.execute("CHECKPOINT;")
 
+        _print_db_size(con=con)
         con.execute(query)
         con.execute("CHECKPOINT;")
 
         if all_materialized:
+            con.execute("CHECKPOINT;")
+            _print_db_size(con=con)
             con.execute(
                 "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;")
             con.execute("CHECKPOINT;")
+
+            _print_db_size(con=con)
 
         end_time = time()
         time_taken = end_time - start_time
@@ -118,7 +124,9 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
     con.execute("CHECKPOINT;")
     con.execute(view_query)
+    _print_db_size(con=con)
     con.execute("CHECKPOINT;")
+    _print_db_size(con=con)
 
 
 def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
@@ -149,29 +157,6 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
     return db_size
 
 
-def get_db_size(con: duckdb.DuckDBPyConnection) -> tuple[int, int, int]:
-    """
-    Get database size information
-
-    Parameters
-    ----------
-    con : duckdb.DuckDBPyConnection
-        DuckDB connection
-
-    Returns
-    -------
-    tuple[int, int, int]
-        (used_blocks, block_size, total_size_in_bytes)
-    """
-    result = con.execute("CALL pragma_database_size();").fetchone()
-    # database_name(0) database_size(1) block_size(2) total_blocks(3) used_blocks(4) free_blocks(5)...
-    block_size = result[2]
-    used_blocks = result[4]
-    total_size = used_blocks * block_size
-    return (used_blocks, block_size, total_size)
-
-
 def _print_db_size(con: duckdb.DuckDBPyConnection):
-    used_blocks, block_size, total_size = get_db_size(con)
-    print(
-        f"Database size: {used_blocks} blocks * {block_size} bytes = {total_size} bytes")
+    print(con.execute(
+        "CALL pragma_database_size();").fetch_df())
