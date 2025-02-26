@@ -73,7 +73,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
         end_time = time()
         time_taken = end_time - start_time
-    print(f"Time taken to alter table: {time_taken} seconds")
+    # print(f"Time taken to alter table: {time_taken} seconds")
 
     return time_taken
 
@@ -113,7 +113,7 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
     temp_db = f"./data/db/temp_{dataset}.db"
 
     if os.path.exists(temp_db):
-        print("Removed temp_db")
+        # print("Removed temp_db")
         os.remove(temp_db)
 
     con.execute(f"""

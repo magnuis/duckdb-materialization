@@ -19,7 +19,7 @@ if not os.path.isdir("./results"):
 DATASETS = {
     "tpch": {
         "queries": tpch_setup.QUERIES,
-        "tests_map": tpch_setup.TESTS,
+        "tests_map": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
     }
 }

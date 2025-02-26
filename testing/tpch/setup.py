@@ -26,30 +26,37 @@ QUERIES = [
     'q25'
 ]
 
-TESTS = {
+LOAD_BASED_MATERIALIZATION = [
+    {
+        "no_frequent_queries": 0,
+        "no_queries": 0,
+        "load": []
+    }
+]
+
+STANDARD_SETUPS = {
     "no_materialization": {
         "materialization": [],
     },
     "full_materialization": {
         "materialization": None,
     },
-
-    "load_based_materialization": {
-        "materialization": [
-            "l_extendedprice",
-            "o_orderkey",
-            "l_discount",
-            "s_suppkey",
-            "l_orderkey",
-            "n_name",
-            "n_nationkey",
-            "c_custkey",
-            "p_partkey",
-            "o_custkey",
-            "s_nationkey",
-            "l_shipdate"
-        ]
-    },
+    # "load_based_materialization": {
+    #     "materialization": [
+    #         "l_extendedprice",
+    #         "o_orderkey",
+    #         "l_discount",
+    #         "s_suppkey",
+    #         "l_orderkey",
+    #         "n_name",
+    #         "n_nationkey",
+    #         "c_custkey",
+    #         "p_partkey",
+    #         "o_custkey",
+    #         "s_nationkey",
+    #         "l_shipdate"
+    #     ]
+    # },
     "schema_based_materialization": {
         "materialization": [
             "l_orderkey",
