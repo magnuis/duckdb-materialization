@@ -48,6 +48,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
     materialized = False
     all_materialized = True
+    materialize_fields = []
     for field, query, materialize in fields:
         # Drop column if it exists
         con.execute(f"ALTER TABLE test_table DROP COLUMN IF EXISTS {field};")
@@ -55,6 +56,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         if materialize:
             alter_query += f"ALTER TABLE test_table ADD {field} {query['type']};"
             update_query += f"{field} = {query['query']}, "
+            materialize_fields.append(field)
 
         materialized |= materialize
         all_materialized &= materialize
@@ -75,6 +77,9 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         time_taken = end_time - start_time
     # print(f"Time taken to alter table: {time_taken} seconds")
 
+    print('------------------------------')
+    print("Materialized fields")
+    print(materialize_fields)
     return time_taken
 
 

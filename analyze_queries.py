@@ -84,7 +84,7 @@ def analyze_queries(data_set: str) -> dict:
             f'./results/{data_set}/field_distribution_{data_set}.csv', index=False)
 
         # Optionally print the DataFrame for this dataset
-        print(f"DataFrame for dataset '{dataset}':")
+        # print(f"DataFrame for dataset '{dataset}':")
         print(freq_df)
 
 

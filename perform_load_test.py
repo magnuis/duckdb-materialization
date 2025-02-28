@@ -21,6 +21,8 @@ if not os.path.isdir("./results"):
 MATERIALIZE_TRESHOLDS = [0.33, 0.5, 0.67, 0.8]
 NO_QUERIES = 300
 
+READ_TIME = 0
+
 # Paths and queries for different datasets
 DATASETS = {
     "tpch": {
@@ -195,25 +197,30 @@ def _perform_test(
     con: duckdb.DuckDBPyConnection,
     dataset: str,
     test: str,
-    load: list[str]
+    load: list[str],
+    run_test: bool
 ):
 
     times = []
     queries = []
     total_time = 0
-    for i, query_name in enumerate(load):
-        with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
-            query = f.read()
 
-        start_time = time.perf_counter()
-        result = con.execute(query).fetchdf()
-        end_time = time.perf_counter()
-        execution_time = end_time - start_time
+    for i, query_name in enumerate(load):
+        if run_test:
+            execution_time = -1
+        else:
+            with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
+                query = f.read()
+            start_time = time.perf_counter()
+            _ = con.execute(query).fetchdf()
+            end_time = time.perf_counter()
+            execution_time = end_time - start_time
+
         times.append({"q": i, test: execution_time})
         queries.append({"q": i, test: query_name})
         total_time += execution_time
 
-    print(f"Total time taken: {total_time}")
+    print(f"Total time taken for test {test}: {total_time}")
 
     times_df = pd.DataFrame(columns=["q", test], data=times)
     query_df = pd.DataFrame(columns=["q", test], data=queries)
@@ -287,7 +294,7 @@ def main():
                     if materialize_columns is None:
                         materialize_columns = column_map.keys()
 
-                    # Create the field-materialization setup for this test
+                        # Create the field-materialization setup for this test
                     fields = []
                     for field, access_query in column_map.items():
                         fields.append(
@@ -302,7 +309,9 @@ def main():
                         con=db_connection,
                         dataset=dataset,
                         test=test,
-                        load=load
+                        load=load,
+                        run_test=len(
+                            materialize_columns) == 0 and test != 'no_materialization'
                     )
 
                     times_df = pd.merge(times_df, _times_df, on="q")
@@ -335,9 +344,10 @@ def main():
                 query_df.to_csv(
                     f"./results/{dataset}/q{query_proportion}|m{majority_proportion}|t{treshold}|l{load_no}_queries.csv", index=False)
 
-                # Store results to
 
-                # assert False
+# Store results to
+
+    # assert False
 
     # print(no_tests)
 
