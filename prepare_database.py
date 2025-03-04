@@ -48,6 +48,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
     materialized = False
     all_materialized = True
+    materialize_fields = []
     for field, query, materialize in fields:
         # Drop column if it exists
         con.execute(f"ALTER TABLE test_table DROP COLUMN IF EXISTS {field};")
@@ -55,6 +56,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         if materialize:
             alter_query += f"ALTER TABLE test_table ADD {field} {query['type']};"
             update_query += f"{field} = {query['query']}, "
+            materialize_fields.append(field)
 
         materialized |= materialize
         all_materialized &= materialize
@@ -86,8 +88,11 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
         end_time = time()
         time_taken = end_time - start_time
-    print(f"Time taken to alter table: {time_taken} seconds")
+    # print(f"Time taken to alter table: {time_taken} seconds")
 
+    print('------------------------------')
+    print("Materialized fields")
+    print(materialize_fields)
     return time_taken
 
 
@@ -100,12 +105,6 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
     fields : list[tuple[str, dict, bool]]
         List of tuples of field name, json extraction query, and materialized status
     """
-
-    # CAST('{' ||
-    #   rtrim(
-    #       COALESCE(
-    #           CASE WHEN r_name IS NOT NULL THEN '"r_name": ' || to_json(r_name) || ', ' ELSE '' END, '')) || '}')
-
     view_query = "DROP VIEW IF EXISTS test_view; CREATE VIEW test_view AS SELECT"
     json_view = "CAST('{' || rtrim("
     all_materialized = True
@@ -116,10 +115,10 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         else:
             view_query += f" {query['query']} AS {field},"
             all_materialized = False
-    if all_materialized:
-        view_query += json_view + "'', ', ') || '}' AS JSON) AS raw_json"
-    else:
-        view_query += " raw_json"
+    # if all_materialized:
+    #     view_query += json_view + "'', ', ') || '}' AS JSON) AS raw_json"
+    # else:
+    #     view_query += " raw_json"
 
     view_query += " FROM test_table;"
 
@@ -135,7 +134,7 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
     temp_db = f"./data/db/temp_{dataset}.db"
 
     if os.path.exists(temp_db):
-        print("Removed temp_db")
+        # print("Removed temp_db")
         os.remove(temp_db)
 
     con.execute(f"""

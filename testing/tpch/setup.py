@@ -1,53 +1,62 @@
 QUERIES = [
     'q1',
-    # 'q2',
-    # 'q3',
-    # 'q4',
-    # 'q5',
-    # 'q6',
-    # 'q7',
-    # 'q8',
-    # 'q9',
-    # 'q10',
-    # 'q11',
-    # 'q12',
-    # 'q13',
-    # 'q14',
-    # 'q15',
-    # 'q16',
-    # 'q17',
-    # 'q18',
-    # 'q19',
-    # 'q20',
-    # 'q21',
-    # 'q22',
+    'q2',
+    'q3',
+    'q4',
+    'q5',
+    'q6',
+    'q7',
+    'q8',
+    'q9',
+    'q10',
+    'q11',
+    'q12',
+    'q13',
+    'q14',
+    'q15',
+    'q16',
+    'q17',
+    'q18',
+    'q19',
+    'q20',
+    'q21',
+    'q22',
     # 'q23',
+    # 'q24',
+    # 'q25'
 ]
 
-TESTS = {
+LOAD_BASED_MATERIALIZATION = [
+    {
+        "no_frequent_queries": 0,
+        "no_queries": 0,
+        "load": []
+    }
+]
+
+STANDARD_SETUPS = {
     "no_materialization": {
         "materialization": [],
     },
     "full_materialization": {
         "materialization": None,
     },
-
-    "load_based_materialization": {
-        "materialization": [
-            "l_extendedprice",
-            "o_orderkey",
-            "l_discount",
-            "s_suppkey",
-            "l_orderkey",
-            "n_name",
-            "n_nationkey",
-            "c_custkey",
-            "p_partkey",
-            "o_custkey",
-            "s_nationkey",
-            "l_shipdate"
-        ]
-    },
+    # "load_based_materialization": {
+    #     "materialization": [
+    #         "l_extendedprice",
+    #         "o_orderkey",
+    #         "l_discount",
+    #         "s_suppkey",
+    #         "l_orderkey",
+    #         "n_name",
+    #         "n_nationkey",
+    #         "c_custkey",
+    #         "p_partkey",
+    #         "o_custkey",
+    #         "s_nationkey",
+    #         "l_shipdate"
+    #     ]
+    # },
     "schema_based_materialization": {
         "materialization": [
             "l_orderkey",
@@ -258,6 +267,10 @@ COLUMN_MAP = {
         'type': 'VARCHAR'
     },
     ########################## PS ###########################
+    "ps_partkey": {
+        'query': "CAST(raw_json->>'ps_partkey' AS INT)",
+        'type': 'INT'
+    },
     "ps_suppkey": {
         'query': "CAST(raw_json->>'ps_suppkey' AS INT)",
         'type': 'INT'
@@ -266,39 +279,31 @@ COLUMN_MAP = {
         'query': "CAST(raw_json->>'ps_availqty' AS INT)",
         'type': 'INT'
     },
-    "ps_partkey": {
-        'query': "CAST(raw_json->>'ps_partkey' AS INT)",
-        'type': 'INT'
-    },
     "ps_supplycost": {
         'query': "CAST(raw_json->>'ps_supplycost' AS INT)",
         'type': 'INT'
+    },
+    "ps_comment": {
+        'query': "raw_json->>'ps_comment'",
+        'type': 'VARCHAR'
     },
     ########################### R ###########################
     "r_regionkey": {
         'query': "CAST(raw_json->>'r_regionkey' AS INT)",
         'type': 'INT'
     },
+    "r_comment": {
+        'query': "raw_json->>'r_comment'",
+        'type': 'VARCHAR'
+    },
     "r_name": {
         'query': "raw_json->>'r_name'",
         'type': 'VARCHAR'
     },
     ########################### S ###########################
-    "s_acctbal": {
-        'query': "CAST(raw_json->>'s_acctbal' AS DECIMAL(12,2))",
-        'type': "DECIMAL(12,2)"
-    },
     "s_suppkey": {
         'query': "CAST(raw_json->>'s_suppkey' AS INT)",
         'type': "INT"
-    },
-    "s_nationkey": {
-        'query': "CAST(raw_json->>'s_nationkey' AS INT)",
-        'type': "INT"
-    },
-    "s_type": {
-        'query': "raw_json->>'s_type'",
-        'type': 'VARCHAR'
     },
     "s_name": {
         'query': "raw_json->>'s_name'",
@@ -308,9 +313,17 @@ COLUMN_MAP = {
         'query': "raw_json->>'s_address'",
         'type': 'VARCHAR'
     },
+    "s_nationkey": {
+        'query': "CAST(raw_json->>'s_nationkey' AS INT)",
+        'type': "INT"
+    },
     "s_phone": {
         'query': "raw_json->>'s_phone'",
         'type': 'VARCHAR'
+    },
+    "s_acctbal": {
+        'query': "CAST(raw_json->>'s_acctbal' AS DECIMAL(12,2))",
+        'type': "DECIMAL(12,2)"
     },
     "s_comment": {
         'query': "raw_json->>'s_comment'",

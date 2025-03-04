@@ -303,7 +303,7 @@ GROUP BY all
         )
         print('-------')
         print(query_result_df[:2])
-
+”
 
 if __name__ == "__main__":
     perform_tests()
