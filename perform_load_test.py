@@ -275,6 +275,7 @@ def main():
             majority_proportion = load_setup["majority_proportion"]
 
             for load_no, load in enumerate(loads):
+                load_name = f"q{query_proportion}|m{majority_proportion}|l{load_no}"
                 t_time = time.perf_counter()
 
                 times_df = pd.DataFrame(columns=["q"], data=load)
@@ -289,7 +290,7 @@ def main():
                     frequent_fields = field_frequency[field_frequency >=
                                                       NO_QUERIES * treshold]
 
-                    tests[f"q{query_proportion}|m{majority_proportion}|t{treshold}"] = {
+                    tests[f"load_based_t{treshold}"] = {
                         "materialization": frequent_fields.index.tolist()
                     }
 
@@ -330,6 +331,9 @@ def main():
 
 
                     meta_results.append({
+                        "Query proportion": query_proportion,
+                        "Majority proportion": majority_proportion,
+                        "Load": load_no,
                         "Test": test,
                         "Time taken": time_taken,
                         "Total query time": total_time,
