@@ -11,7 +11,7 @@ import pandas as pd
 import testing.tpch.setup as tpch_setup
 import testing.yelp.setup as yelp_setup
 # from queries.twitter_queries import
-from prepare_database import prepare_database
+from prepare_database import prepare_database, get_db_size
 
 if not os.path.isdir("./results"):
     os.mkdir("./results")
@@ -285,16 +285,18 @@ GROUP BY all
             # print("DB size after test:",
             #       db_connection.execute(
             #           "CALL pragma_database_size();").fetch_df())
+            db_size = get_db_size(con=duckdb.connect(db_path))
             db_connection.close()
-
-            db_size = os.path.getsize(db_path)
+            
 
             print(f"Prepared database in time {time_taken:.2f}s")
 
             meta_results.append({
                 "Test": test,
                 "Time taken": time_taken,
-                "DB size": db_size
+                "Blocks used": db_size[0],
+                "Block size": db_size[1],
+                "Database size": db_size[2],
             })
 
             os.remove(db_path)
