@@ -218,8 +218,7 @@ def _perform_test(
             end_time = time.perf_counter()
             execution_time = end_time - start_time
 
-        times.append({"q": i, test: execution_time})
-        queries.append({"q": i, test: query_name})
+        times.append({"q": query_name, test: execution_time})
         total_time += execution_time
 
     print(f"Total time taken for test {test}: {total_time}")
