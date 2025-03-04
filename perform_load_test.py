@@ -8,6 +8,7 @@ import os
 from collections import defaultdict
 from collections.abc import Callable
 from datetime import datetime
+from concurrent.futures import ProcessPoolExecutor, Future
 
 import duckdb
 import pandas as pd
@@ -33,8 +34,6 @@ DATASETS = {
         "no_queries": len(tpch_setup.QUERIES)
     }
 }
-
-TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 
 
 # DATASETS = {
@@ -172,9 +171,9 @@ def _create_fresh_db(dataset: str):
         con.execute(f"IMPORT DATABASE '{backup_path}';")
 
 
-def _create_connection(dataset: str, test: str) -> tuple[duckdb.DuckDBPyConnection, str]:
+def _create_connection(dataset: str, test: str, denominator: str) -> tuple[duckdb.DuckDBPyConnection, str]:
     original_db_path = f"./data/db/{dataset}.duckdb"
-    copy_db_path = f"./data/db/{dataset}_{test}.db"
+    copy_db_path = f"./data/db/{dataset}_{test}_{denominator}.db"
 
     # Remove any old db
     if os.path.exists(copy_db_path):
@@ -227,11 +226,125 @@ def _perform_test(
     return times_df, total_time
 
 
+def process_load(
+        load_no,
+        load,
+        dataset,
+        standard_tests,
+        field_distribution,
+        column_map: dict,
+        query_proportion: int,
+        majority_proportion: float,
+        process_no: int
+):
+    meta_results = []
+    t_time = time.perf_counter()
+
+    # Intialize times_df with the load
+    times_df = pd.DataFrame(columns=['q'], data=load)
+
+    # Deep copy standard tests for concurrency safety
+    tests: dict = copy.deepcopy(standard_tests)
+
+    # Calculate field frequency for the current load
+    field_frequency = _calculate_field_frequency(
+        load=load, field_distribution=field_distribution
+    )
+
+    # Keep only fields with frequency above thresholds
+    for treshold in MATERIALIZE_TRESHOLDS:
+        frequent_fields = field_frequency[field_frequency >=
+                                          NO_QUERIES*treshold]
+
+        # Add this materialization setup to tests
+        tests[f"load_based_t{treshold}"] = {
+            "materialization": frequent_fields.index.tolist()
+        }
+
+    # Run tests
+    for test, setup in tests.items():
+        db_connection, db_path = _create_connection(
+            dataset=dataset, test=test, denominator=process_no)
+
+        materialize_columns = setup["materialization"]
+
+        # If all should be materialized
+        if materialize_columns is None:
+            materialize_columns = list(column_map.keys())
+
+        # Prepare field materialization for current test
+        fields = [(field, access_query, field in materialize_columns)
+                  for field, access_query in column_map.items()]
+
+        # Prepare database
+        prepare_db_time = prepare_database(
+            con=db_connection, dataset=dataset, fields=fields)
+
+        # Bool to see if test should be run
+        run_test = len(
+            materialize_columns) == 0 and test != 'no_materialization'
+
+        # Run the test
+        _times_df, test_time = _perform_test(
+            con=db_connection,
+            dataset=dataset,
+            test=test,
+            load=load,
+            run_test=run_test
+        )
+
+        times_df[test] = _times_df[test].values
+
+        # Flush db
+        db_connection.execute("CHECKPOINT")
+        # Get db size
+        db_size = get_db_size(db_connection)
+        # Close connection
+        db_connection.close()
+
+        # Remove db from path
+        os.remove(db_path)
+
+        # Capture meta test results
+        meta_results.append({
+            "Query proportion": query_proportion,
+            "Majority proportion": majority_proportion,
+            "Load": load_no,
+            "Test": test,
+            "Database prepare time": prepare_db_time,
+            "Total query time": test_time,
+            "Blocks used": db_size[0],
+            "Block size": db_size[1],
+            "Database size": db_size[2],
+            "Materialization": materialize_columns
+        })
+
+    # Write times df to csv file
+    times_df.to_csv(
+        f"./results/{dataset}/{TEST_TIME_STRING}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv",
+        index=False
+    )
+
+    # Return test metadata
+    return meta_results
+
+
+def init_globals(test_time_string: str):
+    """Function to initialize global variables (called once per process)."""
+    global MATERIALIZE_TRESHOLDS, NO_QUERIES, TEST_TIME_STRING
+    MATERIALIZE_TRESHOLDS = [0.33, 0.5, 0.67, 0.8]
+    NO_QUERIES = 100
+    TEST_TIME_STRING = test_time_string
+
+
 def main():
+
+    test_time_string = f"{datetime.now().date()}-{datetime.now().hour}H"
+
     dataset = "tpch"
 
-    if not os.path.exists(f"./results/{dataset}/{TEST_TIME_STRING}"):
-        os.mkdir(f"./results/{dataset}/{TEST_TIME_STRING}")
+    if not os.path.exists(f"./results/{dataset}/{test_time_string}"):
+        os.mkdir(f"./results/{dataset}/{test_time_string}")
 
     config = DATASETS[dataset]
     standard_tests = config["standard_tests"]
@@ -256,99 +369,128 @@ def main():
 
     meta_results = []
 
+    tasks: list[Future] = []
+
     for distribution in distributions:
 
         # Get the simulated loads
         load_type = load_types[distribution]
 
-        for load_setup in load_type:
+        # Limit max workers
+        with ProcessPoolExecutor(max_workers=1, initializer=init_globals, initargs=(test_time_string,)) as executor:
+            process_no = 0
+            for load_setup in load_type:
 
-            loads = load_setup["loads"]
-            query_proportion = load_setup["query_proportion"]
-            majority_proportion = load_setup["majority_proportion"]
+                loads = load_setup["loads"]
+                query_proportion = load_setup["query_proportion"]
+                majority_proportion = load_setup["majority_proportion"]
 
-            for load_no, load in enumerate(loads):
-                load_name = f"q{query_proportion}|m{majority_proportion}|l{load_no}"
-                t_time = time.perf_counter()
-
-                times_df = pd.DataFrame(columns=["q"], data=load)
-
-                tests = copy.deepcopy(standard_tests)
-
-                field_frequency = _calculate_field_frequency(
-                    load=load, field_distribution=field_distribution)
-
-                # Keep only fields with frequency above thresholds
-                for treshold in MATERIALIZE_TRESHOLDS:
-                    frequent_fields = field_frequency[field_frequency >=
-                                                      NO_QUERIES * treshold]
-
-                    tests[f"load_based_t{treshold}"] = {
-                        "materialization": frequent_fields.index.tolist()
-                    }
-
-                for test, setup in tests.items():
-                    db_connection, db_path = _create_connection(
-                        dataset=dataset, test=test)
-
-                    materialize_columns = setup["materialization"]
-                    if materialize_columns is None:
-                        materialize_columns = column_map.keys()
-
-                    # Create the field-materialization setup for this test
-                    fields = []
-                    for field, access_query in column_map.items():
-                        fields.append(
-                            (field, access_query, field in materialize_columns))
-
-                    # Prepare database
-                    time_taken = prepare_database(
-                        con=db_connection, dataset=dataset, fields=fields)
-
-                    # Run test
-                    _times_df, total_time = _perform_test(
-                        con=db_connection,
-                        dataset=dataset,
-                        test=test,
+                for load_no, load in enumerate(loads):
+                    future = executor.submit(
+                        process_load,
+                        load_no=load_no,
                         load=load,
-                        run_test=len(
-                            materialize_columns) == 0 and test != 'no_materialization'
+                        dataset=dataset,
+                        standard_tests=standard_tests,
+                        field_distribution=field_distribution,
+                        column_map=column_map,
+                        query_proportion=query_proportion,
+                        majority_proportion=majority_proportion,
+                        process_no=process_no
                     )
-                    times_df[test] = _times_df[test].values
+                    process_no += 1
 
-                    # Close db connection
-                    db_connection.execute("CHECKPOINT;")
+                    tasks.append(future)
 
-                    db_size = get_db_size(db_connection)
-                    db_connection.close()
+            for future in tasks:
+                meta_result = future.result()
+                meta_results.extend(meta_result)
 
+            # Combine and write overall meta results
+        meta_results_df = pd.DataFrame(meta_results)
+        meta_results_df.to_csv(
+            f"./results/{dataset}/{test_time_string}/meta_results.csv", index=False)
 
-                    meta_results.append({
-                        "Query proportion": query_proportion,
-                        "Majority proportion": majority_proportion,
-                        "Load": load_no,
-                        "Test": test,
-                        "Time taken": time_taken,
-                        "Total query time": total_time,
-                        "Blocks used": db_size[0],
-                        "Block size": db_size[1],
-                        "Database size": db_size[2],
-                        "Materialization": materialize_columns
-                    })
+        #     load_name = f"q{query_proportion}|m{majority_proportion}|l{load_no}"
+        #     t_time = time.perf_counter()
 
-                    os.remove(db_path)
+        #     times_df = pd.DataFrame(columns=["q"], data=load)
 
-                print(
-                    f"TOTAL TIME FOR ONE LOAD: {time.perf_counter() - t_time}")
+        #     tests = copy.deepcopy(standard_tests)
 
-                meta_results_df = pd.DataFrame(meta_results)
-                meta_results_df.to_csv(
-                    f"./results/{dataset}/meta_results.csv", index=False)
+        #     field_frequency = _calculate_field_frequency(
+        #         load=load, field_distribution=field_distribution)
 
-                times_df.to_csv(
-                    f"./results/{dataset}/{TEST_TIME_STRING}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv")
-                # f"./results/{dataset}/{datetime()}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv", index=False)
-                assert False
+        #     # Keep only fields with frequency above thresholds
+        #     for treshold in MATERIALIZE_TRESHOLDS:
+        #         frequent_fields = field_frequency[field_frequency >=
+        #                                           NO_QUERIES * treshold]
+
+        #         tests[f"load_based_t{treshold}"] = {
+        #             "materialization": frequent_fields.index.tolist()
+        #         }
+
+        #     for test, setup in tests.items():
+        #         db_connection, db_path = _create_connection(
+        #             dataset=dataset, test=test)
+
+        #         materialize_columns = setup["materialization"]
+        #         if materialize_columns is None:
+        #             materialize_columns = column_map.keys()
+
+        #         # Create the field-materialization setup for this test
+        #         fields = []
+        #         for field, access_query in column_map.items():
+        #             fields.append(
+        #                 (field, access_query, field in materialize_columns))
+
+        #         # Prepare database
+        #         time_taken = prepare_database(
+        #             con=db_connection, dataset=dataset, fields=fields)
+
+        #         # Run test
+        #         _times_df, total_time = _perform_test(
+        #             con=db_connection,
+        #             dataset=dataset,
+        #             test=test,
+        #             load=load,
+        #             run_test=len(
+        #                 materialize_columns) == 0 and test != 'no_materialization'
+        #         )
+        #         times_df[test] = _times_df[test].values
+
+        #         # Close db connection
+        #         db_connection.execute("CHECKPOINT;")
+
+        #         db_size = get_db_size(db_connection)
+        #         db_connection.close()
+
+        #         meta_results.append({
+        #             "Query proportion": query_proportion,
+        #             "Majority proportion": majority_proportion,
+        #             "Load": load_no,
+        #             "Test": test,
+        #             "Time taken": time_taken,
+        #             "Total query time": total_time,
+        #             "Blocks used": db_size[0],
+        #             "Block size": db_size[1],
+        #             "Database size": db_size[2],
+        #             "Materialization": materialize_columns
+        #         })
+
+        #         os.remove(db_path)
+
+        #     print(
+        #         f"TOTAL TIME FOR ONE LOAD: {time.perf_counter() - t_time}")
+
+        #     meta_results_df = pd.DataFrame(meta_results)
+        #     meta_results_df.to_csv(
+        #         f"./results/{dataset}/meta_results.csv", index=False)
+
+        #     times_df.to_csv(
+        #         f"./results/{dataset}/{TEST_TIME_STRING}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv")
+        #     # f"./results/{dataset}/{datetime()}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv", index=False)
+        #     assert False
 
 
 if __name__ == "__main__":
