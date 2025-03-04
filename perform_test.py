@@ -19,7 +19,7 @@ if not os.path.isdir("./results"):
 DATASETS = {
     "tpch": {
         "queries": tpch_setup.QUERIES,
-        "tests_map": tpch_setup.STANDARD_SETUPS,
+        "tests_map": tpch_setup.TESTS,
         "column_map": tpch_setup.COLUMN_MAP,
     }
 }
@@ -287,7 +287,7 @@ def perform_tests():
         )
         print('-------')
         print(query_result_df[:2])
-
+”
 
 if __name__ == "__main__":
     perform_tests()

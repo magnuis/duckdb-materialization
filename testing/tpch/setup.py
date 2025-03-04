@@ -21,9 +21,9 @@ QUERIES = [
     'q20',
     'q21',
     'q22',
-    'q23',
-    'q24',
-    'q25'
+    # 'q23',
+    # 'q24',
+    # 'q25'
 ]
 
 LOAD_BASED_MATERIALIZATION = [

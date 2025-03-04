@@ -1,6 +1,7 @@
 import random
 import copy
 import argparse
+from datetime import datetime
 import shutil
 import time
 import os
@@ -19,7 +20,7 @@ if not os.path.isdir("./results"):
     os.mkdir("./results")
 
 MATERIALIZE_TRESHOLDS = [0.33, 0.5, 0.67, 0.8]
-NO_QUERIES = 300
+NO_QUERIES = 100
 
 READ_TIME = 0
 
@@ -32,6 +33,8 @@ DATASETS = {
         "no_queries": len(tpch_setup.QUERIES)
     }
 }
+
+TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 
 
 # DATASETS = {
@@ -114,7 +117,6 @@ DISTRIBUTIONS: dict[str, Callable] = {
     "random": _random_distribution,
     "normalized": _normalized_distribution,
     "numerical": _numerical_distribution
-
 }
 
 
@@ -223,12 +225,14 @@ def _perform_test(
     print(f"Total time taken for test {test}: {total_time}")
 
     times_df = pd.DataFrame(columns=["q", test], data=times)
-    query_df = pd.DataFrame(columns=["q", test], data=queries)
-    return times_df, query_df, total_time
+    return times_df, total_time
 
 
 def main():
     dataset = "tpch"
+
+    if not os.path.exists(f"./results/{dataset}/{TEST_TIME_STRING}"):
+        os.mkdir(f"./results/{dataset}/{TEST_TIME_STRING}")
 
     config = DATASETS[dataset]
     standard_tests = config["standard_tests"]
@@ -267,10 +271,7 @@ def main():
             for load_no, load in enumerate(loads):
                 t_time = time.perf_counter()
 
-                times_df = pd.DataFrame(columns=["q"], data=[
-                                        i for i in range(NO_QUERIES)])
-                query_df = pd.DataFrame(columns=["q"], data=[
-                    i for i in range(NO_QUERIES)])
+                times_df = pd.DataFrame(columns=["q"], data=load)
 
                 tests = copy.deepcopy(standard_tests)
 
@@ -294,7 +295,7 @@ def main():
                     if materialize_columns is None:
                         materialize_columns = column_map.keys()
 
-                        # Create the field-materialization setup for this test
+                    # Create the field-materialization setup for this test
                     fields = []
                     for field, access_query in column_map.items():
                         fields.append(
@@ -305,7 +306,7 @@ def main():
                         con=db_connection, dataset=dataset, fields=fields)
 
                     # Run test
-                    _times_df, _query_df, total_time = _perform_test(
+                    _times_df, total_time = _perform_test(
                         con=db_connection,
                         dataset=dataset,
                         test=test,
@@ -315,7 +316,6 @@ def main():
                     )
 
                     times_df = pd.merge(times_df, _times_df, on="q")
-                    query_df = pd.merge(query_df, _query_df, on="q")
 
                     # Close db connection
                     db_connection.execute("CHECKPOINT;")
@@ -327,6 +327,7 @@ def main():
                         "Test": test,
                         "Time taken": time_taken,
                         "Materialization": materialize_columns,
+                        "Total query time": total_time,
                         "DB size": db_size
                     })
 
@@ -340,16 +341,8 @@ def main():
                     f"./results/{dataset}/meta_results.csv", index=False)
 
                 times_df.to_csv(
-                    f"./results/{dataset}/q{query_proportion}|m{majority_proportion}|t{treshold}|l{load_no}_times.csv", index=False)
-                query_df.to_csv(
-                    f"./results/{dataset}/q{query_proportion}|m{majority_proportion}|t{treshold}|l{load_no}_queries.csv", index=False)
-
-
-# Store results to
-
-    # assert False
-
-    # print(no_tests)
+                    f"./results/{dataset}/{datetime()}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv")
+                # f"./results/{dataset}/{datetime()}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv", index=False)
 
 
 if __name__ == "__main__":

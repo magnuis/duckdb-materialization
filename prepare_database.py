@@ -102,10 +102,10 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         else:
             view_query += f" {query['query']} AS {field},"
             all_materialized = False
-    if all_materialized:
-        view_query += json_view + "'', ', ') || '}' AS JSON) AS raw_json"
-    else:
-        view_query += " raw_json"
+    # if all_materialized:
+    #     view_query += json_view + "'', ', ') || '}' AS JSON) AS raw_json"
+    # else:
+    #     view_query += " raw_json"
 
     view_query += " FROM test_table;"
 

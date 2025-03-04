@@ -176,3 +176,6 @@ data copy/
 
 # Databases
 *.db*
+
+# Results
+results/
