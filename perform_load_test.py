@@ -313,8 +313,7 @@ def main():
                         run_test=len(
                             materialize_columns) == 0 and test != 'no_materialization'
                     )
-
-                    times_df = pd.merge(times_df, _times_df, on="q")
+                    times_df[test] = _times_df[test].values
 
                     # Close db connection
                     db_connection.execute("CHECKPOINT;")
@@ -340,7 +339,7 @@ def main():
                     f"./results/{dataset}/meta_results.csv", index=False)
 
                 times_df.to_csv(
-                    f"./results/{dataset}/{datetime()}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv")
+                    f"./results/{dataset}/{TEST_TIME_STRING}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv")
                 # f"./results/{dataset}/{datetime()}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv", index=False)
 
 
