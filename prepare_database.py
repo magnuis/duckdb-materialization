@@ -157,6 +157,26 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
     return db_size
 
 
+def _get_db_size(con: duckdb.DuckDBPyConnection) -> tuple[int, int, int]:
+    """
+    Get database size information
+    
+    Returns
+    -------
+    tuple[int, int, int]
+        (used_blocks, block_size, total_size_in_bytes)
+    """
+    result = con.execute("CALL pragma_database_size();").fetchone()
+    # Correct column indices for pragma_database_size() output
+    # database_name(0) database_size(1) block_size(2) total_blocks(3) used_blocks(4) free_blocks(5)...
+    block_size = result[2] 
+    used_blocks = result[4]
+    total_size = used_blocks * block_size
+    return (used_blocks, block_size, total_size)
+
+
 def _print_db_size(con: duckdb.DuckDBPyConnection):
-    print(con.execute(
-        "CALL pragma_database_size();").fetch_df())
+    used_blocks, block_size, total_size = _get_db_size(con)
+    print(f"Database size: {used_blocks} blocks * {block_size} bytes = {total_size} bytes")
+
+
