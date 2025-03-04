@@ -415,6 +415,17 @@ Q: {QUERIES_IN_LOAD}
         with open(f"./results/load-based/{dataset}/{TEST_TIME_STRING}/description.txt", mode="w") as file:
             file.write(desc)
 
+        # TODO add description of the tests run to a .txt file
+        desc = f"""
+Load based materialization test
+q: {QUERY_PROPORTIONS}
+m: {MAJORITY_PROPORTIONS}
+t: {MATERIALIZE_TRESHOLDS}
+Q: {QUERIES_IN_LOAD}
+        """
+        with open(f"./results/load-based/{dataset}/{TEST_TIME_STRING}/description.txt", mode="w") as file:
+            file.write(desc)
+
 
 if __name__ == "__main__":
     t = time.perf_counter()
