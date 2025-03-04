@@ -14,7 +14,7 @@ import pandas as pd
 
 import testing.tpch.setup as tpch_setup
 from analyze_queries import analyze_queries
-from prepare_database import prepare_database
+from prepare_database import prepare_database, get_db_size
 
 if not os.path.isdir("./results"):
     os.mkdir("./results")
@@ -317,16 +317,19 @@ def main():
 
                     # Close db connection
                     db_connection.execute("CHECKPOINT;")
+
+                    db_size = get_db_size(db_connection)
                     db_connection.close()
 
-                    db_size = os.path.getsize(db_path)
 
                     meta_results.append({
                         "Test": test,
                         "Time taken": time_taken,
-                        "Materialization": materialize_columns,
                         "Total query time": total_time,
-                        "DB size": db_size
+                        "Blocks used": db_size[0],
+                        "Block size": db_size[1],
+                        "Database size": db_size[2],
+                        "Materialization": materialize_columns
                     })
 
                     os.remove(db_path)
@@ -341,6 +344,7 @@ def main():
                 times_df.to_csv(
                     f"./results/{dataset}/{TEST_TIME_STRING}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv")
                 # f"./results/{dataset}/{datetime()}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv", index=False)
+                assert False
 
 
 if __name__ == "__main__":
