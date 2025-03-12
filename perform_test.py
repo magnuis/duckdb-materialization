@@ -9,6 +9,7 @@ import duckdb
 import pandas as pd
 
 import testing.tpch.setup as tpch_setup
+import testing.yelp.setup as yelp_setup
 # from queries.twitter_queries import
 from prepare_database import prepare_database
 
@@ -19,8 +20,13 @@ if not os.path.isdir("./results"):
 DATASETS = {
     "tpch": {
         "queries": tpch_setup.QUERIES,
-        "tests_map": tpch_setup.TESTS,
+        "tests_map": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
+    },
+    "yelp": {
+        "queries": yelp_setup.QUERIES,
+        "tests_map": yelp_setup.STANDARD_SETUPS,
+        "column_map": yelp_setup.COLUMN_MAP,
     }
 }
 
@@ -186,13 +192,13 @@ def perform_tests():
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description="Run performance tests on different datasets.")
-    parser.add_argument("dataset", nargs="?", default="tpch", choices=["tpch"],
+    parser.add_argument("dataset", nargs="?", default="tpch", choices=["tpch", "yelp"],
                         help="The dataset to run tests on (tpch, yelp, twitter, or all)")
     args = parser.parse_args()
 
-    # datasets_to_test = DATASETS.keys() if args.dataset == "all" else [
-    #     args.dataset]
-    datasets_to_test = ['tpch']
+    datasets_to_test = DATASETS.keys() if args.dataset == "all" else [
+        args.dataset]
+    # datasets_to_test = ['tpch']
 
     for dataset in datasets_to_test:
         if not os.path.isdir(f"./results/{dataset}"):
@@ -268,6 +274,8 @@ def perform_tests():
 
             db_size = os.path.getsize(db_path)
 
+            print(f"Prepared database in time {time_taken:.2f}s")
+
             meta_results.append({
                 "Test": test,
                 "Time taken": time_taken,
@@ -285,9 +293,7 @@ def perform_tests():
         success = compare_query_results(
             dfs=query_results_dfs.values()
         )
-        print('-------')
-        print(query_result_df[:2])
-”
+
 
 if __name__ == "__main__":
     perform_tests()

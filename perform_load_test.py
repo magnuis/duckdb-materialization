@@ -31,6 +31,12 @@ DATASETS = {
         "standard_tests": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
         "no_queries": len(tpch_setup.QUERIES)
+    },
+    "yelp": {
+        "queries": tpch_setup.QUERIES,
+        "standard_tests": tpch_setup.STANDARD_SETUPS,
+        "column_map": tpch_setup.COLUMN_MAP,
+        "no_queries": len(tpch_setup.QUERIES)
     }
 }
 

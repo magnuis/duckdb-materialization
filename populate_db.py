@@ -9,7 +9,16 @@ import pyarrow.parquet as pq
 
 CONFIG = {
     "tpch": {
-        "json_path": './data/tpch/tpch_json.json',
+        "json_paths": ['./data/tpch/tpch_json.json'],
+    },
+    "yelp": {
+        "json_paths": [
+            './data/yelp/yelp_academic_dataset_business.json',
+            './data/yelp/yelp_academic_dataset_checkin.json',
+            './data/yelp/yelp_academic_dataset_review.json',
+            './data/yelp/yelp_academic_dataset_tip.json',
+            './data/yelp/yelp_academic_dataset_user.json',
+        ],
     }
 }
 
@@ -30,7 +39,7 @@ def _create_db(con: duckdb.DuckDBPyConnection):
     print("Created fresh test_table table for raw JSON data.")
 
 
-def _parse_and_insert(dataset: str, data_path: str, con: duckdb.DuckDBPyConnection, batch_size=50000) -> int:
+def _parse_and_insert(dataset: str, data_paths: str, con: duckdb.DuckDBPyConnection, batch_size=50000) -> int:
     parquet_file_path = f"{DATA_PATH}/{dataset}.parquet"
     CLEAN_UP_FILES.add(parquet_file_path)
 
@@ -48,31 +57,33 @@ def _parse_and_insert(dataset: str, data_path: str, con: duckdb.DuckDBPyConnecti
     data_batch = []
     total_rows = 0
 
-    try:
-        # for file_path in JSON_FILE_PATHS:
-        with open(data_path, 'r') as file:
-            for line_number, line in enumerate(file, start=1):
-                try:
-                    # Parse the JSON document and store as a single string
-                    json_obj = json.loads(line)
-                    data_batch.append({'raw_json': json.dumps(json_obj)})
+    for data_path in data_paths:
+        try:
+            with open(data_path, 'r') as file:
+                for line_number, line in enumerate(file, start=1):
+                    try:
+                        # Parse the JSON document and store as a single string
+                        json_obj = json.loads(line)
+                        data_batch.append({'raw_json': json.dumps(json_obj)})
 
-                    # Once the batch reaches batch_size, write to Parquet
-                    if len(data_batch) >= batch_size:
-                        total_rows += _insert_batch(data_batch=data_batch)
-                        data_batch = []  # Clear batch memory
+                        # Once the batch reaches batch_size, write to Parquet
+                        if len(data_batch) >= batch_size:
+                            total_rows += _insert_batch(data_batch=data_batch)
+                            data_batch = []  # Clear batch memory
 
-                except json.JSONDecodeError as e:
-                    print(f"Error decoding JSON on line {line_number}: {e}")
+                    except json.JSONDecodeError as e:
+                        print(
+                            f"Error decoding JSON on line {line_number}: {e}")
 
-            # Write any remaining rows in the last batch
-            if data_batch:
-                total_rows += _insert_batch(data_batch=data_batch)
+                # Write any remaining rows in the last batch
+                if data_batch:
+                    total_rows += _insert_batch(data_batch=data_batch)
 
-    finally:
-        # Close the writer if it was initialized
-        if writer:
-            writer.close()
+        finally:
+            # Close the writer if it was initialized
+            if writer:
+                writer.close()
+        print(f"Finished with file {data_path}")
 
     print(f"""Final batch written. Total rows written to raw Parquet: {
         total_rows}""")
@@ -121,7 +132,8 @@ def populate_db():
     """
     Populate database
     """
-    dataset = 'tpch'  # TODO dynamic/take from args
+    dataset = 'yelp'  # TODO dynamic/take from args
+    # dataset = 'tpch'  # TODO dynamic/take from args
     config = CONFIG[dataset]
     backup_path = f"{BACKUP_PATH}/{dataset}"
     db_path = f"{DB_PATH}/{dataset}.db"
@@ -134,8 +146,11 @@ def populate_db():
 
     _create_db(con=db_connection)
 
-    _parse_and_insert(con=db_connection, dataset=dataset,
-                      data_path=config["json_path"])
+    _parse_and_insert(
+        con=db_connection,
+        dataset=dataset,
+        data_paths=config["json_paths"]
+    )
 
     # Export database as backup
     db_connection.execute(f"EXPORT DATABASE '{backup_path}' (FORMAT PARQUET);")
@@ -146,4 +161,7 @@ def populate_db():
 
 
 if __name__ == "__main__":
+    start_time = time.perf_counter()
     populate_db()
+    print(
+        f"Total time for populating db: {round(time.perf_counter() - start_time, 2)}s")
