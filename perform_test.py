@@ -27,6 +27,7 @@ DATASETS = {
     "tpch": {
         "queries": tpch_setup.QUERIES,
         "tests_map": tpch_setup.STANDARD_SETUPS,
+        "tests_map": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
     },
     "yelp": {
@@ -295,6 +296,8 @@ GROUP BY all
             #           "CALL pragma_database_size();").fetch_df())
             db_size = get_db_size(con=duckdb.connect(db_path))
             db_connection.close()
+
+            db_size = os.path.getsize(db_path)
 
             print(f"Prepared database in time {time_taken:.2f}s")
 
