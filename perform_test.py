@@ -297,6 +297,8 @@ GROUP BY all
             db_connection.close()
             print(f"Prepared database in time {time_taken:.2f}s")
 
+            print(f"Prepared database in time {time_taken:.2f}s")
+
             meta_results.append({
                 "Test": test,
                 "Time taken": time_taken,
