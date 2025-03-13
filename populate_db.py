@@ -102,7 +102,6 @@ def _insert_parquet_into_db(con: duckdb.DuckDBPyConnection, file_path: str) -> f
 
 
 def _clean_up():
-    print(CLEAN_UP_FILES)
     for file in list(CLEAN_UP_FILES):
         try:
             os.remove(file)

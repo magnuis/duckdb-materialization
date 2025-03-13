@@ -13,6 +13,7 @@ import duckdb
 import pandas as pd
 
 import testing.tpch.setup as tpch_setup
+import testing.yelp.setup as yelp_setup
 from analyze_queries import analyze_queries
 from prepare_database import prepare_database
 
@@ -33,10 +34,10 @@ DATASETS = {
         "no_queries": len(tpch_setup.QUERIES)
     },
     "yelp": {
-        "queries": tpch_setup.QUERIES,
-        "standard_tests": tpch_setup.STANDARD_SETUPS,
-        "column_map": tpch_setup.COLUMN_MAP,
-        "no_queries": len(tpch_setup.QUERIES)
+        "queries": yelp_setup.QUERIES,
+        "standard_tests": yelp_setup.STANDARD_SETUPS,
+        "column_map": yelp_setup.COLUMN_MAP,
+        "no_queries": len(yelp_setup.QUERIES)
     }
 }
 
@@ -167,7 +168,7 @@ def _calculate_field_frequency(load: list[str], field_distribution: pd.DataFrame
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}"
+    backup_path = f"./data/backup/{dataset}_small"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -234,7 +235,7 @@ def _perform_test(
 
 
 def main():
-    dataset = "tpch"
+    dataset = "yelp"
 
     if not os.path.exists(f"./results/{dataset}/{TEST_TIME_STRING}"):
         os.mkdir(f"./results/{dataset}/{TEST_TIME_STRING}")

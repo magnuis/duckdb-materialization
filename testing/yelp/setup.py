@@ -3,7 +3,13 @@ QUERIES = [
     'q2',
     'q3',
     'q4',
-    'q5'
+    'q5',
+    'q6',
+    'q7',
+    'q8',
+    'q9',
+    'q10',
+    'q11'
 ]
 
 
@@ -16,7 +22,7 @@ STANDARD_SETUPS = {
     },
     # TODO
     "schema_based_materialization": {
-        "materialization": []
+        "materialization": ['review_id', 'user_id', 'business_id', 'stars', 'date', 'useful', 'funny', 'cool', 'name']
     }
 }
 
@@ -106,9 +112,13 @@ COLUMN_MAP = {
     # Name already defined under business
     # Review count already defined under business
     "yelping_since": {
-        'query': "CAST(raw_json->>'yelping_since' AS DATE)",
-        'type': 'DATE'
+        'query': "raw_json->>'yelping_since'",
+        'type': 'VARCHAR'
     },
+    # "yelping_since": {
+    #     'query': "CAST(raw_json->>'yelping_since' AS DATE)",
+    #     'type': 'DATE'
+    # },
     # Useful already defined under review
     # Funny already defined under review
     # Cool already defined under review

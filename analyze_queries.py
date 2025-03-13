@@ -1,12 +1,17 @@
 import os
 import argparse
 import testing.tpch.setup as tpch_setup
+import testing.yelp.setup as yelp_setup
 import pandas as pd
 
 DATASETS = {
     "tpch": {
         "queries": tpch_setup.QUERIES,
         "column_map": tpch_setup.COLUMN_MAP,
+    },
+    "yelp": {
+        "queries": yelp_setup.QUERIES,
+        "column_map": yelp_setup.COLUMN_MAP,
     }
 }
 
