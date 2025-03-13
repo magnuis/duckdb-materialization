@@ -132,9 +132,4 @@ COLUMN_MAP = {
         'type': 'DECIMAL(12,2)'
     },
     # TODO compliments
-
-
-
-
-
 }
