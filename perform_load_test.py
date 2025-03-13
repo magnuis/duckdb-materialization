@@ -241,9 +241,7 @@ def _perform_test(
             execution_time = end_time - start_time
 
         times.append({"q": query_name, test: execution_time})
-        total_time += execution_time
-
-    print(f"Total time taken for test {test}: {total_time}")
+        test_time += execution_time
 
     times_df = pd.DataFrame(columns=["q", test], data=times)
     return times_df, test_time

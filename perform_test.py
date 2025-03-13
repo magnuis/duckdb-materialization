@@ -130,8 +130,8 @@ def _perform_test(
         else:
             results_df = pd.concat([results_df, temp_df],
                                    ignore_index=True).reset_index(drop=True)
-        # print(f"""Query {i} Average Execution Time (last 4 runs): {
-        #       avg_time:.4f} seconds""")
+        print(f"""Query {i} Average Execution Time (last 4 runs): {
+              avg_time:.4f} seconds""")
     return results_df, query_results
 
 
@@ -295,9 +295,6 @@ GROUP BY all
             #           "CALL pragma_database_size();").fetch_df())
             db_size = get_db_size(con=duckdb.connect(db_path))
             db_connection.close()
-
-            db_size = os.path.getsize(db_path)
-
             print(f"Prepared database in time {time_taken:.2f}s")
 
             meta_results.append({
