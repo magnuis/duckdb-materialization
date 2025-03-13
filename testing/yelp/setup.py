@@ -3,7 +3,6 @@ QUERIES = [
     'q2',
     'q3',
     'q4',
-    << << << < HEAD
     'q5',
     'q6',
     'q7',
@@ -11,9 +10,6 @@ QUERIES = [
     'q9',
     'q10',
     'q11'
-    == == == =
-    'q5'
-    >> >>>> > 6c2ab74(Add yelp queries 1-5)
 ]
 
 
@@ -26,11 +22,7 @@ STANDARD_SETUPS = {
     },
     # TODO
     "schema_based_materialization": {
-        << << << < HEAD
         "materialization": ['review_id', 'user_id', 'business_id', 'stars', 'date', 'useful', 'funny', 'cool', 'name']
-        == == == =
-        "materialization": []
-        >> >>>> > 6c2ab74(Add yelp queries 1-5)
     }
 }
 
