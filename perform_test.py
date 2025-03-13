@@ -16,6 +16,12 @@ from prepare_database import prepare_database, get_db_size
 if not os.path.isdir("./results"):
     os.mkdir("./results")
 
+if not os.path.isdir("./results/single-queries"):
+    os.mkdir("./results/single-queries")
+
+TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
+
+
 # Paths and queries for different datasets
 DATASETS = {
     "tpch": {
@@ -124,8 +130,8 @@ def _perform_test(
         else:
             results_df = pd.concat([results_df, temp_df],
                                    ignore_index=True).reset_index(drop=True)
-        # print(f"""Query {i} Average Execution Time (last 4 runs): {
-        #       avg_time:.4f} seconds""")
+        print(f"""Query {i} Average Execution Time (last 4 runs): {
+              avg_time:.4f} seconds""")
     return results_df, query_results
 
 
@@ -202,8 +208,10 @@ def perform_tests():
     # datasets_to_test = ['tpch']
 
     for dataset in datasets_to_test:
-        if not os.path.isdir(f"./results/{dataset}"):
-            os.mkdir(f"./results/{dataset}")
+        if not os.path.exists(f"./results/single-queries/{dataset}"):
+            os.mkdir(f"./results/single-queries/{dataset}")
+        if not os.path.exists(f"./results/single-queries/{dataset}/{TEST_TIME_STRING}"):
+            os.mkdir(f"./results/single-queries/{dataset}/{TEST_TIME_STRING}")
 
         config = DATASETS[dataset]
 
@@ -257,7 +265,7 @@ def perform_tests():
             )
 
             new_results_df.to_csv(
-                f"./results/{dataset}/{test}.csv", index=False)
+                f"./results/single-queries/{dataset}/{TEST_TIME_STRING}/{test}.csv", index=False)
 
             # Update df dicts
             old_result_df: pd.DataFrame = old_result_dfs[test]
@@ -287,7 +295,6 @@ GROUP BY all
             #           "CALL pragma_database_size();").fetch_df())
             db_size = get_db_size(con=duckdb.connect(db_path))
             db_connection.close()
-            
 
             print(f"Prepared database in time {time_taken:.2f}s")
 
@@ -303,7 +310,7 @@ GROUP BY all
 
         meta_results_df = pd.DataFrame(meta_results)
         meta_results_df.to_csv(
-            f"./results/{dataset}/meta_results.csv", index=False)
+            f"./results/single-queries/{dataset}/{TEST_TIME_STRING}/meta_results.csv", index=False)
 
         # Compare the results of raw and materialized queries
         print(f"\nComparing query results for dataset: {dataset}")
