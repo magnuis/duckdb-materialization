@@ -7,9 +7,9 @@ SELECT
     r2.business_id AS business_id_2,
     r2.stars AS stars_2,
     (r1.stars - r2.stars) AS stars_difference
-FROM test_view r1
-JOIN test_view r2
-    ON r1.user_id = r2.user_id 
+FROM test_view r1, test_view r2
+WHERE 
+    r1.user_id = r2.user_id 
     AND r1.review_id <> r2.review_id
-WHERE r1.date < r2.date
+    AND r1.date < r2.date
 ORDER BY r1.user_id, r1.date;

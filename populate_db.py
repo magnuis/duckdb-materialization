@@ -14,9 +14,7 @@ CONFIG = {
     "yelp": {
         "json_paths": [
             './data/yelp/yelp_academic_dataset_business.json',
-            './data/yelp/yelp_academic_dataset_checkin.json',
             './data/yelp/yelp_academic_dataset_review.json',
-            './data/yelp/yelp_academic_dataset_tip.json',
             './data/yelp/yelp_academic_dataset_user.json',
         ],
     }
@@ -66,10 +64,10 @@ def _parse_and_insert(dataset: str, data_paths: str, con: duckdb.DuckDBPyConnect
                         json_obj = json.loads(line)
                         data_batch.append({'raw_json': json.dumps(json_obj)})
 
-                        # Once the batch reaches batch_size, write to Parquet
-                        if len(data_batch) >= batch_size:
-                            total_rows += _insert_batch(data_batch=data_batch)
-                            data_batch = []  # Clear batch memory
+                        # # Once the batch reaches batch_size, write to Parquet
+                        # if len(data_batch) >= batch_size:
+                        #     total_rows += _insert_batch(data_batch=data_batch)
+                        #     data_batch = []  # Clear batch memory
 
                     except json.JSONDecodeError as e:
                         print(
@@ -102,6 +100,7 @@ def _insert_parquet_into_db(con: duckdb.DuckDBPyConnection, file_path: str) -> f
 
 
 def _clean_up():
+    return
     for file in list(CLEAN_UP_FILES):
         try:
             os.remove(file)
@@ -118,13 +117,13 @@ def _prepare_dirs(dataset: str):
         os.mkdir(DB_PATH)
 
     backup_path = f"{BACKUP_PATH}/{dataset}"
-    try:
-        os.mkdir(backup_path)
-    except FileExistsError:
-        shutil.rmtree(backup_path)
-    except FileNotFoundError:
-        os.mkdir(BACKUP_PATH)
-        os.mkdir(backup_path)
+    # try:
+    #     os.mkdir(backup_path)
+    # except FileExistsError:
+    #     shutil.rmtree(backup_path)
+    # except FileNotFoundError:
+    #     os.mkdir(BACKUP_PATH)
+    #     os.mkdir(backup_path)
 
 
 def populate_db():
@@ -152,7 +151,11 @@ def populate_db():
     )
 
     # Export database as backup
-    db_connection.execute(f"EXPORT DATABASE '{backup_path}' (FORMAT PARQUET);")
+    # FIXME
+
+    db_connection.execute(
+        f"COPY test_table TO '{backup_path}/test_table_copy.parquet' (FORMAT PARQUET);")
+    # db_connection.execute(f"EXPORT DATABASE '{backup_path}' (FORMAT PARQUET);")
     # Close connection
     db_connection.close()
 

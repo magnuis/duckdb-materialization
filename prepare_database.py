@@ -16,8 +16,11 @@ def prepare_database(con: duckdb.DuckDBPyConnection, dataset: str, fields: list[
         List of tuples of field name, json extraction query, and materialized status
     """
     time_taken = _alter_table(con=con, fields=fields)
+    print(f"Imported and prepared database in time {time_taken}")
 
     _create_view(con=con, fields=fields)
+    print(f"Created view in time {time_taken}")
+
     return time_taken
 
 
