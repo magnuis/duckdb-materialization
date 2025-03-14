@@ -7,5 +7,5 @@ FROM test_view b, test_view r
 WHERE b.business_id = r.business_id
   AND b.city IS NOT NULL
 GROUP BY b.city
-ORDER BY total_reviews DESC
+ORDER BY total_reviews DESC, avg_stars
 LIMIT 10;
