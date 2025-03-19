@@ -55,7 +55,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
         if materialize:
             alter_query += f"ALTER TABLE test_table ADD {field} {query['type']};"
-            update_query += f"{field} = {query['query']}, "
+            update_query += f"{field} = {query['access']}, "
             materialize_fields.append(field)
 
         materialized |= materialize
@@ -107,7 +107,7 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
             view_query += f""" {field},"""
             json_view += f"""COALESCE(CASE WHEN {field} IS NOT NULL THEN '"{field}": ' || to_json({field}) || ', ' ELSE '' END, '') ||"""
         else:
-            view_query += f" {query['query']} AS {field},"
+            view_query += f" {query['access']} AS {field},"
             all_materialized = False
     # if all_materialized:
     #     view_query += json_view + "'', ', ') || '}' AS JSON) AS raw_json"
