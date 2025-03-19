@@ -55,7 +55,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
         if materialize:
             alter_query += f"ALTER TABLE test_table ADD {field} {query['type']};"
-            update_query += f"{field} = {query['query']}, "
+            update_query += f"{field} = {query['access']}, "
             materialize_fields.append(field)
 
         materialized |= materialize
@@ -80,13 +80,12 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
                 "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;")
             con.execute("CHECKPOINT;")
 
-
         end_time = time()
         time_taken = end_time - start_time
     # print(f"Time taken to alter table: {time_taken} seconds")
 
     print('------------------------------')
-    print("Materialized fields")
+    print(f"Materialized {len(materialize_fields)} fields")
     print(materialize_fields)
     return time_taken
 
@@ -108,7 +107,7 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
             view_query += f""" {field},"""
             json_view += f"""COALESCE(CASE WHEN {field} IS NOT NULL THEN '"{field}": ' || to_json({field}) || ', ' ELSE '' END, '') ||"""
         else:
-            view_query += f" {query['query']} AS {field},"
+            view_query += f" {query['access']} AS {field},"
             all_materialized = False
     # if all_materialized:
     #     view_query += json_view + "'', ', ') || '}' AS JSON) AS raw_json"
@@ -153,12 +152,12 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 def get_db_size(con: duckdb.DuckDBPyConnection) -> tuple[int, int, int]:
     """
     Get database size information
-    
+
     Parameters
     ----------
     con : duckdb.DuckDBPyConnection
         DuckDB connection
-    
+
     Returns
     -------
     tuple[int, int, int]
@@ -166,7 +165,7 @@ def get_db_size(con: duckdb.DuckDBPyConnection) -> tuple[int, int, int]:
     """
     result = con.execute("CALL pragma_database_size();").fetchone()
     # database_name(0) database_size(1) block_size(2) total_blocks(3) used_blocks(4) free_blocks(5)...
-    block_size = result[2] 
+    block_size = result[2]
     used_blocks = result[4]
     total_size = used_blocks * block_size
     return (used_blocks, block_size, total_size)
@@ -174,6 +173,5 @@ def get_db_size(con: duckdb.DuckDBPyConnection) -> tuple[int, int, int]:
 
 def _print_db_size(con: duckdb.DuckDBPyConnection):
     used_blocks, block_size, total_size = get_db_size(con)
-    print(f"Database size: {used_blocks} blocks * {block_size} bytes = {total_size} bytes")
-
-
+    print(
+        f"Database size: {used_blocks} blocks * {block_size} bytes = {total_size} bytes")

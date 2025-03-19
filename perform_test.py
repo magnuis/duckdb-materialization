@@ -9,11 +9,18 @@ import duckdb
 import pandas as pd
 
 import testing.tpch.setup as tpch_setup
+from queries.query import Query
 # from queries.twitter_queries import
 from prepare_database import prepare_database, get_db_size
 
 if not os.path.isdir("./results"):
     os.mkdir("./results")
+
+if not os.path.isdir("./results/single-queries"):
+    os.mkdir("./results/single-queries")
+
+TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
+
 
 # Paths and queries for different datasets
 DATASETS = {
@@ -57,8 +64,8 @@ def _results_dfs(dataset: str, tests: list[str]):
 
 def _perform_test(
         con: duckdb.DuckDBPyConnection,
-        dataset: str,
-        queries: list,
+        queries: dict[str, Query],
+        fields: list[tuple[str, dict, bool]],
         run_no: int,
         test_time: datetime,
 ) -> tuple[pd.DataFrame, list]:
@@ -67,13 +74,14 @@ def _perform_test(
     results_df = pd.DataFrame(columns=DF_COL_NAMES)
     query_results = []  # List to store results from the first execution
 
-    for i, query_name in enumerate(queries, start=1):
+    for query_name, query_obj in queries.items():
 
-        with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
-            query = f.read()
+        query = query_obj.get_query(fields=fields)
+
+        print(query)
 
         df_row = {
-            "Query": i,
+            "Query": query_name,
             'Created At': test_time,
             'Test run no.': run_no,
         }
@@ -82,7 +90,6 @@ def _perform_test(
         first_run_result = None
 
         iterations = 5
-        mallocs = []
 
         for j in range(iterations):  # Execute the query 5 times
             tracemalloc.start()
@@ -91,18 +98,12 @@ def _perform_test(
             result = con.execute(query).fetchdf()
             end_time = time.perf_counter()
             execution_time = end_time - start_time
-            malloc = tracemalloc.get_traced_memory()[1]
-            tracemalloc.stop()
             execution_times.append(execution_time)
-            mallocs.append(malloc)
             df_row[f"Iteration {j}"] = execution_time
 
             if j == 0:
 
                 first_run_result = result.copy()
-
-        for j in range(iterations):
-            df_row[f"malloc {j}"] = mallocs[j]
 
         # Collect the result from the first run
         query_results.append(first_run_result)
@@ -119,8 +120,8 @@ def _perform_test(
         else:
             results_df = pd.concat([results_df, temp_df],
                                    ignore_index=True).reset_index(drop=True)
-        # print(f"""Query {i} Average Execution Time (last 4 runs): {
-        #       avg_time:.4f} seconds""")
+        print(f"""Query {query_name} Average Execution Time (last 4 runs): {
+              avg_time:.4f} seconds""")
     return results_df, query_results
 
 
@@ -197,12 +198,14 @@ def perform_tests():
     datasets_to_test = ['tpch']
 
     for dataset in datasets_to_test:
-        if not os.path.isdir(f"./results/{dataset}"):
-            os.mkdir(f"./results/{dataset}")
+        if not os.path.exists(f"./results/single-queries/{dataset}"):
+            os.mkdir(f"./results/single-queries/{dataset}")
+        if not os.path.exists(f"./results/single-queries/{dataset}/{TEST_TIME_STRING}"):
+            os.mkdir(f"./results/single-queries/{dataset}/{TEST_TIME_STRING}")
 
         config = DATASETS[dataset]
 
-        queries: list = config["queries"]
+        queries: dict = config["queries"]
         tests_map: dict = config["tests_map"]
         column_map: dict = config["column_map"]
 
@@ -245,14 +248,14 @@ def perform_tests():
             # Run test
             new_results_df, query_result_df = _perform_test(
                 con=db_connection,
-                dataset=dataset,
+                fields=fields,
                 queries=queries,
                 run_no=run_no,
                 test_time=test_time
             )
 
             new_results_df.to_csv(
-                f"./results/{dataset}/{test}.csv", index=False)
+                f"./results/single-queries/{dataset}/{TEST_TIME_STRING}/{test}.csv", index=False)
 
             # Update df dicts
             old_result_df: pd.DataFrame = old_result_dfs[test]
@@ -282,7 +285,6 @@ GROUP BY all
             #           "CALL pragma_database_size();").fetch_df())
             db_size = get_db_size(con=duckdb.connect(db_path))
             db_connection.close()
-            
 
             meta_results.append({
                 "Test": test,
@@ -296,15 +298,14 @@ GROUP BY all
 
         meta_results_df = pd.DataFrame(meta_results)
         meta_results_df.to_csv(
-            f"./results/{dataset}/meta_results.csv", index=False)
+            f"./results/single-queries/{dataset}/{TEST_TIME_STRING}/meta_results.csv", index=False)
 
         # Compare the results of raw and materialized queries
         print(f"\nComparing query results for dataset: {dataset}")
         success = compare_query_results(
             dfs=query_results_dfs.values()
         )
-        print('-------')
-        print(query_result_df[:2])
+
 
 if __name__ == "__main__":
     perform_tests()

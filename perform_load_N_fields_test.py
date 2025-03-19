@@ -8,6 +8,7 @@ import os
 from collections import defaultdict
 from collections.abc import Callable
 from datetime import datetime
+import numpy as np
 
 import duckdb
 import pandas as pd
@@ -19,14 +20,15 @@ from prepare_database import prepare_database, get_db_size
 if not os.path.isdir("./results"):
     os.mkdir("./results")
 
-if not os.path.isdir("./results/load-based"):
-    os.mkdir("./results/load-based")
+if not os.path.isdir("./results/load-based-N-fields"):
+    os.mkdir("./results/load-based-N-fields")
 
-MATERIALIZE_TRESHOLDS = [0.30, 0.35, 0.4, 0.45,
-                         0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.80, 0.85]
-QUERY_PROPORTIONS = [3, 4, 5]
-MAJORITY_PROPORTIONS = [0.75, 0.80, 0.90]
 QUERIES_IN_LOAD = 500
+NO_MATERIALIZE = [1, 2, 3, 4, 5, 6, 7, 8, 9,
+                  10, 11, 12, 13, 14, 15, 20, 25, 30, 35]
+QUERY_PROPORTIONS = [4]
+MAJORITY_PROPORTIONS = [0.80]
+NO_LOADS = 10
 
 READ_TIME = 0
 
@@ -41,21 +43,6 @@ DATASETS = {
 }
 
 TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
-
-
-# DATASETS = {
-#     "tpch": {
-#         "no_queries": 25
-#     }
-# }
-
-
-def _random_distribution(no_queries: int):
-    return []
-
-
-def _normalized_distribution(no_queries: int):
-    return []
 
 
 def _numerical_distribution(no_queries: int):
@@ -93,7 +80,7 @@ def _numerical_distribution(no_queries: int):
         loads = []
         load_majority_queries = []
 
-        for i in range(5):
+        for i in range(NO_LOADS):
             r = random.Random()
             r.seed(i)
 
@@ -128,8 +115,6 @@ def _numerical_distribution(no_queries: int):
 
 
 DISTRIBUTIONS: dict[str, Callable] = {
-    "random": _random_distribution,
-    "normalized": _normalized_distribution,
     "numerical": _numerical_distribution
 }
 
@@ -242,10 +227,10 @@ def _perform_test(
 
 def main():
     dataset = "tpch"
-    if not os.path.exists(f"./results/load-based/{dataset}"):
-        os.mkdir(f"./results/load-based/{dataset}")
-    if not os.path.exists(f"./results/load-based/{dataset}/{TEST_TIME_STRING}"):
-        os.mkdir(f"./results/load-based/{dataset}/{TEST_TIME_STRING}")
+    if not os.path.exists(f"./results/load-based-N-fields/{dataset}"):
+        os.mkdir(f"./results/load-based-N-fields/{dataset}")
+    if not os.path.exists(f"./results/load-based-N-fields/{dataset}/{TEST_TIME_STRING}"):
+        os.mkdir(f"./results/load-based-N-fields/{dataset}/{TEST_TIME_STRING}")
 
     config = DATASETS[dataset]
     standard_tests = config["standard_tests"]
@@ -293,21 +278,21 @@ def main():
                 field_frequency = _calculate_field_frequency(
                     load=load, field_distribution=field_distribution)
 
-                # Keep only fields with frequency above thresholds
-                for treshold in MATERIALIZE_TRESHOLDS:
-                    frequent_fields = field_frequency[field_frequency >=
-                                                      QUERIES_IN_LOAD * treshold]
+                field_frequency.sort_index(inplace=True)
+                field_frequency.sort_values(ascending=False, inplace=True)
 
-                    tests[f"load_based_t{treshold}"] = {
+                for fields_to_materialize in NO_MATERIALIZE:
+                    frequent_fields = field_frequency.head(
+                        fields_to_materialize)
+
+                    tests[f"load_based_m{fields_to_materialize}"] = {
                         "materialization": frequent_fields.index.tolist()
                     }
 
-                last_materialization = -1
-                last_test_time = -1
-                last_prepare_time = -1
-                no_materialization_time = -1
-
                 for test, setup in tests.items():
+
+                    if test == "no_materialization":
+                        continue
 
                     default_time = None
 
@@ -315,27 +300,20 @@ def main():
                         dataset=dataset, test=test)
 
                     materialize_columns = setup["materialization"]
+
+                    # Signifies full materialization
                     if materialize_columns is None:
                         materialize_columns = list(column_map.keys())
 
-                    # If no columns are materialized
-                    if len(materialize_columns) == 0 and test != 'no_materialization':
-                        default_time = no_materialization_time
+                    # Create the field-materialization setup for this test
+                    fields = []
+                    for field, access_query in column_map.items():
+                        fields.append(
+                            (field, access_query, field in materialize_columns))
 
-                    # If there is no change in materialized columns, omit tests
-                    elif len(materialize_columns) == last_materialization:
-                        default_time = last_test_time
-
-                    else:
-                        # Create the field-materialization setup for this test
-                        fields = []
-                        for field, access_query in column_map.items():
-                            fields.append(
-                                (field, access_query, field in materialize_columns))
-
-                        # Prepare database
-                        last_prepare_time = prepare_database(
-                            con=db_connection, dataset=dataset, fields=fields)
+                    # Prepare database
+                    last_prepare_time = prepare_database(
+                        con=db_connection, dataset=dataset, fields=fields)
 
                     # Run test
                     _times_df, test_time = _perform_test(
@@ -345,12 +323,6 @@ def main():
                         load=load,
                         default_time=default_time
                     )
-
-                    if test == 'no_materialization':
-                        no_materialization_time = test_time
-
-                    last_test_time = test_time
-                    last_materialization = len(materialize_columns)
 
                     print(
                         f"[q{query_proportion}m{majority_proportion}l{load_no}] Total time taken for test {test}: {test_time}")
@@ -391,21 +363,20 @@ def main():
 
                 meta_results_df = pd.DataFrame(meta_results)
                 meta_results_df.to_csv(
-                    f"./results/load-based/{dataset}/{TEST_TIME_STRING}/meta_results.csv", index=False)
+                    f"./results/load-based-N-fields/{dataset}/{TEST_TIME_STRING}/meta_results.csv", index=False)
 
                 times_df.to_csv(
-                    f"./results/load-based/{dataset}/{TEST_TIME_STRING}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv")
+                    f"./results/load-based-N-fields/{dataset}/{TEST_TIME_STRING}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv")
                 # f"./results/{dataset}/{datetime()}/q{query_proportion}|m{majority_proportion}|l{load_no}.csv", index=False)
 
         # TODO add description of the tests run to a .txt file
         desc = f"""
-Load based materialization test
+Load based materialization test, only materializing the n most frequent columns
 q: {QUERY_PROPORTIONS}
 m: {MAJORITY_PROPORTIONS}
-t: {MATERIALIZE_TRESHOLDS}
 Q: {QUERIES_IN_LOAD}
         """
-        with open(f"./results/load-based/{dataset}/{TEST_TIME_STRING}/description.txt", mode="w") as file:
+        with open(f"./results/load-based-N-fields/{dataset}/{TEST_TIME_STRING}/description.txt", mode="w") as file:
             file.write(desc)
 
 
