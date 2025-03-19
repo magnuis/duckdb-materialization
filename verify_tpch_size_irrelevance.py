@@ -5,6 +5,8 @@ import shutil
 from collections import defaultdict
 from datetime import datetime
 
+from queries.query import Query
+
 
 import pandas as pd
 import duckdb
@@ -45,6 +47,7 @@ DF_COL_NAMES = [
     'Iteration 3',
     'Iteration 4'
 ]
+
 
 TESTS_PER_TRESHOLD = 3
 TRESHOLDS_TO_MATERIALIZE = [0.25, 0.50, 0.75]
@@ -118,34 +121,49 @@ def _create_connection(db_dir: str) -> tuple[duckdb.DuckDBPyConnection, str]:
     return con, copy_db_path
 
 
-def _perform_tests(db_dir: str, query: str, materializations: dict, con: duckdb.DuckDBPyConnection) -> tuple[dict, pd.DataFrame]:
+# TODO: Check if results are correct
+def _perform_tests(query_name: str, query_object: object, db_dir: str, materializations: dict, dataset: str) -> pd.DataFrame:
+    config = DATASETS[dataset]
+    column_map: dict = config["column_map"]
 
-    for strategies in materializations:
-
-        db_connection, db_path = _create_connection(db_dir=db_dir)
-    test_results = dict()
+    rows = []  # list to collect row dictionaries
     iterations = 5
-    query_result = None
 
-    for i in range(iterations):
-        start_time = time.perf_counter()
-        result = con.execute(query).fetchdf
-        end_time = time.perf_counter()
-        execution_time = end_time - start_time
+    for threshold, field_lists in materializations.items():
+        for index, fields_list in enumerate(field_lists):
+            # Initialize a row dictionary for this test
+            row = {"Query": query_name, "Param": threshold, "Replicate": index}
 
-        test_results[f"Iteration {i}"] = execution_time
+            # Create the field-materialization setup for this test
+            fields = []
+            for field, access_query in column_map.items():
+                fields.append((field, access_query, field in fields_list))
 
-        if i == 0:
+            query = query_object.get_query(fields=fields)
 
-            query_result = result.copy()
+            # Execute the test iterations and record their times
+            for i in range(iterations):
+                con, copy_con = _create_connection(db_dir=db_dir)
+                prepare_database(con=con, fields=fields)
 
-    avg_time = sum(test_results[1:]) / (iterations - 1)
-    test_results['Avg (last 4 runs)'] = avg_time
+                start_time = time.perf_counter()
+                result = con.execute(query).fetchdf()
+                end_time = time.perf_counter()
+                execution_time = end_time - start_time
 
-    print(f"""Query {i} Average Execution Time (last 4 runs): {
-              avg_time:.4f} seconds""")
+                row[f"Iteration {i}"] = execution_time
 
-    return test_results, query_result
+            # Compute average execution time over iterations 1 to 4
+            avg_time = sum(row[f"Iteration {i}"] for i in range(
+                1, iterations)) / (iterations - 1)
+            row['Avg (last 4 runs)'] = avg_time
+
+            # Append the row to our list
+            rows.append(row)
+
+    # Create the flat DataFrame directly from the rows list
+    df_flat = pd.DataFrame(rows)
+    return df_flat
 
 
 def _create_fresh_db(db_dir: str):
@@ -173,7 +191,6 @@ def main():
     # Extract setup metadata
     config = DATASETS[dataset]
     queries: list = config["queries"]
-    tests_map: dict = config["tests_map"]
     column_map: dict = config["column_map"]
     db_backups: dict = config["db_backups"]
 
@@ -181,24 +198,40 @@ def main():
     materializations = _generate_materializations(
         dataset=dataset, queries=queries, columns=column_map.keys())
 
-    for k, v in materializations.items():
-        print(k)
-        print(v)
-
     query_results_dfs = dict()  # Query results
     meta_results = []
 
     for db in db_backups:
         scale_factor = db["scale_factor"]
-        dir = db["dir"]
+        db_dir = db["dir"]
+        _create_fresh_db(db_dir=db_dir)
 
-        # Make a clean db to copy for each test
-        _create_fresh_db(db_dir=dir)
+        query_results_list = []
 
         for query_name, strategies in materializations.items():
-            with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
-                query = f.read()
-            _perform_tests(query=query, materializations=strategies)
+            query_results = _perform_tests(query_name=query_name,
+                                           query_object=queries[query_name],
+                                           materializations=strategies,
+                                           db_dir=db_dir,
+                                           dataset=dataset)
+            query_results_list.append(query_results)
+
+        merged_query_results = pd.concat(query_results_list, ignore_index=True)
+
+        merged_query_results["scale_factor"] = scale_factor
+
+        # Reorder columns so that 'scale_factor' is the second column
+        cols = merged_query_results.columns.tolist()
+        cols.remove("scale_factor")
+        cols.insert(1, "scale_factor")
+        merged_query_results = merged_query_results[cols]
+
+        meta_results.append(merged_query_results)
+
+    # Merge all the DataFrames from the db_backups loop into a final shared DataFrame
+    final_shared_df = pd.concat(meta_results, ignore_index=True)
+    final_shared_df.to_csv(
+        f"./results/verify-datasize-irrelevance/{dataset}/{TEST_TIME_STRING}/meta_data.csv")
 
 
 if __name__ == "__main__":

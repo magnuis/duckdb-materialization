@@ -3,7 +3,7 @@ from time import time
 import duckdb
 
 
-def prepare_database(con: duckdb.DuckDBPyConnection, dataset: str, fields: list[tuple[str, dict, bool]]) -> float:
+def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]]) -> float:
     # def prepare_database(con: duckdb.DuckDBPyConnection, fields: dict[str, bool]):
     """
     Prepare the database by materializing the correct fields and creating the view

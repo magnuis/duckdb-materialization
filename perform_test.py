@@ -243,7 +243,7 @@ def perform_tests():
 
             # Prepare database
             time_taken = prepare_database(
-                con=db_connection, dataset=dataset, fields=fields)
+                con=db_connection, fields=fields)
 
             # Run test
             new_results_df, query_result_df = _perform_test(
