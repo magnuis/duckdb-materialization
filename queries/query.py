@@ -20,7 +20,7 @@ class Query:
         str
         """
 
-    def get_used_cols(self):
+    def columns_used(self):
         """
         Get the columns used in the query
 
@@ -28,6 +28,25 @@ class Query:
         -------
         list[str]
         """
+        return []
+
+    def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
+
+        used_columns = self.columns_used()
+
+        if fields is None:
+            return {col: None for col in used_columns}
+
+        data_types = dict()
+
+        for col, access_query, materialized in fields:
+            if col in used_columns:
+                if materialized:
+                    data_types[col] = None
+                else:
+                    data_types[col] = access_query["type"]
+
+        return data_types
 
     def _json(self, tbl: str, col: str, dt: str):
         """
@@ -50,5 +69,8 @@ class Query:
         """
         if dt is None:
             return f"{tbl}.{col}"
+
+        # elif dt == "VARCHAR":
+        #     return f"{tbl}.raw_json->>'{col}'"
 
         return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
