@@ -13,6 +13,7 @@ import duckdb
 import pandas as pd
 
 import testing.tpch.setup as tpch_setup
+import testing.yelp.setup as yelp_setup
 from analyze_queries import analyze_queries
 from prepare_database import prepare_database, get_db_size
 
@@ -22,8 +23,9 @@ if not os.path.isdir("./results"):
 if not os.path.isdir("./results/load-based"):
     os.mkdir("./results/load-based")
 
-MATERIALIZE_TRESHOLDS = [0.30, 0.35, 0.4, 0.45,
-                         0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.80, 0.85]
+# MATERIALIZE_TRESHOLDS = [0.30, 0.35, 0.4, 0.45,
+#                          0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.80, 0.85]
+MATERIALIZE_TRESHOLDS = [0.30, 0.4, 0.5, 0.6, 0.7, 0.8]
 QUERY_PROPORTIONS = [3, 4, 5]
 MAJORITY_PROPORTIONS = [0.75, 0.80, 0.90]
 QUERIES_IN_LOAD = 500
@@ -37,6 +39,12 @@ DATASETS = {
         "standard_tests": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
         "no_queries": len(tpch_setup.QUERIES)
+    },
+    "yelp": {
+        "queries": yelp_setup.QUERIES,
+        "standard_tests": yelp_setup.STANDARD_SETUPS,
+        "column_map": yelp_setup.COLUMN_MAP,
+        "no_queries": len(yelp_setup.QUERIES)
     }
 }
 
@@ -176,7 +184,7 @@ def _calculate_field_frequency(load: list[str], field_distribution: pd.DataFrame
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_small"
+    backup_path = f"./data/backup/{dataset}"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -241,7 +249,7 @@ def _perform_test(
 
 
 def main():
-    dataset = "tpch"
+    dataset = "yelp"
     if not os.path.exists(f"./results/load-based/{dataset}"):
         os.mkdir(f"./results/load-based/{dataset}")
     if not os.path.exists(f"./results/load-based/{dataset}/{TEST_TIME_STRING}"):
@@ -321,6 +329,10 @@ def main():
                     # If no columns are materialized
                     if len(materialize_columns) == 0 and test != 'no_materialization':
                         default_time = no_materialization_time
+
+                    # If three or less columns are materialized
+                    if len(materialize_columns) <= 3:
+                        default_time = -1
 
                     # If there is no change in materialized columns, omit tests
                     elif len(materialize_columns) == last_materialization:
