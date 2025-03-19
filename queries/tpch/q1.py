@@ -24,12 +24,16 @@ class Q1(Query):
 
         used_columns = self.columns_used()
 
-        for col, access_query, materialized in fields:
-            if col in used_columns:
-                if materialized:
-                    data_types[col] = None
-                else:
-                    data_types[col] = access_query["type"]
+        if fields is None:
+            data_types = {col: None for col in used_columns}
+
+        else:
+            for col, access_query, materialized in fields:
+                if col in used_columns:
+                    if materialized:
+                        data_types[col] = None
+                    else:
+                        data_types[col] = access_query["type"]
 
         return f"""
     SELECT

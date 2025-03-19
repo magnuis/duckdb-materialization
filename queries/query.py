@@ -10,6 +10,11 @@ class Query:
         """
         Get the formatted query, adjusted to current db materializaiton
 
+        Parameters
+        ----------
+        fields : list[tuple[str, dict, bool]]
+            List of tuples of the fields in the database table.
+
         Returns
         -------
         str

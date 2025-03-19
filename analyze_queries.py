@@ -1,7 +1,9 @@
 import os
 import argparse
-import testing.tpch.setup as tpch_setup
 import pandas as pd
+
+from queries.query import Query
+import testing.tpch.setup as tpch_setup
 
 DATASETS = {
     "tpch": {
@@ -38,22 +40,19 @@ def analyze_queries(data_set: str) -> dict:
         ) and os.path.exists(
             f'./results/{data_set}/field_distribution_{data_set}.csv'
         )
-        if previously_computed:
-            continue
 
         config = DATASETS[dataset]
 
-        queries: list = config["queries"]
+        queries: dict[str, Query] = config["queries"]
         column_map: dict = config["column_map"]
 
         dataset_freq = {query: 0 for query in column_map}
         field_distributions = []
 
-        for query in queries:
-            field_distribution = {"query": query}
+        for query_name, query_obj in queries.items():
+            field_distribution = {"query": query_name}
 
-            with open(f"./queries/{dataset}/{query}.sql", 'r') as f:
-                query = f.read()
+            query = query_obj.get_query(fields=None)
 
             for column in dataset_freq:
                 if column in query:
@@ -82,10 +81,6 @@ def analyze_queries(data_set: str) -> dict:
 
         dist_df.to_csv(
             f'./results/{data_set}/field_distribution_{data_set}.csv', index=False)
-
-        # Optionally print the DataFrame for this dataset
-        # print(f"DataFrame for dataset '{dataset}':")
-        print(freq_df)
 
 
 if __name__ == "__main__":
