@@ -121,13 +121,15 @@ def _create_connection(db_dir: str) -> tuple[duckdb.DuckDBPyConnection, str]:
     return con, copy_db_path
 
 
-# TODO: Check if results are correct
 def _perform_tests(query_name: str, query_object: object, db_dir: str, materializations: dict, dataset: str) -> pd.DataFrame:
     config = DATASETS[dataset]
     column_map: dict = config["column_map"]
 
     rows = []  # list to collect row dictionaries
     iterations = 5
+
+    # will hold the query result from the first materialization
+    global_baseline_result = None
 
     for threshold, field_lists in materializations.items():
         for index, fields_list in enumerate(field_lists):
@@ -141,6 +143,8 @@ def _perform_tests(query_name: str, query_object: object, db_dir: str, materiali
 
             query = query_object.get_query(fields=fields)
 
+            baseline_result = None  # to store the query result from the first iteration
+
             # Execute the test iterations and record their times
             for i in range(iterations):
                 con, copy_con = _create_connection(db_dir=db_dir)
@@ -151,6 +155,14 @@ def _perform_tests(query_name: str, query_object: object, db_dir: str, materiali
                 end_time = time.perf_counter()
                 execution_time = end_time - start_time
 
+                if i == 0:
+                    # Save the result of the first iteration as the baseline for this test.
+                    baseline_result = result.copy()
+                else:
+                    # Check that subsequent iterations yield the same result.
+                    if not baseline_result.equals(result):
+                        raise ValueError(
+                            f"Query results differ in iteration {i} for threshold {threshold}, replicate {index}!")
                 row[f"Iteration {i}"] = execution_time
 
             # Compute average execution time over iterations 1 to 4
@@ -158,8 +170,15 @@ def _perform_tests(query_name: str, query_object: object, db_dir: str, materiali
                 1, iterations)) / (iterations - 1)
             row['Avg (last 4 runs)'] = avg_time
 
-            # Append the row to our list
             rows.append(row)
+
+            # Check consistency across all materializations:
+            if global_baseline_result is None:
+                global_baseline_result = baseline_result.copy()
+            else:
+                if not global_baseline_result.equals(baseline_result):
+                    raise ValueError(
+                        f"Query result for threshold {threshold}, replicate {index} differs from previous materializations!")
 
     # Create the flat DataFrame directly from the rows list
     df_flat = pd.DataFrame(rows)
