@@ -237,12 +237,12 @@ def main():
 
         merged_query_results = pd.concat(query_results_list, ignore_index=True)
 
-        merged_query_results["scale_factor"] = scale_factor
+        merged_query_results["Scale_factor"] = scale_factor
 
         # Reorder columns so that 'scale_factor' is the second column
         cols = merged_query_results.columns.tolist()
-        cols.remove("scale_factor")
-        cols.insert(1, "scale_factor")
+        cols.remove("Scale_factor")
+        cols.insert(1, "Scale_factor")
         merged_query_results = merged_query_results[cols]
 
         meta_results.append(merged_query_results)
