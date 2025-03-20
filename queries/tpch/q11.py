@@ -50,7 +50,6 @@ HAVING
 ORDER BY
     value DESC,
     ps_partkey;
-
     """
 
     def columns_used(self,) -> list[str]:
