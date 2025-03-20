@@ -58,6 +58,45 @@ LOAD_BASED_MATERIALIZATION = [
 ]
 
 STANDARD_SETUPS = {
+    # "q4m400l9_1field": {
+    #     "materialization": ["s_suppkey"],
+    # },
+    # "q4m400l9_2field": {
+    #     "materialization": ['l_shipdate', 's_suppkey'],
+    # },
+    # "q4m400l9_3field": {
+    #     "materialization": ['l_suppkey', 'l_shipdate', 's_suppkey'],
+    # },
+    # "q4m400l9_4field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_shipdate', 's_suppkey'],
+    # },
+    # "q4m400l9_5field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 's_suppkey'],
+    # },
+    # "q4m400l9_6field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 's_suppkey', 's_name'],
+    # },
+    # "q4m400l9_7field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 's_suppkey', 's_name'],
+    # },
+    # "q4m400l9_8field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 's_suppkey', 's_name'],
+    # },
+    # "q4m400l9_9field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 's_suppkey', 's_name', 's_address'],
+    # },
+    # "q4m400l9_10field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 's_suppkey', 's_name', 's_address', 's_nationkey'],
+    # },
+    # "q4m400l9_11field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 'p_partkey', 's_suppkey', 's_name', 's_address', 's_nationkey'],
+    # },
+    # "q4m400l9_12field": {
+    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 'o_orderkey', 'p_partkey', 's_suppkey', 's_name', 's_address', 's_nationkey'],
+    # },
+    # "q4m400l9_13field": {
+    #     "materialization": ['l_orderkey', 'l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 'o_orderkey', 'p_partkey', 's_suppkey', 's_name', 's_address', 's_nationkey'],
+    # },
     "no_materialization": {
         "materialization": [],
     },

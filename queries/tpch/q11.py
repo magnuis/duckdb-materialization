@@ -48,8 +48,8 @@ HAVING
             AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'GERMANY'
     )
 ORDER BY
-    value DESC;
-
+    value DESC,
+    ps_partkey;
     """
 
     def columns_used(self,) -> list[str]:
