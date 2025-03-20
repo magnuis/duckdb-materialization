@@ -3,7 +3,7 @@ from time import time
 import duckdb
 
 
-def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]]) -> float:
+def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]], include_print: bool = True) -> float:
     # def prepare_database(con: duckdb.DuckDBPyConnection, fields: dict[str, bool]):
     """
     Prepare the database by materializing the correct fields and creating the view
@@ -15,13 +15,14 @@ def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dic
     fields : list[tuple[str, dict, bool]]
         List of tuples of field name, json extraction query, and materialized status
     """
-    time_taken = _alter_table(con=con, fields=fields)
+    time_taken = _alter_table(con=con, fields=fields,
+                              include_print=include_print)
 
     _create_view(con=con, fields=fields)
     return time_taken
 
 
-def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]]) -> float:
+def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]], include_print: bool = True) -> float:
     """
     Alter the table for the given field
 
@@ -84,9 +85,11 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         time_taken = end_time - start_time
     # print(f"Time taken to alter table: {time_taken} seconds")
 
-    print('------------------------------')
-    print(f"Materialized {len(materialize_fields)} fields")
-    print(materialize_fields)
+    if include_print:
+        print('------------------------------')
+        print(
+            f"Materialized {len(materialize_fields)} fields in time {time_taken:.3f}")
+        print(materialize_fields)
     return time_taken
 
 

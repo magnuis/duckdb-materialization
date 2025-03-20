@@ -52,12 +52,12 @@ DF_COL_NAMES = [
 TESTS_PER_TRESHOLD = 3
 TRESHOLDS_TO_MATERIALIZE = [0.25, 0.50, 0.75]
 
-PATHS_TO_CLEAN = set()
+CLEAN_UP_FILES = set()
 
 
 def _prepare_dirs(dataset: str):
-    if not os.path.exists(f"./results/verify-datasize-irrelevance"):
-        os.mkdir(f"./results/verify-datasize-irrelevance")
+    if not os.path.exists("./results/verify-datasize-irrelevance"):
+        os.mkdir("./results/verify-datasize-irrelevance")
     if not os.path.exists(f"./results/verify-datasize-irrelevance/{dataset}"):
         os.mkdir(f"./results/verify-datasize-irrelevance/{dataset}")
     if not os.path.exists(f"./results/verify-datasize-irrelevance/{dataset}/{TEST_TIME_STRING}"):
@@ -65,17 +65,31 @@ def _prepare_dirs(dataset: str):
             f"./results/verify-datasize-irrelevance/{dataset}/{TEST_TIME_STRING}")
 
 
-def _generate_materializations(dataset: str, queries: list, columns: list):
+def _generate_materializations(
+        queries: dict[str, Query],
+):
+
+    def _check_duplicates(old: list[str], new: list[str]):
+        if len(old) == 0:
+            return True
+        for l in old:
+            if sorted(l) == sorted(new):
+                return False
+        return True
+
     materializations = dict()
 
     # Generate test setup for the queries
-    for i, query_name in enumerate(queries, start=1):
+    for query_name, query_obj in queries.items():
+
         query_setup = defaultdict(list)
 
-        with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
-            query = f.read()
+        # query = query_obj.get_query(fields=fields)
 
-        columns_in_query = [col for col in columns if col in query]
+        # with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
+        #     query = f.read()
+
+        columns_in_query = query_obj.columns_used()
 
         for treshold in TRESHOLDS_TO_MATERIALIZE:
             no_to_materialize = int(len(columns_in_query) * treshold)
@@ -83,15 +97,25 @@ def _generate_materializations(dataset: str, queries: list, columns: list):
             # Must materialize at least one
             no_to_materialize = max(no_to_materialize, 1)
 
-            for seed in range(TESTS_PER_TRESHOLD):
-                r = random.Random(x=seed)
+            seed = 0
 
-                # FIXME Make sure there are not duplicates per treshold
-                cols_to_materialize = r.sample(
-                    columns_in_query, no_to_materialize)
+            for _ in range(TESTS_PER_TRESHOLD):
+                set_is_valid = False
+
+                while not set_is_valid:
+                    seed += 1
+                    r = random.Random(x=seed)
+
+                    cols_to_materialize = r.sample(
+                        columns_in_query, no_to_materialize
+                    )
+
+                    set_is_valid = _check_duplicates(
+                        old=query_setup[treshold], new=cols_to_materialize)
+
+                    assert seed < 1000
 
                 query_setup[treshold].append(cols_to_materialize)
-
         materializations[query_name] = query_setup
 
     return materializations
@@ -101,7 +125,7 @@ def _create_connection(db_dir: str) -> tuple[duckdb.DuckDBPyConnection, str]:
     original_db_path = f"./data/db/{db_dir}.duckdb"
     copy_db_path = f"./data/db/{db_dir}_test.db"
 
-    PATHS_TO_CLEAN.add(copy_db_path)
+    CLEAN_UP_FILES.add(copy_db_path)
 
     # Remove any old db
     if os.path.exists(copy_db_path):
@@ -121,7 +145,23 @@ def _create_connection(db_dir: str) -> tuple[duckdb.DuckDBPyConnection, str]:
     return con, copy_db_path
 
 
-def _perform_tests(query_name: str, query_object: object, db_dir: str, materializations: dict, dataset: str) -> pd.DataFrame:
+def _clean_up():
+    print(CLEAN_UP_FILES)
+    for file in list(CLEAN_UP_FILES):
+        try:
+            os.remove(file)
+            print(f"Deleted file {file}")
+        except FileNotFoundError:
+            print(f"No file at path {file}")
+
+
+def _perform_tests(
+        query_name: str,
+        query_object: Query,
+        db_dir: str,
+        materializations: dict,
+        dataset: str
+) -> pd.DataFrame:
     config = DATASETS[dataset]
     column_map: dict = config["column_map"]
 
@@ -133,6 +173,9 @@ def _perform_tests(query_name: str, query_object: object, db_dir: str, materiali
 
     for threshold, field_lists in materializations.items():
         for index, fields_list in enumerate(field_lists):
+
+            iteration_time = time.perf_counter()
+
             # Initialize a row dictionary for this test
             row = {"Query": query_name, "Param": threshold, "Replicate": index}
 
@@ -145,15 +188,18 @@ def _perform_tests(query_name: str, query_object: object, db_dir: str, materiali
 
             baseline_result = None  # to store the query result from the first iteration
 
+            con, copy_con = _create_connection(db_dir=db_dir)
+            prepare_database(con=con, fields=fields, include_print=False)
+
+            execution_times = []
+
             # Execute the test iterations and record their times
             for i in range(iterations):
-                con, copy_con = _create_connection(db_dir=db_dir)
-                prepare_database(con=con, fields=fields)
-
                 start_time = time.perf_counter()
                 result = con.execute(query).fetchdf()
                 end_time = time.perf_counter()
                 execution_time = end_time - start_time
+                execution_times.append(execution_time)
 
                 if i == 0:
                     # Save the result of the first iteration as the baseline for this test.
@@ -166,9 +212,11 @@ def _perform_tests(query_name: str, query_object: object, db_dir: str, materiali
                 row[f"Iteration {i}"] = execution_time
 
             # Compute average execution time over iterations 1 to 4
-            avg_time = sum(row[f"Iteration {i}"] for i in range(
-                1, iterations)) / (iterations - 1)
+            avg_time = sum(execution_times[1:]) / (iterations - 1)
             row['Avg (last 4 runs)'] = avg_time
+
+            row["No. materialized fields"] = len(fields_list)
+            row["Materialized fields"] = fields_list
 
             rows.append(row)
 
@@ -180,8 +228,12 @@ def _perform_tests(query_name: str, query_object: object, db_dir: str, materiali
                     raise ValueError(
                         f"Query result for threshold {threshold}, replicate {index} differs from previous materializations!")
 
+            print(
+                f"Finished treshold {threshold}, iteration {index} in time {(time.perf_counter() - iteration_time):.3f}")
+
     # Create the flat DataFrame directly from the rows list
     df_flat = pd.DataFrame(rows)
+
     return df_flat
 
 
@@ -197,7 +249,7 @@ def _create_fresh_db(db_dir: str):
         con.execute("SET default_block_size = '16384'")
         con.execute(f"IMPORT DATABASE '{backup_path}';")
 
-    PATHS_TO_CLEAN.add(db_path)
+    CLEAN_UP_FILES.add(db_path)
 
 
 def main():
@@ -214,8 +266,7 @@ def main():
     db_backups: dict = config["db_backups"]
 
     # Generate random materializations for each query
-    materializations = _generate_materializations(
-        dataset=dataset, queries=queries, columns=column_map.keys())
+    materializations = _generate_materializations(queries=queries)
 
     query_results_dfs = dict()  # Query results
     meta_results = []
@@ -228,11 +279,13 @@ def main():
         query_results_list = []
 
         for query_name, strategies in materializations.items():
-            query_results = _perform_tests(query_name=query_name,
-                                           query_object=queries[query_name],
-                                           materializations=strategies,
-                                           db_dir=db_dir,
-                                           dataset=dataset)
+            query_results = _perform_tests(
+                query_name=query_name,
+                query_object=queries[query_name],
+                materializations=strategies,
+                db_dir=db_dir,
+                dataset=dataset
+            )
             query_results_list.append(query_results)
 
         merged_query_results = pd.concat(query_results_list, ignore_index=True)
@@ -247,6 +300,8 @@ def main():
 
         meta_results.append(merged_query_results)
 
+        print(f"Finished with scale factor {scale_factor}")
+
     # Merge all the DataFrames from the db_backups loop into a final shared DataFrame
     final_shared_df = pd.concat(meta_results, ignore_index=True)
     final_shared_df.to_csv(
@@ -255,3 +310,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    _clean_up()
