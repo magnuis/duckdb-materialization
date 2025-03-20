@@ -84,11 +84,6 @@ def _generate_materializations(
 
         query_setup = defaultdict(list)
 
-        # query = query_obj.get_query(fields=fields)
-
-        # with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
-        #     query = f.read()
-
         columns_in_query = query_obj.columns_used()
 
         for treshold in TRESHOLDS_TO_MATERIALIZE:
@@ -228,8 +223,8 @@ def _perform_tests(
                     raise ValueError(
                         f"Query result for threshold {threshold}, replicate {index} differs from previous materializations!")
 
-            print(
-                f"Finished treshold {threshold}, iteration {index} in time {(time.perf_counter() - iteration_time):.3f}")
+        print(
+            f"[{query_name} t{threshold:.2f}] Time {(time.perf_counter() - iteration_time):.3f}")
 
     # Create the flat DataFrame directly from the rows list
     df_flat = pd.DataFrame(rows)
@@ -279,6 +274,7 @@ def main():
         query_results_list = []
 
         for query_name, strategies in materializations.items():
+            test_time = time.perf_counter()
             query_results = _perform_tests(
                 query_name=query_name,
                 query_object=queries[query_name],
@@ -287,6 +283,8 @@ def main():
                 dataset=dataset
             )
             query_results_list.append(query_results)
+            print(
+                f"Finishied query {query_name}, scale factor {scale_factor} in time {int(time.perf_counter() - test_time)} seconds")
 
         merged_query_results = pd.concat(query_results_list, ignore_index=True)
 
@@ -300,7 +298,8 @@ def main():
 
         meta_results.append(merged_query_results)
 
-        print(f"Finished with scale factor {scale_factor}")
+        print(f"!! Finished with scale factor {scale_factor}")
+        print("-------------------------------------------")
 
     # Merge all the DataFrames from the db_backups loop into a final shared DataFrame
     final_shared_df = pd.concat(meta_results, ignore_index=True)
