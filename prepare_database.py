@@ -18,6 +18,8 @@ def prepare_database(con: duckdb.DuckDBPyConnection, dataset: str, fields: list[
     time_taken = _alter_table(con=con, fields=fields)
 
     _create_view(con=con, fields=fields)
+
+    con.execute("ANALYZE")
     return time_taken
 
 
