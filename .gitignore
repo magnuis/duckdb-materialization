@@ -178,4 +178,4 @@ data copy/
 *.db*
 
 # Results
-results/
+*results/
