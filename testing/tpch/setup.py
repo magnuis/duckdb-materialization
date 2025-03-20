@@ -1,27 +1,49 @@
 from queries.tpch.q1 import Q1
+from queries.tpch.q2 import Q2
+from queries.tpch.q3 import Q3
+from queries.tpch.q4 import Q4
+from queries.tpch.q5 import Q5
+from queries.tpch.q6 import Q6
+from queries.tpch.q7 import Q7
+from queries.tpch.q8 import Q8
+from queries.tpch.q9 import Q9
+from queries.tpch.q10 import Q10
+from queries.tpch.q11 import Q11
+from queries.tpch.q12 import Q12
+from queries.tpch.q13 import Q13
+from queries.tpch.q14 import Q14
+from queries.tpch.q15 import Q15
+from queries.tpch.q16 import Q16
+from queries.tpch.q17 import Q17
+from queries.tpch.q18 import Q18
+from queries.tpch.q19 import Q19
+from queries.tpch.q20 import Q20
+from queries.tpch.q21 import Q21
+from queries.tpch.q22 import Q22
+
 QUERIES = {
     'q1': Q1(),
-    # 'q2',
-    # 'q3',
-    # 'q4',
-    # 'q5',
-    # 'q6',
-    # 'q7',
-    # 'q8',
-    # 'q9',
-    # 'q10',
-    # 'q11',
-    # 'q12',
-    # 'q13',
-    # 'q14',
-    # 'q15',
-    # 'q16',
-    # 'q17',
-    # 'q18',
-    # 'q19',
-    # 'q20',
-    # 'q21',
-    # 'q22',
+    'q2': Q2(),
+    'q3': Q3(),
+    'q4': Q4(),
+    'q5': Q5(),
+    'q6': Q6(),
+    'q7': Q7(),
+    'q8': Q8(),
+    'q9': Q9(),
+    'q10': Q10(),
+    'q11': Q11(),
+    'q12': Q12(),
+    'q13': Q13(),
+    'q14': Q14(),
+    'q15': Q15(),
+    'q16': Q16(),
+    'q17': Q17(),
+    'q18': Q18(),
+    'q19': Q19(),
+    'q20': Q20(),
+    'q21': Q21(),
+    'q22': Q22(),
     # 'q23',
     # 'q24',
     # 'q25'

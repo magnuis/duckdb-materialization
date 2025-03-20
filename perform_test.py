@@ -78,8 +78,6 @@ def _perform_test(
 
         query = query_obj.get_query(fields=fields)
 
-        print(query)
-
         df_row = {
             "Query": query_name,
             'Created At': test_time,

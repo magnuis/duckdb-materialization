@@ -234,8 +234,9 @@ def _perform_test(
         if default_time is not None:
             execution_time = default_time / QUERIES_IN_LOAD
         else:
-            with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
-                query = f.read()
+            # with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
+            #     query = f.read()
+            query = None
             start_time = time.perf_counter()
             _ = con.execute(query).fetchdf()
             end_time = time.perf_counter()

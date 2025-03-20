@@ -1,18 +1,16 @@
 import random
 import copy
-import argparse
 from datetime import datetime
 import shutil
 import time
 import os
 from collections import defaultdict
 from collections.abc import Callable
-from datetime import datetime
-import numpy as np
 
 import duckdb
 import pandas as pd
 
+from queries.query import Query
 import testing.tpch.setup as tpch_setup
 from analyze_queries import analyze_queries
 from prepare_database import prepare_database, get_db_size
@@ -197,7 +195,8 @@ def _create_connection(dataset: str, test: str) -> tuple[duckdb.DuckDBPyConnecti
 
 def _perform_test(
     con: duckdb.DuckDBPyConnection,
-    dataset: str,
+    queries_map: dict[str, Query],
+    fields: list[tuple[str, dict, bool]],
     test: str,
     load: list[str],
     default_time: float = None
@@ -211,8 +210,8 @@ def _perform_test(
         if default_time is not None:
             execution_time = default_time / QUERIES_IN_LOAD
         else:
-            with open(f"./queries/{dataset}/{query_name}.sql", 'r') as f:
-                query = f.read()
+            query = queries_map[query_name].get_query(fields=fields)
+
             start_time = time.perf_counter()
             _ = con.execute(query).fetchdf()
             end_time = time.perf_counter()
@@ -235,6 +234,7 @@ def main():
     config = DATASETS[dataset]
     standard_tests = config["standard_tests"]
     column_map = config["column_map"]
+    queries = config["queries"]
 
     distributions = ["numerical"]  # TODO input-based
 
@@ -318,7 +318,8 @@ def main():
                     # Run test
                     _times_df, test_time = _perform_test(
                         con=db_connection,
-                        dataset=dataset,
+                        fields=fields,
+                        queries_map=queries,
                         test=test,
                         load=load,
                         default_time=default_time
