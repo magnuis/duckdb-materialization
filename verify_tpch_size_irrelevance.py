@@ -32,6 +32,14 @@ DATASETS = {
             {
                 "scale_factor": 1,
                 "dir": "tpch_big"
+            },
+            {
+                "scale_factor": 2,
+                "dir": "tpch_bigger"
+            },
+            {
+                "scale_factor": 3,
+                "dir": "tpch_bigbigger"
             }
 
         ]
@@ -203,7 +211,7 @@ def _perform_tests(
                     # Check that subsequent iterations yield the same result.
                     if not baseline_result.equals(result):
                         raise ValueError(
-                            f"Query results differ in iteration {i} for threshold {threshold}, replicate {index}!")
+                            f"[{query_name}] Query results differ in iteration {i} for threshold {threshold}, replicate {index}!")
                 row[f"Iteration {i}"] = execution_time
 
             # Compute average execution time over iterations 1 to 4
@@ -267,6 +275,7 @@ def main():
     meta_results = []
 
     for db in db_backups:
+        scale_factor_time = time.perf_counter()
         scale_factor = db["scale_factor"]
         db_dir = db["dir"]
         _create_fresh_db(db_dir=db_dir)
@@ -284,7 +293,7 @@ def main():
             )
             query_results_list.append(query_results)
             print(
-                f"Finishied query {query_name}, scale factor {scale_factor} in time {int(time.perf_counter() - test_time)} seconds")
+                f"Finished query {query_name}, scale factor {scale_factor} in time {int(time.perf_counter() - test_time)} seconds")
 
         merged_query_results = pd.concat(query_results_list, ignore_index=True)
 
@@ -298,7 +307,8 @@ def main():
 
         meta_results.append(merged_query_results)
 
-        print(f"!! Finished with scale factor {scale_factor}")
+        print(
+            f"!! Finished with scale factor {scale_factor} in time {int(time.perf_counter() - scale_factor_time)}")
         print("-------------------------------------------")
 
     # Merge all the DataFrames from the db_backups loop into a final shared DataFrame
@@ -308,5 +318,8 @@ def main():
 
 
 if __name__ == "__main__":
+    t = time.perf_counter()
     main()
     _clean_up()
+
+    print(f"Finished test in time ~{int(time.perf_counter() - t)*60} minutes")

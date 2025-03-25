@@ -70,8 +70,6 @@ ORDER BY
             "l_extendedprice",
             "l_discount",
             "l_shipdate",
-            "supplier_no",
-            "total_revenue",
             "s_suppkey",
             "s_name",
             "s_address",

@@ -172,5 +172,4 @@ LIMIT
             "r_regionkey",
             "r_name",
             "ps_supplycost",
-            "s_acctbal"
         ]

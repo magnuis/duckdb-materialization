@@ -320,7 +320,8 @@ def analyze_fields_frequency():
 
 def convert(limit_rows, field_frequency):
     total_start_time = time.time()
-    output_file = os.path.join(TPCH_OUTPUT_DATA_PATH, 'tpch_json.json')
+    output_file = os.path.join(
+        TPCH_OUTPUT_DATA_PATH, 'bigbigger_tpch_json.json')
 
     if limit_rows:
         print('Limiting output to first 10 rows from each table.')

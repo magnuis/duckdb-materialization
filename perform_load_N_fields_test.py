@@ -313,7 +313,7 @@ def main():
 
                     # Prepare database
                     last_prepare_time = prepare_database(
-                        con=db_connection, dataset=dataset, fields=fields)
+                        con=db_connection, fields=fields)
 
                     # Run test
                     _times_df, test_time = _perform_test(

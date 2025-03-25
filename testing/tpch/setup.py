@@ -97,6 +97,14 @@ STANDARD_SETUPS = {
     # "q4m400l9_13field": {
     #     "materialization": ['l_orderkey', 'l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 'o_orderkey', 'p_partkey', 's_suppkey', 's_name', 's_address', 's_nationkey'],
     # },
+
+
+
+
+
+    "q2_l0": {
+        "materialization": ["p_mfgr", "n_name", "p_partkey", "ps_partkey"]
+    },
     "no_materialization": {
         "materialization": [],
     },
