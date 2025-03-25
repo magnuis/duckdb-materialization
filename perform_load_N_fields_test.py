@@ -97,7 +97,8 @@ def _numerical_distribution(no_queries: int):
             r.shuffle(load)
 
             loads.append(load)
-            load_majority_queries.append(minority_queries)
+            load_majority_queries.append(
+                sorted(majority_queries, key=lambda x: int(x[1:])))
 
             assert last_load_length == len(load)
             last_load_length = len(load)
