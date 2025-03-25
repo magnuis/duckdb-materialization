@@ -14,6 +14,54 @@ import duckdb
 import testing.tpch.setup as tpch_setup
 from prepare_database import prepare_database, get_db_size
 
+TESTS_TO_INCLUDE = {
+    "q3": {
+        0.75: [0, 2]
+    },
+    "q4": {
+        0.5: [0],
+        0.75: [2]
+    },
+    "q5": {
+        0.25: [1],
+        0.5: [0, 1],
+        0.75: [2]
+    },
+    "q6": {
+        0.5: [0],
+        0.75: [0]
+    },
+    "q7": {
+        0.25: [1],
+        0.5: [0]
+    },
+    "q9": {
+        0.25: [1, 2],
+        0.5: [0, 1],
+        0.75: [0, 2]
+    },
+    "q10": {
+        0.5: [1],
+        0.75: [1]
+    },
+    "q13": {
+        0.25: [0],
+        0.75: [0, 1, 2]
+    },
+    "q14": {
+        0.25: [0],
+        0.75: [0, 1, 2]
+    },
+    "q18": {
+        0.25: [0, 1],
+        0.5: [0]
+    },
+    "q19": {
+        0.5: [0, 2],
+        0.75: [2]
+    },
+}
+
 TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 
 DATASETS = {
@@ -38,7 +86,7 @@ DATASETS = {
                 "dir": "tpch_bigger"
             },
             {
-                "scale_factor": 3,
+                "scale_factor": 4,
                 "dir": "tpch_bigbigger"
             }
 
@@ -175,7 +223,15 @@ def _perform_tests(
     global_baseline_result = None
 
     for threshold, field_lists in materializations.items():
+        if query_name not in TESTS_TO_INCLUDE.keys():
+            continue
+        if threshold not in TESTS_TO_INCLUDE[query_name].keys():
+            continue
+
         for index, fields_list in enumerate(field_lists):
+
+            if index not in TESTS_TO_INCLUDE[query_name][threshold]:
+                continue
 
             iteration_time = time.perf_counter()
 
