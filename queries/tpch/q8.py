@@ -169,51 +169,66 @@ ORDER BY
         """
         Returns the number of join clauses in the query
         """
-        return 5
+        return 7
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """
-        Get the columns used in the query along with their position in the query 
-        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+        Get the underlying column names used in the query along with their position 
+        in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
         -------
         dict
             A dictionary with the following keys:
-            - 'select': list of column names used in the SELECT clause.
-            - 'where': list of column names used in the WHERE clause that are not joins.
-            - 'group_by': list of column names used in the GROUP BY clause.
-            - 'order_by': list of column names used in the ORDER BY clause.
-            - 'join': list of column names used in a join operation (including WHERE)
+            - 'select': list of underlying column names used in the SELECT clause.
+            - 'where': list of underlying column names used in the WHERE clause that are not joins.
+            - 'group_by': list of underlying column names used in the GROUP BY clause.
+            - 'order_by': list of underlying column names used in the ORDER BY clause.
+            - 'join': list of underlying column names used in a join operation (including WHERE)
         """
         return {
             'select': [
-                "n_name",
-                "l_shipdate",
+                "o_orderdate",
                 "l_extendedprice",
-                "l_discount"
+                "l_discount",
+                "n_name"
             ],
             'where': [
-                "n_name",
-                "l_shipdate"
-            ],
-            'group_by': [
-                "n_name",
-                "l_shipdate"
-            ],
-            'order_by': [
-                "n_name",
-                "l_shipdate"
-            ],
-            'join': [
+                "p_partkey",
+                "l_partkey",
                 "s_suppkey",
                 "l_suppkey",
-                "o_orderkey",
                 "l_orderkey",
-                "c_custkey",
+                "o_orderkey",
                 "o_custkey",
-                "s_nationkey",
-                "n_nationkey",
+                "c_custkey",
+                "r_regionkey",
+                "n_regionkey",
                 "c_nationkey",
+                "r_name",
+                "s_nationkey",
+                "o_orderdate",
+                "p_type"
+            ],
+            'group_by': [
+                "o_orderdate"
+            ],
+            'order_by': [
+                "o_orderdate"
+            ],
+            'join': [
+                "p_partkey",
+                "l_partkey",
+                "s_suppkey",
+                "l_suppkey",
+                "l_orderkey",
+                "o_orderkey",
+                "o_custkey",
+                "c_custkey",
+                "r_regionkey",
+                "n_regionkey",
+                "c_nationkey",
+                "s_nationkey",
+                "n_nationkey"
             ]
         }

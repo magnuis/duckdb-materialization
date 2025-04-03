@@ -1,3 +1,5 @@
+from queries.query import Query
+
 from queries.tpch.q1 import Q1
 from queries.tpch.q2 import Q2
 from queries.tpch.q3 import Q3
@@ -21,7 +23,7 @@ from queries.tpch.q20 import Q20
 from queries.tpch.q21 import Q21
 from queries.tpch.q22 import Q22
 
-QUERIES = {
+QUERIES: dict[str, Query] = {
     'q1': Q1(),
     'q2': Q2(),
     'q3': Q3(),

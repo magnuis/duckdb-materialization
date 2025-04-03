@@ -92,10 +92,11 @@ ORDER BY
         """
         Returns the number of join clauses in the query
         """
+        return 5
 
-    def columns_used_with_position(self,) -> dict[str, list[str]]:
+    def columns_used_with_position(self) -> dict[str, list[str]]:
         """
-        Get the columns used in TPC-H Query 1 along with their position in the query 
+        Get the columns used in the query along with their position in the query 
         (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -108,3 +109,34 @@ ORDER BY
             - 'order_by': list of column names used in the ORDER BY clause.
             - 'join': list of column names used in a join operation (including WHERE)
         """
+        return {
+            'select': [
+                "n_name",
+                "l_shipdate",
+                "l_extendedprice",
+                "l_discount"
+            ],
+            'where': [
+                "n_name",
+                "l_shipdate"
+            ],
+            'group_by': [
+                "n_name",
+                "l_shipdate"
+            ],
+            'order_by': [
+                "n_name",
+                "l_shipdate"
+            ],
+            'join': [
+                "s_suppkey",
+                "l_suppkey",
+                "o_orderkey",
+                "l_orderkey",
+                "c_custkey",
+                "o_custkey",
+                "s_nationkey",
+                "n_nationkey",
+                "c_nationkey",
+            ]
+        }
