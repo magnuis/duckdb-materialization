@@ -61,6 +61,42 @@ class Q1(Query):
             "l_extendedprice",
             "l_discount",
             "l_tax",
-            "l_quantity",
+            "l_quantity",  # Duplicate
             "l_shipdate"
         ]
+
+    def columns_used_with_position(self,) -> dict[str, list[str]]:
+        """
+        Get the columns used in TPC-H Query 1 along with their position in the query 
+        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of column names used in the SELECT clause.
+            - 'where': list of column names used in the WHERE clause.
+            - 'group_by': list of column names used in the GROUP BY clause.
+            - 'order_by': list of column names used in the ORDER BY clause.
+        """
+        return {
+            'select': [
+                "l_returnflag",
+                "l_linestatus",
+                "l_quantity",
+                "l_extendedprice",
+                "l_discount",
+                "l_tax"
+            ],
+            'where': [
+                "l_shipdate"
+            ],
+            'group_by': [
+                "l_returnflag",
+                "l_linestatus"
+            ],
+            'order_by': [
+                "l_returnflag",
+                "l_linestatus"
+            ]
+        }

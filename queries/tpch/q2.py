@@ -173,3 +173,47 @@ LIMIT
             "r_name",
             "ps_supplycost",
         ]
+
+    def columns_used_with_position(self,) -> dict[str, list[str]]:
+        """
+        Get the columns used in TPC-H Query 2 along with their position in the query 
+        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of column names used in the SELECT clause.
+            - 'where': list of column names used in the WHERE clause.
+            - 'group_by': list of column names used in the GROUP BY clause.
+            - 'order_by': list of column names used in the ORDER BY clause.
+        """
+        return {
+            'select': [
+                "s_acctbal",
+                "s_name",
+                "n_name",
+                "p_partkey",
+                "p_mfgr",
+                "s_address",
+                "s_phone",
+                "s_comment"
+            ],
+            'where': [
+                "ps_partkey",
+                "ps_suppkey",
+                "s_suppkey",
+                "p_size",
+                "p_type",
+                "s_nationkey",
+                "n_nationkey",
+                "n_regionkey",
+                "r_regionkey"
+            ],
+            'order_by': [
+                "s_acctbal",
+                "n_name",
+                "s_name",
+                "p_partkey"
+            ]
+        }

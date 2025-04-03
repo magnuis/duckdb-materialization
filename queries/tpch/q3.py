@@ -68,3 +68,85 @@ LIMIT
             "o_orderkey",
             "l_shipdate"
         ]
+
+    def columns_used_with_position(self,) -> dict[str, list[str]]:
+        """
+        Get the columns used in TPC-H Query 2 along with their position in the query 
+        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of column names used in the SELECT clause.
+            - 'where': list of column names used in the WHERE clause.
+            - 'group_by': list of column names used in the GROUP BY clause.
+            - 'order_by': list of column names used in the ORDER BY clause.
+        """
+        return {
+            'select': [
+                "l_orderkey",
+                "l_extendedprice",
+                "l_discount",
+                "o_orderdate",
+                "o_shippriority"
+            ],
+            'where': [
+                "c_mktsegment",
+                "c_custkey",
+                "o_custkey",
+                "o_orderkey",
+                "o_orderdate",
+                "l_shipdate"
+            ],
+            'group_by': [
+                "l_orderkey",
+                "o_orderdate",
+                "o_shippriority"
+            ],
+            'order_by': [
+                "revenue DESC",
+                "o_orderdate"
+            ]
+        }
+
+    def columns_used_with_position(self,) -> dict[str, list[str]]:
+        """
+        Get the columns used in TPC-H Query 2 along with their position in the query 
+        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of column names used in the SELECT clause.
+            - 'where': list of column names used in the WHERE clause.
+            - 'group_by': list of column names used in the GROUP BY clause.
+            - 'order_by': list of column names used in the ORDER BY clause.
+        """
+        return {
+            'select': [
+                "l_orderkey",
+                "l_extendedprice",
+                "l_discount",
+                "o_orderdate",
+                "o_shippriority"
+            ],
+            'where': [
+                "c_mktsegment",
+                "c_custkey",
+                "o_custkey",
+                "o_orderkey",
+                "o_orderdate",
+                "l_shipdate"
+            ],
+            'group_by': [
+                "l_orderkey",
+                "o_orderdate",
+                "o_shippriority"
+            ],
+            'order_by': [
+                "revenue DESC",
+                "o_orderdate"
+            ]
+        }
