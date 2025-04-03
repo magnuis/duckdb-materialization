@@ -83,3 +83,63 @@ LIMIT
             "c_nationkey",
             "n_nationkey"
         ]
+
+    def no_join_clauses(self) -> int:
+        """
+        Returns the number of join clauses in the query
+        """
+        return 3
+
+    def columns_used_with_position(self) -> dict[str, list[str]]:
+        """
+        Get the columns used in the query along with their position in the query 
+        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of column names used in the SELECT clause.
+            - 'where': list of column names used in the WHERE clause that are not joins.
+            - 'group_by': list of column names used in the GROUP BY clause.
+            - 'order_by': list of column names used in the ORDER BY clause.
+            - 'join': list of column names used in a join operation (including WHERE)
+        """
+        return {
+            'select': [
+                "c_custkey",
+                "c_name",
+                "c_acctbal",
+                "n_name",
+                "c_address",
+                "c_phone",
+                "c_comment"
+                "l_extendedprice",
+                "l_discount"
+            ],
+            'where': [
+                "o_orderdate",
+                "l_returnflag"
+            ],
+            'group_by': [
+                "c_custkey",
+                "c_name",
+                "c_acctbal",
+                "c_phone",
+                "n_name",
+                "c_address",
+                "c_comment"
+            ],
+            'order_by': [
+                "l_extendedprice",
+                "l_discount"
+            ],
+            'join': [
+                "c_custkey",
+                "o_custkey",
+                "o_orderkey",
+                "l_orderkey",
+                "c_nationkey",
+                "n_nationkey"
+            ]
+        }

@@ -121,14 +121,16 @@ WHERE
         AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = r_n_joined.n_nationkey
         AND p_ps_joined.ps_supplycost = (
                 SELECT
-                        min({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])})
+                        min({self._json(tbl='ps', col='ps_supplycost',
+                                        dt=dts['ps_supplycost'])})
                 FROM
                         test_table s,
                         test_table ps,
                         test_table n,
                         test_table r
                 WHERE
-                        p_ps_joined.p_partkey = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
+                        p_ps_joined.p_partkey = {self._json(
+                                            tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
                         AND {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
                         AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
                         AND {self._json(tbl='n', col='n_regionkey', dt=dts['n_regionkey'])} = {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])}
@@ -174,9 +176,15 @@ LIMIT
             "ps_supplycost",
         ]
 
+    def no_join_clauses(self) -> int:
+        """
+        Returns the number of join clauses in the query
+        """
+        return 4
+
     def columns_used_with_position(self,) -> dict[str, list[str]]:
         """
-        Get the columns used in TPC-H Query 2 along with their position in the query 
+        Get the columns used in TPC-H Query 1 along with their position in the query 
         (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -184,9 +192,10 @@ LIMIT
         dict
             A dictionary with the following keys:
             - 'select': list of column names used in the SELECT clause.
-            - 'where': list of column names used in the WHERE clause.
+            - 'where': list of column names used in the WHERE clause that are not joins.
             - 'group_by': list of column names used in the GROUP BY clause.
             - 'order_by': list of column names used in the ORDER BY clause.
+            - 'join': list of column names used in a join operation (including WHERE)
         """
         return {
             'select': [
@@ -200,20 +209,26 @@ LIMIT
                 "s_comment"
             ],
             'where': [
-                "ps_partkey",
-                "ps_suppkey",
-                "s_suppkey",
                 "p_size",
                 "p_type",
-                "s_nationkey",
-                "n_nationkey",
-                "n_regionkey",
-                "r_regionkey"
+                "r_name",
+                "pps_supplycost"
             ],
+            'group_by': [],
             'order_by': [
                 "s_acctbal",
                 "n_name",
                 "s_name",
                 "p_partkey"
+            ],
+            'join': [
+                "p_partkey",
+                "pps_partkey",
+                "s_suppkey",
+                "pps_suppkey",
+                "s_nationkey",
+                "n_nationkey",
+                "n_regionkey",
+                "r_regionkey"
             ]
         }

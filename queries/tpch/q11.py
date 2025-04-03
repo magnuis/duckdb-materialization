@@ -71,3 +71,48 @@ ORDER BY
             "n_nationkey",
             "n_name"
         ]
+
+    def no_join_clauses(self) -> int:
+        """
+        Returns the number of join clauses in the query
+        """
+        return 4
+
+    def columns_used_with_position(self) -> dict[str, list[str]]:
+        """
+        Get the underlying column names used in the query along with their position 
+        in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of underlying column names used in the SELECT clause.
+            - 'where': list of underlying column names used in the WHERE clause that are not joins.
+            - 'group_by': list of underlying column names used in the GROUP BY clause.
+            - 'order_by': list of underlying column names used in the ORDER BY clause.
+            - 'join': list of underlying column names used in a join operation (including WHERE)
+        """
+        return {
+            'select': [
+                "ps_partkey",
+                "ps_supplycost",
+                "ps_availqty"
+            ],
+            'where': [
+                "n_name"
+            ],
+            'group_by': [
+                "ps_partkey"
+            ],
+            'order_by': [
+                "ps_supplycost",
+                "ps_availqty"
+            ],
+            'join': [
+                "ps_suppkey",
+                "s_suppkey",
+                "s_nationkey",
+                "n_nationkey"
+            ]
+        }

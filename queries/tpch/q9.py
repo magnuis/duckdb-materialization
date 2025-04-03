@@ -141,3 +141,57 @@ class Q9(Query):
             "n_nationkey",
             "p_name"
         ]
+
+    def no_join_clauses(self) -> int:
+        """
+        Returns the number of join clauses in the query
+        """
+        return 6
+
+    def columns_used_with_position(self) -> dict[str, list[str]]:
+        """
+        Get the underlying column names used in the query along with their position 
+        in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of underlying column names used in the SELECT clause.
+            - 'where': list of underlying column names used in the WHERE clause that are not joins.
+            - 'group_by': list of underlying column names used in the GROUP BY clause.
+            - 'order_by': list of underlying column names used in the ORDER BY clause.
+            - 'join': list of underlying column names used in a join operation (including WHERE)
+        """
+        return {
+            'select': [
+                "n_name",
+                "o_orderdate",
+                "l_extendedprice",
+                "l_discount",
+                "ps_supplycost"
+            ],
+            'where': [
+                "p_name"
+            ],
+            'group_by': [
+                "n_name",
+                "o_orderdate"
+            ],
+            'order_by': [
+                "n_name",
+                "o_orderdate"
+            ],
+            'join': [
+                "s_suppkey",
+                "l_suppkey",
+                "ps_suppkey",
+                "ps_partkey",
+                "l_partkey",
+                "p_partkey",
+                "o_orderkey",
+                "l_orderkey",
+                "s_nationkey",
+                "n_nationkey"
+            ]
+        }

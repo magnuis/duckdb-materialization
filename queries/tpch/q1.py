@@ -18,7 +18,6 @@ class Q1(Query):
         str
         """
 
-        # TODO use more performant e.g. dict for loopup
         dts = self._get_field_accesses(fields=fields)
 
         return f"""
@@ -61,9 +60,14 @@ class Q1(Query):
             "l_extendedprice",
             "l_discount",
             "l_tax",
-            "l_quantity",  # Duplicate
             "l_shipdate"
         ]
+
+    def no_join_clauses(self) -> int:
+        """
+        Returns the number of join clauses in the query
+        """
+        return 0
 
     def columns_used_with_position(self,) -> dict[str, list[str]]:
         """
@@ -75,9 +79,10 @@ class Q1(Query):
         dict
             A dictionary with the following keys:
             - 'select': list of column names used in the SELECT clause.
-            - 'where': list of column names used in the WHERE clause.
+            - 'where': list of column names used in the WHERE clause that are not joins.
             - 'group_by': list of column names used in the GROUP BY clause.
             - 'order_by': list of column names used in the ORDER BY clause.
+            - 'join': list of column names used in a join operation (including WHERE).
         """
         return {
             'select': [
@@ -98,5 +103,6 @@ class Q1(Query):
             'order_by': [
                 "l_returnflag",
                 "l_linestatus"
-            ]
+            ],
+            'join': []
         }

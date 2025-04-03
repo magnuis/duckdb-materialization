@@ -65,3 +65,47 @@ ORDER BY
             "l_receiptdate",
             "l_shipdate"
         ]
+
+    def no_join_clauses(self) -> int:
+        """
+        Returns the number of join clauses in the query
+        """
+        return 1
+
+    def columns_used_with_position(self) -> dict[str, list[str]]:
+        """
+        Get the underlying column names used in the query along with their position 
+        in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of underlying column names used in the SELECT clause.
+            - 'where': list of underlying column names used in the WHERE clause that are not joins.
+            - 'group_by': list of underlying column names used in the GROUP BY clause.
+            - 'order_by': list of underlying column names used in the ORDER BY clause.
+            - 'join': list of underlying column names used in a join operation (including WHERE)
+        """
+        return {
+            'select': [
+                "l_shipmode",
+                "o_orderpriority"
+            ],
+            'where': [
+                "l_shipmode",
+                "l_commitdate",
+                "l_receiptdate",
+                "l_shipdate"
+            ],
+            'group_by': [
+                "l_shipmode"
+            ],
+            'order_by': [
+                "l_shipmode"
+            ],
+            'join': [
+                "o_orderkey",
+                "l_orderkey"
+            ]
+        }
