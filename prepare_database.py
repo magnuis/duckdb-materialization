@@ -79,8 +79,8 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         con.execute("CHECKPOINT;")
 
         if all_materialized:
-            con.execute(
-                "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;")
+            # con.execute(
+            #     "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;")
             con.execute("CHECKPOINT;")
 
         end_time = time()
@@ -128,7 +128,7 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
 def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 
-    temp_db = f"./data/db/temp_{dataset}.db"
+    temp_db = os.curdir + f"/data/db/temp_{dataset}.db"
 
     if os.path.exists(temp_db):
         # print("Removed temp_db")
@@ -147,7 +147,7 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 
     con.execute('DETACH temp_db;')
 
-    db_size = os.path.getsize(f"./data/db/temp_{dataset}.db")
+    db_size = os.path.getsize(os.curdir + f"/data/db/temp_{dataset}.db")
 
     os.remove(temp_db)
 
