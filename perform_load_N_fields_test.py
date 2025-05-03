@@ -43,7 +43,7 @@ DATASETS = {
 TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 
 
-def _numerical_distribution(no_queries: int):
+def _numerical_distribution(all_queries: list[str]):
 
     load_dicts = []
 
@@ -66,7 +66,7 @@ def _numerical_distribution(no_queries: int):
     # except TypeError:
     #     raise ValueError("Query percentage must be an int between 50 and 100")
 
-    all_queries = [f"q{i}" for i in range(1, no_queries + 1)]
+    # all_queries = [f"q{i}" for i in range(1, no_queries + 1) if i != 5]
 
     qm = [(q, int(m*QUERIES_IN_LOAD))
           for q in QUERY_PROPORTIONS for m in MAJORITY_PROPORTIONS]
@@ -118,11 +118,11 @@ DISTRIBUTIONS: dict[str, Callable] = {
 }
 
 
-def _generate_loads(distributions: list[int], no_queries: int) -> dict[str, list[str]]:
+def _generate_loads(distributions: list[int], all_queries=list[str]) -> dict[str, list[str]]:
     load_confs = defaultdict(list)
     for distribution in distributions:
         _load_method = DISTRIBUTIONS[distribution]
-        load_dicts = _load_method(no_queries=no_queries)
+        load_dicts = _load_method(all_queries=all_queries)
 
         for load_dict in load_dicts:
             load_conf = {}
@@ -235,12 +235,12 @@ def main():
     config = DATASETS[dataset]
     standard_tests = config["standard_tests"]
     column_map = config["column_map"]
-    queries = config["queries"]
+    queries: dict = config["queries"]
 
     distributions = ["numerical"]  # TODO input-based
 
     load_types = _generate_loads(
-        distributions=distributions, no_queries=config["no_queries"])
+        distributions=distributions, all_queries=list(queries.keys()))
 
     # Make sure query frequency exists
     analyze_queries(data_set=dataset)
@@ -292,7 +292,7 @@ def main():
 
                 for test, setup in tests.items():
 
-                    if test == "no_materialization":
+                    if test != "schema_based_materialization":
                         continue
 
                     default_time = None
@@ -314,7 +314,7 @@ def main():
 
                     # Prepare database
                     last_prepare_time = prepare_database(
-                        con=db_connection, dataset=dataset, fields=fields)
+                        con=db_connection, fields=fields)
 
                     # Run test
                     _times_df, test_time = _perform_test(

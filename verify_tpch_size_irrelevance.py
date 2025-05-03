@@ -32,8 +32,15 @@ DATASETS = {
             {
                 "scale_factor": 1,
                 "dir": "tpch_big"
-            }
-
+            },
+            #     {
+            #         "scale_factor": 2,
+            #         "dir": "tpch_bigger"
+            #     },
+            #     {
+            #         "scale_factor": 4,
+            #         "dir": "tpch_bigbigger"
+            #     }
         ]
     }
 }

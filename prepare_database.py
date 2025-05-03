@@ -18,7 +18,7 @@ def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dic
     time_taken = _alter_table(con=con, fields=fields,
                               include_print=include_print)
 
-    _create_view(con=con, fields=fields)
+    # _create_view(con=con, fields=fields)
 
     con.execute("ANALYZE")
     return time_taken
@@ -72,10 +72,12 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
             pass
             # query += "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;"
         query += " END TRANSACTION;"
+        print(query)
 
         start_time = time()
 
         con.execute(query)
+        # print(query)
         con.execute("CHECKPOINT;")
 
         if all_materialized:
@@ -87,11 +89,11 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         time_taken = end_time - start_time
     # print(f"Time taken to alter table: {time_taken} seconds")
 
-    if include_print:
-        print('------------------------------')
-        print(
-            f"Materialized {len(materialize_fields)} fields in time {time_taken:.3f}")
-        print(materialize_fields)
+    # if include_print:
+    #     print('------------------------------')
+    #     print(
+    #         f"Materialized {len(materialize_fields)} fields in time {time_taken:.3f}")
+    #     print(materialize_fields)
     return time_taken
 
 
@@ -124,6 +126,7 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
     con.execute("CHECKPOINT;")
     con.execute(view_query)
     con.execute("CHECKPOINT;")
+    print(view_query)
 
 
 def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):

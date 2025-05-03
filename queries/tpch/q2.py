@@ -153,7 +153,6 @@ LIMIT
         """
 
         return [
-            "s_acctbal",
             "s_name",
             "n_name",
             "p_partkey",

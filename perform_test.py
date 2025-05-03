@@ -100,6 +100,7 @@ def _perform_test(
             df_row[f"Iteration {j}"] = execution_time
 
             if j == 0:
+                print(query)
 
                 first_run_result = result.copy()
 

@@ -24,7 +24,7 @@ from queries.tpch.q22 import Q22
 QUERIES = {
     # 'q1': Q1(),
     # 'q2': Q2(),
-    # 'q3': Q3(),
+    'q3': Q3(),
     # 'q4': Q4(),
     # 'q5': Q5(),
     # 'q6': Q6(),
@@ -36,7 +36,7 @@ QUERIES = {
     # 'q12': Q12(),
     # 'q13': Q13(),
     # 'q14': Q14(),
-    'q15': Q15(),
+    # 'q15': Q15(),
     # 'q16': Q16(),
     # 'q17': Q17(),
     # 'q18': Q18(),
@@ -44,9 +44,9 @@ QUERIES = {
     # 'q20': Q20(),
     # 'q21': Q21(),
     # 'q22': Q22(),
-    # 'q23',
-    # 'q24',
-    # 'q25'
+    # # 'q23',
+    # # 'q24',
+    # # 'q25'
 }
 
 LOAD_BASED_MATERIALIZATION = [
@@ -58,6 +58,59 @@ LOAD_BASED_MATERIALIZATION = [
 ]
 
 STANDARD_SETUPS = {
+    # "q13_05_1_01-05": {
+    #     "materialization": ["c_custkey", "o_comment"],
+    # },
+    # "q13_075_0_01-05": {
+    #     "materialization": ["c_custkey", "o_custkey", "o_orderkey"],
+    # }
+    # "q9_05_0_05-2-4": {
+    #     "materialization": ['ps_supplycost', 'l_partkey', 's_nationkey', 'l_orderkey', 'o_orderdate', 'p_name', 'o_orderkey', 'ps_suppkey'],
+    # },
+    # "q9_05_1_05-2-4": {
+    #     "materialization": ['o_orderdate', 'p_name', 'n_nationkey', 's_suppkey', 'l_extendedprice', 'p_partkey', 'ps_supplycost', 'l_partkey'],
+    # },
+    # "q18_25_1_05-4": {
+    #     "materialization": ['c_name', 'l_orderkey'],
+    # },
+    # "q18_25_0_05-4": {
+    #     "materialization": ['o_orderkey', 'o_totalprice'],
+    # }
+    # "q5_l1_m10": {
+    #     "materialization": ['l_extendedprice', 'l_discount', 'o_orderkey', 'l_orderkey', 'o_orderdate', 'c_custkey', 'o_custkey', 's_suppkey', 'n_name', 'n_nationkey']
+    # },
+    # "q5_l1_m11": {
+    #     "materialization": ['l_extendedprice', 'l_discount', 'o_orderkey', 'l_orderkey', 'o_orderdate', 'c_custkey', 'o_custkey', 's_suppkey', 'n_name', 'n_nationkey', 'l_suppkey']
+    # },
+    # "q5_l3_m11": {
+    #     "materialization": ['o_orderkey', 'l_orderkey', 'l_extendedprice', 'o_custkey', 'c_custkey',
+    #                         'l_discount', 'o_orderdate', 's_suppkey', 'n_name', 'n_nationkey', 's_nationkey']
+    # },
+    # "q5_l3_m12": {
+    #     "materialization": ['o_orderkey', 'l_orderkey', 'l_extendedprice', 'o_custkey', 'c_custkey',
+    #                         'l_discount', 'o_orderdate', 's_suppkey', 'n_name', 'n_nationkey', 's_nationkey', 'l_suppkey']
+    # },
+    # "q5_l7_m8": {
+    #     "materialization": ['s_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'o_orderkey', 'l_orderkey', 'l_suppkey', 'c_custkey']
+    # },
+    # "q5_l7_m9": {
+    #     "materialization": ['s_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'o_orderkey', 'l_orderkey', 'l_suppkey', 'c_custkey', 'o_custkey']
+    # },
+    # "q5_l8_m10": {
+    #     "materialization": ['o_orderkey', 'l_orderkey', 'c_custkey', 'o_custkey', 'l_extendedprice', 'l_discount', 's_suppkey', 'n_nationkey', 'n_name', 'o_orderdate']
+    # },
+    # "q5_l8_m11": {
+    #     "materialization": ['o_orderkey', 'l_orderkey', 'c_custkey', 'o_custkey', 'l_extendedprice', 'l_discount', 's_suppkey', 'n_nationkey', 'n_name', 'o_orderdate', 'l_suppkey']
+    # }
+    # "q3_l2_m10": {
+    #     "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal']
+    # },
+    "q3_l2_m11": {
+        "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal', 'l_extendedprice']
+    }
+    # "test": {
+    #     "materialization": ["s_suppkey"],
+    # },
     # "q4m400l9_1field": {
     #     "materialization": ["s_suppkey"],
     # },
@@ -125,38 +178,26 @@ STANDARD_SETUPS = {
     #         "l_shipdate"
     #     ]
     # },
-    "schema_based_materialization": {
-        "materialization": [
-            "l_orderkey",
-            "l_suppkey",
-            "l_partkey",
-            "l_returnflag",
-            'l_linestatus',
-            "l_quantity",
-            "l_tax",
-            "l_extendedprice",
-            "l_discount",
-            "l_commitdate",
-            "l_receiptdate",
-            "l_shipdate",
-            "l_shipmode",
-            "l_shipinstruct",
-            #         # "c_mktsegment",
-            #         # "c_name",
-            #         # "c_phone",
-            #         # "c_address",
-            #         # "c_comment",
-            #         # "s_name",
-            #         # "s_phone",
-            #         # "s_address",
-            #         # "s_comment",
-            #         # "p_name",
-            #         # "p_type",
-            #         # "p_partkey",
-            #         # # "p_size",
-            #         # # "p_mfgr"
-        ],
-    },
+    # "schema_based_materialization": {
+    #     "materialization": [
+    #         "l_orderkey",
+    #         "l_suppkey",
+    #         "l_partkey",
+    #         "l_returnflag",
+    #         'l_linestatus',
+    #         "l_quantity",
+    #         "l_tax",
+    #         "l_extendedprice",
+    #         "l_discount",
+    #         "l_commitdate",
+    #         "l_receiptdate",
+    #         "l_shipdate",
+    #         "l_shipmode",
+    #         "l_shipinstruct",
+    #         "l_comment",
+    #         "l_linenumber"
+    #     ],
+    # },
 }
 
 
