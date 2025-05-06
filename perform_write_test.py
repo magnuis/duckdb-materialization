@@ -15,7 +15,7 @@ from queries.query import Query
 RANDOM_GEN = random.Random()
 RANDOM_GEN.seed(0)
 CHARS = string.ascii_letters + string.digits + " "
-LINES_TO_INSERT = 1
+LINES_TO_INSERT = 500
 
 BASE_PATH = os.curdir
 PATHS_TO_REMOVE = []
@@ -36,7 +36,7 @@ TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 def _create_fresh_db(dataset: str):
     db_path = BASE_PATH + f"/data/db/{dataset}.duckdb"
     print(db_path)
-    backup_path = BASE_PATH + f"/data/backup/{dataset}_medium"
+    backup_path = BASE_PATH + f"/data/backup/{dataset}_bigbigger"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -227,13 +227,6 @@ def _clean_up():
 
 def main():
     dataset = "tpch"
-    if not os.path.exists(BASE_PATH + "/results/write-performance"):
-        os.mkdir(BASE_PATH + "/results/write-performance")
-    if not os.path.exists(BASE_PATH + f"/results/write-performance/{dataset}"):
-        os.mkdir(BASE_PATH + f"/results/write-performance/{dataset}")
-    if not os.path.exists(BASE_PATH + f"/results/write-performance/{dataset}/{TEST_TIME_STRING}"):
-        os.mkdir(
-            BASE_PATH + f"/results/write-performance/{dataset}/{TEST_TIME_STRING}")
 
     config = DATASETS[dataset]
     column_map: dict = config["column_map"]
@@ -250,8 +243,10 @@ def main():
 
     # Create fresh db
     _create_fresh_db(dataset=dataset)
+    prev_load = 0
 
     for loads_df_row in loads_df.itertuples():
+        load_time = time.time()
 
         load_no: str = loads_df_row[1]
         test_name: str = loads_df_row[2]
@@ -300,22 +295,31 @@ def main():
             timed_loads[materialized_fields] = {
                 "write_time": write_time, "db_size": db_size}
 
-        results_df.add(
-            {
+        results_df = pd.concat([
+            results_df,
+            pd.DataFrame([{
                 "Load": load_no,
                 "Test": test_name,
                 "Materialization": materialized_fields_list,
                 "Write time": write_time,
                 "DB Size": db_size
                 # TODO add other relevant db sizes
-            }
-        )
+            }])
+        ], ignore_index=True)
+
+        if prev_load != load_no:
+            print(f"time taken for load {load_no}: {time.time() - load_time}")
+            load_time = time.time()
+            prev_load = load_no
 
     # Write results back to `results_path`
-    results_df.to_csv(results_path + "write_times.csv")
+    results_df.to_csv(results_path + "/write_times.csv")
 
 
 if __name__ == "__main__":
+    t = time.time()
     main()
 
     _clean_up()
+
+    print(f"Total time: {time.time() - t}s")
