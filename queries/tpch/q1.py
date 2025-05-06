@@ -97,12 +97,8 @@ class Q1(Query):
                 "l_shipdate"
             ],
             'group_by': [
-                "l_returnflag",
-                "l_linestatus"
             ],
             'order_by': [
-                "l_returnflag",
-                "l_linestatus"
             ],
             'join': []
         }

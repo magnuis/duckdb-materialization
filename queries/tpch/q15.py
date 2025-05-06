@@ -99,17 +99,16 @@ ORDER BY
         """
         return {
             'select': [
+                "l_suppkey",
+                "l_extendedprice",
+                "l_discount"
                 "s_suppkey",
                 "s_name",
                 "s_address",
                 "s_phone",
-                "l_extendedprice",
-                "l_discount"
             ],
             'where': [
-                "l_shipdate",
-                "l_extendedprice",
-                "l_discount"
+                "l_shipdate"
             ],
             'group_by': [
                 "l_suppkey"
@@ -119,6 +118,5 @@ ORDER BY
             ],
             'join': [
                 "s_suppkey",
-                "l_suppkey"
             ]
         }

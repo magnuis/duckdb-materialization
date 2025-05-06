@@ -111,27 +111,29 @@ ORDER BY
         return {
             'select': [
                 "s_name",
-                "s_address"
+                "s_address",
+                "ps_suppkey",
+                "p_partkey",
+                "l_quantity"
             ],
             'where': [
                 "s_suppkey",
-                "n_name",
-                "ps_availqty",
+                "ps_partkey"
                 "p_name",
-                "p_partkey",
+                "ps_availqty",
                 "l_shipdate",
-                "l_quantity"
+                "n_name",
             ],
             'group_by': [],
             'order_by': [
                 "s_name"
             ],
             'join': [
-                "s_nationkey",
-                "n_nationkey",
                 "l_partkey",
                 "ps_partkey",
                 "l_suppkey",
-                "ps_suppkey"
+                "ps_suppkey",
+                "s_nationkey",
+                "n_nationkey"
             ]
         }

@@ -107,7 +107,7 @@ FROM
         (
                 SELECT
                         {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey,
-                        {self._json(tbl='r', col='r_name', dt=dts['r_name'])} AS n_name
+                        {self._json(tbl='r', col='r_name', dt=dts['r_name'])} AS r_name
                 FROM
                         test_table r,
                         test_table n
@@ -138,7 +138,7 @@ WHERE
         )
 ORDER BY
         {self._json(tbl='s', col='s_acctbal', dt=dts['s_acctbal'])} DESC,
-        r_n_joined.n_name,
+        r_n_joined.r_name,
         {self._json(tbl='s', col='s_name', dt=dts['s_name'])},
         p_ps_joined.p_partkey
 LIMIT
@@ -201,31 +201,38 @@ LIMIT
             'select': [
                 "s_acctbal",
                 "s_name",
-                "n_name",
-                "p_partkey",
-                "p_mfgr",
                 "s_address",
                 "s_phone",
-                "s_comment"
+                "s_comment",
+                "ps_suppkey",
+                "ps_supplycost",
+                "p_partkey",
+                "p_mfgr",
+                "n_nationkey",
+                "r_name",
+                "ps_supplycost",
             ],
             'where': [
                 "p_size",
                 "p_type",
                 "r_name",
-                "pps_supplycost"
+                "r_name"
             ],
             'group_by': [],
             'order_by': [
                 "s_acctbal",
-                "n_name",
-                "s_name",
-                "p_partkey"
+                "s_name"
             ],
             'join': [
                 "p_partkey",
-                "pps_partkey",
+                "ps_partkey",
+                "n_regionkey",
+                "r_regionkey",
                 "s_suppkey",
-                "pps_suppkey",
+                "s_nationkey",
+                "ps_partkey",
+                "s_suppkey",
+                "ps_suppkey",
                 "s_nationkey",
                 "n_nationkey",
                 "n_regionkey",

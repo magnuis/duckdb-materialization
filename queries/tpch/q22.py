@@ -97,24 +97,25 @@ ORDER BY
         """
         return {
             'select': [
-                # underlying column for SUBSTRING(c_phone FROM 1 FOR 2)
                 "c_phone",
-                "c_acctbal"   # underlying column for c_acctbal
+                "c_acctbal",
+                "c_acctbal"
+
             ],
             'where': [
-                # used in the IN condition on SUBSTRING(c_phone FROM 1 FOR 2)
                 "c_phone",
-                # used in the > condition comparing to AVG(c_acctbal)
-                "c_acctbal"
+                "c_acctbal",
+                "c_acctbal",
+                "c_phone"
             ],
             'group_by': [
-                "c_phone"     # group by the computed country code derived from c_phone
+                "c_phone"
             ],
             'order_by': [
-                "c_phone"     # ordering by the computed country code
+                "c_phone"
             ],
             'join': [
-                "o_custkey",  # join condition in NOT EXISTS: o_custkey = c_custkey
-                "c_custkey"   # join condition in NOT EXISTS: o_custkey = c_custkey
+                "o_custkey",
+                "c_custkey"
             ]
         }

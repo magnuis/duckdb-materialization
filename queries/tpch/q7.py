@@ -112,21 +112,19 @@ ORDER BY
         return {
             'select': [
                 "n_name",
+                "n_name",
                 "l_shipdate",
                 "l_extendedprice",
                 "l_discount"
             ],
             'where': [
                 "n_name",
+                "n_name",
                 "l_shipdate"
             ],
             'group_by': [
-                "n_name",
-                "l_shipdate"
             ],
             'order_by': [
-                "n_name",
-                "l_shipdate"
             ],
             'join': [
                 "s_suppkey",
@@ -138,5 +136,6 @@ ORDER BY
                 "s_nationkey",
                 "n_nationkey",
                 "c_nationkey",
+                "n_nationkey"
             ]
         }

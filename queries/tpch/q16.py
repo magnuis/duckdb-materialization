@@ -115,11 +115,13 @@ ORDER BY
                 "p_type",
                 "p_size"
             ],
-            'order_by': [],
-            'join': [
+            'order_by': [
                 "p_brand",
                 "p_type",
-                "p_size",
-                "ps_suppkey"
+                "p_size"
+            ],
+            'join': [
+                "p_partkey",
+                "ps_partkey"
             ]
         }

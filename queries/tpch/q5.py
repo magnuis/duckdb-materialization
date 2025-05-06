@@ -110,9 +110,7 @@ ORDER BY
             'group_by': [
                 "n_name"
             ],
-            'order_by': [
-                "revenue"
-            ],
+            'order_by': [],
             'join': [
                 "c_custkey",
                 "o_custkey",
@@ -121,6 +119,7 @@ ORDER BY
                 "l_suppkey",
                 "s_suppkey",
                 "c_nationkey",
+                "s_nationkey",
                 "s_nationkey",
                 "n_nationkey",
                 "n_regionkey",

@@ -82,7 +82,6 @@ class Q9(Query):
                                     select 
                                             {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} AS l_partkey,
                                             {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} AS l_suppkey,
-                                            {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} AS l_partkey,
                                             {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} AS l_orderkey,
                                             {self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} AS l_extendedprice,
                                             {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])} AS l_discount
@@ -99,7 +98,7 @@ class Q9(Query):
                             test_table o,
                             test_table n
                     WHERE
-                            {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} =  lp_joined.l_suppkey
+                            {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = lp_joined.l_suppkey
                             AND {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} = lp_joined.l_suppkey
                             AND {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} = lp_joined.l_partkey
                             AND {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = lp_joined.l_orderkey
@@ -167,30 +166,26 @@ class Q9(Query):
             'select': [
                 "n_name",
                 "o_orderdate",
+                "ps_supplycost",
+                "l_partkey",
+                "l_suppkey",
+                "l_orderkey",
                 "l_extendedprice",
-                "l_discount",
-                "ps_supplycost"
+                "l_dscount"
             ],
             'where': [
                 "p_name"
             ],
             'group_by': [
-                "n_name",
-                "o_orderdate"
             ],
             'order_by': [
-                "n_name",
-                "o_orderdate"
             ],
             'join': [
+                "p_partkey",
+                "l_partkey",
                 "s_suppkey",
-                "l_suppkey",
                 "ps_suppkey",
                 "ps_partkey",
-                "l_partkey",
-                "p_partkey",
-                "o_orderkey",
-                "l_orderkey",
                 "s_nationkey",
                 "n_nationkey"
             ]

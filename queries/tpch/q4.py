@@ -94,10 +94,8 @@ ORDER BY
                 "l_receiptdate"
             ],
             'group_by': [
-                "o_orderpriority"
             ],
             'order_by': [
-                "o_orderpriority"
             ],
             'join': [
                 "l_orderkey",

@@ -38,7 +38,6 @@ WHERE
         WHERE
             {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
     );
-
     """
 
     def columns_used(self,) -> list[str]:
@@ -96,5 +95,7 @@ WHERE
             'join': [
                 "p_partkey",
                 "l_partkey",
+                "p_partkey",
+                "l_partkey"
             ]
         }

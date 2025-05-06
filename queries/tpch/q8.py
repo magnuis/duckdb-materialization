@@ -103,16 +103,13 @@ FROM
                         ) AS p_l_joined,
                         (
                                 SELECT
-                                        {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])} AS r_regionkey,
-                                        {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey,
-                                        {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])} AS n_regionkey
-
+                                        {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey
                                 FROM
                                         test_table r,
                                         test_table n1
                                 WHERE
                                         {self._json(tbl='r', col='r_name', dt=dts['r_name'])} = 'AMERICA'
-                                        AND {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])} = {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])}
+                                        AND {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])} = {self._json(tbl='n1', col='n_regionkey', dt=dts['n_regionkey'])}
                         ) AS r_n1_joined,
 
                         test_table o,
@@ -189,44 +186,33 @@ ORDER BY
         return {
             'select': [
                 "o_orderdate",
+                "n_name",
+                "p_partkey",
                 "l_extendedprice",
                 "l_discount",
-                "n_name"
+                "l_orderkey",
+                "l_partkey",
+                "l_suppkey",
+                "n_nationkey"
             ],
             'where': [
-                "p_partkey",
-                "l_partkey",
-                "s_suppkey",
-                "l_suppkey",
-                "l_orderkey",
-                "o_orderkey",
-                "o_custkey",
-                "c_custkey",
-                "r_regionkey",
-                "n_regionkey",
-                "c_nationkey",
-                "r_name",
-                "s_nationkey",
-                "o_orderdate",
                 "p_type"
+                "r_name",
+                "o_orderdate",
             ],
             'group_by': [
-                "o_orderdate"
             ],
             'order_by': [
-                "o_orderdate"
             ],
             'join': [
                 "p_partkey",
                 "l_partkey",
+                "r_regionkey",
+                "n_regionkey",
                 "s_suppkey",
-                "l_suppkey",
-                "l_orderkey",
                 "o_orderkey",
                 "o_custkey",
                 "c_custkey",
-                "r_regionkey",
-                "n_regionkey",
                 "c_nationkey",
                 "s_nationkey",
                 "n_nationkey"

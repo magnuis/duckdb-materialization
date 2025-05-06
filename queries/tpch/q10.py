@@ -109,13 +109,13 @@ LIMIT
             'select': [
                 "c_custkey",
                 "c_name",
+                "l_extendedprice",
+                "l_discount",
                 "c_acctbal",
                 "n_name",
                 "c_address",
                 "c_phone",
                 "c_comment"
-                "l_extendedprice",
-                "l_discount"
             ],
             'where': [
                 "o_orderdate",
@@ -131,14 +131,12 @@ LIMIT
                 "c_comment"
             ],
             'order_by': [
-                "l_extendedprice",
-                "l_discount"
             ],
             'join': [
                 "c_custkey",
                 "o_custkey",
-                "o_orderkey",
                 "l_orderkey",
+                "o_orderkey",
                 "c_nationkey",
                 "n_nationkey"
             ]

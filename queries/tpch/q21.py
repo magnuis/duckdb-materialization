@@ -117,6 +117,8 @@ LIMIT
                 "o_orderstatus",
                 "l_receiptdate",
                 "l_commitdate",
+                "l_receiptdate",
+                "l_commitdate",
                 "n_name"
             ],
             'group_by': [
@@ -130,6 +132,14 @@ LIMIT
                 "l_suppkey",
                 "o_orderkey",
                 "l_orderkey",
+                "l_orderkey",
+                "l_orderkey",
+                "l_suppkey",
+                "l_suppkey",
+                "l_orderkey",
+                "l_orderkey",
+                "l_suppkey",
+                "l_suppkey"
                 "s_nationkey",
                 "n_nationkey"
             ]

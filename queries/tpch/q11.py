@@ -97,22 +97,28 @@ ORDER BY
             'select': [
                 "ps_partkey",
                 "ps_supplycost",
+                "ps_availqty",
+                "ps_supplycost",
                 "ps_availqty"
             ],
             'where': [
+                "ps_supplycost",
+                "ps_availqty",
                 "n_name"
             ],
             'group_by': [
                 "ps_partkey"
             ],
             'order_by': [
-                "ps_supplycost",
-                "ps_availqty"
             ],
             'join': [
                 "ps_suppkey",
                 "s_suppkey",
                 "s_nationkey",
-                "n_nationkey"
+                "n_nationkey",
+                "ps_suppkey",
+                "s_suppkey",
+                "s_nationkey",
+                "n_nationkey",
             ]
         }

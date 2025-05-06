@@ -89,9 +89,9 @@ ORDER BY
                 "o_comment"
             ],
             'group_by': [
+                "c_custkey"
             ],
             'order_by': [
-                "c_custkey"
             ],
             'join': [
                 "c_custkey",

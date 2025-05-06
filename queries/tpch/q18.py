@@ -106,13 +106,15 @@ LIMIT
                 "o_orderkey",
                 "o_orderdate",
                 "o_totalprice",
-                "l_quantity"
+                "l_quantity",
+                "l_orderkey"
             ],
             'where': [
-                "l_orderkey",
+                "o_orderkey",
                 "l_quantity"
             ],
             'group_by': [
+                "l_orderkey"
                 "c_name",
                 "c_custkey",
                 "o_orderkey",
@@ -128,5 +130,8 @@ LIMIT
                 "o_custkey",
                 "o_orderkey",
                 "l_orderkey"
+            ],
+            "having": [
+                "l_quantity"
             ]
         }
