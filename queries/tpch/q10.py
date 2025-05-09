@@ -56,34 +56,6 @@ LIMIT
     20;
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 10
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "c_custkey",
-            "c_name",
-            "l_extendedprice",
-            "l_discount",
-            "c_acctbal",
-            "n_name",
-            "c_address",
-            "c_phone",
-            "c_comment",
-            "o_custkey",
-            "o_orderdate",
-            "o_orderkey",
-            "l_orderkey",
-            "l_returnflag",
-            "c_nationkey",
-            "n_nationkey"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

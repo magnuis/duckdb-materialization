@@ -33,22 +33,6 @@ WHERE
 
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 6
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "l_extendedprice",
-            "l_discount",
-            "l_shipdate",
-            "l_quantity"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

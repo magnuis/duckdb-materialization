@@ -113,34 +113,6 @@ class Q9(Query):
 
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 9
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "n_name",
-            "o_orderdate",
-            "l_extendedprice",
-            "l_discount",
-            "ps_supplycost",
-            "s_suppkey",
-            "l_suppkey",
-            "ps_suppkey",
-            "ps_partkey",
-            "l_partkey",
-            "p_partkey",
-            "o_orderkey",
-            "l_orderkey",
-            "s_nationkey",
-            "n_nationkey",
-            "p_name"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

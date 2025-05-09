@@ -43,22 +43,6 @@ ORDER BY
     c_count DESC;
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 13
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "c_custkey",
-            "o_custkey",
-            "o_orderkey",
-            "o_comment"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

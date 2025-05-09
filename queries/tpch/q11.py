@@ -52,26 +52,6 @@ ORDER BY
     ps_partkey;
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 11
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "ps_partkey",
-            "ps_supplycost",
-            "ps_availqty",
-            "ps_suppkey",
-            "s_suppkey",
-            "s_nationkey",
-            "n_nationkey",
-            "n_name"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

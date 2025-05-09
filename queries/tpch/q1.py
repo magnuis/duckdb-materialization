@@ -44,25 +44,6 @@ class Q1(Query):
         l_linestatus;
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 1
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "l_returnflag",
-            "l_linestatus",
-            "l_quantity",
-            "l_extendedprice",
-            "l_discount",
-            "l_tax",
-            "l_shipdate"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

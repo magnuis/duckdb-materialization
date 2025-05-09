@@ -56,26 +56,6 @@ ORDER BY
 
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 15s
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "l_suppkey",
-            "l_extendedprice",
-            "l_discount",
-            "l_shipdate",
-            "s_suppkey",
-            "s_name",
-            "s_address",
-            "s_phone"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

@@ -60,33 +60,6 @@ ORDER BY
     {self._json(tbl='s', col='s_name', dt=dts['s_name'])};
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 20
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "s_name",
-            "s_address",
-            "s_suppkey",
-            "s_nationkey",
-            "n_nationkey",
-            "n_name",
-            "ps_suppkey",
-            "ps_partkey",
-            "ps_availqty",
-            "p_partkey",
-            "p_name",
-            "l_quantity",
-            "l_partkey",
-            "l_suppkey",
-            "l_shipdate"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

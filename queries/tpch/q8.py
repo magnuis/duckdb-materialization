@@ -131,37 +131,6 @@ ORDER BY
         o_year;
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 8
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "o_orderdate",
-            "l_extendedprice",
-            "l_discount",
-            "n_name",
-            "p_partkey",
-            "l_partkey",
-            "s_suppkey",
-            "l_suppkey",
-            "l_orderkey",
-            "o_orderkey",
-            "o_custkey",
-            "c_custkey",
-            "r_regionkey",
-            "n_regionkey",
-            "c_nationkey",
-            "n_nationkey",
-            "r_name",
-            "s_nationkey",
-            "p_type"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

@@ -58,22 +58,6 @@ ORDER BY
     cntrycode;
     """
 
-    def columns_used(self,) -> list[str]:
-        """
-        Get the columns used in TPC-H query 22
-
-        Returns
-        -------
-        list[str]
-        """
-
-        return [
-            "c_phone",
-            "c_acctbal",
-            "c_custkey",
-            "o_custkey"
-        ]
-
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query

@@ -28,7 +28,10 @@ class Query:
         -------
         list[str]
         """
-        return []
+        columns = []
+        for col_list in self.columns_used_with_position().values():
+            columns.extend(col_list)
+        return columns
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """

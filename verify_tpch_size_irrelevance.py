@@ -140,7 +140,7 @@ def _generate_materializations(
 
         query_setup = defaultdict(list)
 
-        columns_in_query = query_obj.columns_used()
+        columns_in_query = set(query_obj.columns_used())
 
         for treshold in TRESHOLDS_TO_MATERIALIZE:
             no_to_materialize = int(len(columns_in_query) * treshold)
