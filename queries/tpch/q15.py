@@ -96,7 +96,7 @@ ORDER BY
             'order_by': [
                 "s_suppkey"
             ],
-            'join': [
-                "s_suppkey",
-            ]
+            'join': {
+                "s_suppkey": [None],
+            }
         }

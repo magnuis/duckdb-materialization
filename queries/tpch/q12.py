@@ -85,8 +85,8 @@ ORDER BY
             'order_by': [
                 "l_shipmode"
             ],
-            'join': [
-                "o_orderkey",
-                "l_orderkey"
-            ]
+            'join': {
+                "o_orderkey": ["l_orderkey"],
+                "l_orderkey": ["o_orderkey"]
+            }
         }

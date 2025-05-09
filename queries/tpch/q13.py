@@ -77,8 +77,8 @@ ORDER BY
             ],
             'order_by': [
             ],
-            'join': [
-                "c_custkey",
-                "o_custkey"
-            ]
+            'join': {
+                "c_custkey": ["o_custkey"],
+                "o_custkey": ["c_custkey"]
+            }
         }

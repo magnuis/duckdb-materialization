@@ -91,14 +91,10 @@ ORDER BY
             ],
             'order_by': [
             ],
-            'join': [
-                "ps_suppkey",
-                "s_suppkey",
-                "s_nationkey",
-                "n_nationkey",
-                "ps_suppkey",
-                "s_suppkey",
-                "s_nationkey",
-                "n_nationkey",
-            ]
+            'join': {
+                "ps_suppkey": ["s_suppkey", "s_suppkey"],
+                "s_suppkey": ["ps_suppkey", "ps_suppkey"],
+                "s_nationkey": ["n_nationkey", "n_nationkey"],
+                "n_nationkey": ["s_nationkey", "s_nationkey"]
+            }
         }

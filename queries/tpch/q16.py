@@ -100,8 +100,8 @@ ORDER BY
                 "p_type",
                 "p_size"
             ],
-            'join': [
-                "p_partkey",
-                "ps_partkey"
-            ]
+            'join': {
+                "p_partkey": ["ps_partkey"],
+                "ps_partkey": ["p_partkey"]
+            }
         }

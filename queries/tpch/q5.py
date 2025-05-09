@@ -83,18 +83,17 @@ ORDER BY
                 "n_name"
             ],
             'order_by': [],
-            'join': [
-                "c_custkey",
-                "o_custkey",
-                "l_orderkey",
-                "o_orderkey",
-                "l_suppkey",
-                "s_suppkey",
-                "c_nationkey",
-                "s_nationkey",
-                "s_nationkey",
-                "n_nationkey",
-                "n_regionkey",
-                "r_regionkey"
-            ]
+            'join': {
+                "c_custkey": ["o_custkey"],
+                "o_custkey": ["c_custkey"],
+                "l_orderkey": ["o_orderkey"],
+                "o_orderkey": ["l_orderkey"],
+                "l_suppkey": ["o_suppkey"],
+                "s_suppkey": ["l_suppkey"],
+                "c_nationkey": ["s_nationkey"],
+                "s_nationkey": ["c_nationkey", "n_nationkey"],
+                "n_nationkey": ["s_nationkey"],
+                "n_regionkey": ["r_regionkey"],
+                "r_regionkey": ["n_regionkey"]
+            }
         }

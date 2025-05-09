@@ -104,20 +104,16 @@ LIMIT
             'order_by': [
                 "s_name"
             ],
-            'join': [
-                "s_suppkey",
-                "l_suppkey",
-                "o_orderkey",
-                "l_orderkey",
-                "l_orderkey",
-                "l_orderkey",
-                "l_suppkey",
-                "l_suppkey",
-                "l_orderkey",
-                "l_orderkey",
-                "l_suppkey",
-                "l_suppkey"
-                "s_nationkey",
-                "n_nationkey"
-            ]
+            'join': {
+                "s_suppkey": ["l_suppkey"],
+                "l_suppkey": ["s_suppkey"],
+                "o_orderkey": ["l_orderkey"],
+                "l_orderkey": ["o_orderkey"],
+                "s_nationkey": ["n_nationkey"],
+                "n_nationkey": ["s_nationkey"]
+            },
+            "self_join": {
+                "l_orderkey": 2,
+                "l_suppkey": 2
+            }
         }

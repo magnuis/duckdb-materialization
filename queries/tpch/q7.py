@@ -101,16 +101,15 @@ ORDER BY
             ],
             'order_by': [
             ],
-            'join': [
-                "s_suppkey",
-                "l_suppkey",
-                "o_orderkey",
-                "l_orderkey",
-                "c_custkey",
-                "o_custkey",
-                "s_nationkey",
-                "n_nationkey",
-                "c_nationkey",
-                "n_nationkey"
-            ]
+            'join': {
+                "s_suppkey": ["l_suppkey"],
+                "l_suppkey": ["s_suppkey"],
+                "o_orderkey": ["l_orderkey"],
+                "l_orderkey": ["o_orderkey"],
+                "c_custkey": ["o_custkey"],
+                "o_custkey": ["c_custkey"],
+                "s_nationkey": ["n_nationkey"],
+                "n_nationkey": ["s_nationkey", "c_nationkey"],
+                "c_nationkey": ["n_nationkey"]
+            }
         }

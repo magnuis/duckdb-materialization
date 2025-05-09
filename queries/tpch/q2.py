@@ -192,19 +192,14 @@ LIMIT
                 "s_acctbal",
                 "s_name"
             ],
-            'join': [
-                "p_partkey",
-                "ps_partkey",
-                "n_regionkey",
-                "r_regionkey",
-                "s_suppkey",
-                "s_nationkey",
-                "ps_partkey",
-                "s_suppkey",
-                "ps_suppkey",
-                "s_nationkey",
-                "n_nationkey",
-                "n_regionkey",
-                "r_regionkey"
-            ]
+            'join': {
+                "p_partkey": ["ps_partkey"],
+                "ps_partkey": ["p_partkey", None],
+                "n_regionkey": ["r_regionkey", "r_regionkey"],
+                "r_regionkey": ["n_regionkey", "n_regionkey"],
+                "s_suppkey": [None, "ps_suppkey"],
+                "s_nationkey": [None, "n_nationkey"],
+                "ps_suppkey": ["s_suppkey"],
+                "n_nationkey": ["s_nationkey"]
+            }
         }

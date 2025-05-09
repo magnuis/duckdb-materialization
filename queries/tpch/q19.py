@@ -95,8 +95,8 @@ WHERE
             ],
             'group_by': [],
             'order_by': [],
-            'join': [
-                "p_partkey",
-                "l_partkey"
-            ]
+            'join': {
+                "p_partkey": ["l_partkey"],
+                "l_partkey": ["p_partkey"]
+            }
         }

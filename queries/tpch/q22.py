@@ -98,8 +98,8 @@ ORDER BY
             'order_by': [
                 "c_phone"
             ],
-            'join': [
-                "o_custkey",
-                "c_custkey"
-            ]
+            'join': {
+                "o_custkey": ["c_custkey"],
+                "c_custkey": ["o_custkey"]
+            }
         }

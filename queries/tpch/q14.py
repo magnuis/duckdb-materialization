@@ -70,8 +70,8 @@ WHERE
             ],
             'group_by': [],
             'order_by': [],
-            'join': [
-                "l_partkey",
-                "p_partkey"
-            ]
+            'join': {
+                "l_partkey": ["p_partkey"],
+                "p_partkey": ["l_partkey"],
+            }
         }

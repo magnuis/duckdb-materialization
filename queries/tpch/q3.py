@@ -89,10 +89,12 @@ LIMIT
             'order_by': [
                 "o_orderdate"
             ],
-            'join': [
-                "c_custkey",
-                "o_custkey",
-                "l_orderkey",
-                "o_orderkey"
-            ]
+            'join':
+            {
+                "c_custkey": ["o_custkey"],
+                "o_custkey": ["c_custkey"],
+                "l_orderkey": ["o_orderkey"],
+                "o_orderkey": ["l_orderkey"]
+            }
+
         }

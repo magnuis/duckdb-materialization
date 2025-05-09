@@ -29,8 +29,15 @@ class Query:
         list[str]
         """
         columns = []
-        for col_list in self.columns_used_with_position().values():
-            columns.extend(col_list)
+        for clause, col_list in self.columns_used_with_position().items():
+            if clause == "join":
+                for field, join_fields in col_list.items():
+                    columns.extend([field] * len(join_fields))
+            elif clause == "self_join":
+                for field, no_self_joins in col_list.items():
+                    columns.extend([field] * 2 * no_self_joins)
+            else:
+                columns.extend(col_list)
         return columns
 
     def columns_used_with_position(self) -> dict[str, list[str]]:

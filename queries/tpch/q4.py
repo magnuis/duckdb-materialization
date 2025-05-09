@@ -79,8 +79,8 @@ ORDER BY
             ],
             'order_by': [
             ],
-            'join': [
-                "l_orderkey",
-                "o_orderkey"
-            ]
+            'join': {
+                "l_orderkey": ["o_orderkey"],
+                "o_orderkey": ["l_orderkey"]
+            }
         }

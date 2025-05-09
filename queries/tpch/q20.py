@@ -101,12 +101,12 @@ ORDER BY
             'order_by': [
                 "s_name"
             ],
-            'join': [
-                "l_partkey",
-                "ps_partkey",
-                "l_suppkey",
-                "ps_suppkey",
-                "s_nationkey",
-                "n_nationkey"
-            ]
+            'join': {
+                "l_partkey": ["ps_partkey"],
+                "ps_partkey": ["l_partkey"],
+                "l_suppkey": ["ps_suppkey"],
+                "ps_suppkey": ["l_suppkey"],
+                "s_nationkey": ["n_nationkey"],
+                "n_nationkey": ["s_nationkey"]
+            }
         }

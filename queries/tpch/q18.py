@@ -87,7 +87,8 @@ LIMIT
                 "o_orderdate",
                 "o_totalprice",
                 "l_quantity",
-                "l_orderkey"
+                "l_orderkey",
+                "l_quantity"  # Fra HAVING
             ],
             'where': [
                 "o_orderkey",
@@ -105,13 +106,11 @@ LIMIT
                 "o_totalprice",
                 "o_orderdate"
             ],
-            'join': [
-                "c_custkey",
-                "o_custkey",
-                "o_orderkey",
-                "l_orderkey"
-            ],
-            "having": [
-                "l_quantity"
-            ]
+            'join': {
+                "c_custkey": ["o_custkey"],
+                "o_custkey": ["c_custkey"],
+                "l_orderkey": ["o_orderkey"],
+                "o_orderkey": ["l_orderkey"]
+            },
+
         }

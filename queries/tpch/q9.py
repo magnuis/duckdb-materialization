@@ -152,13 +152,13 @@ class Q9(Query):
             ],
             'order_by': [
             ],
-            'join': [
-                "p_partkey",
-                "l_partkey",
-                "s_suppkey",
-                "ps_suppkey",
-                "ps_partkey",
-                "s_nationkey",
-                "n_nationkey"
-            ]
+            'join': {
+                "p_partkey": ["l_partkey"],
+                "l_partkey": ["p_partkey"],
+                "s_suppkey": [None],
+                "ps_suppkey": [None],
+                "ps_partkey": [None],
+                "s_nationkey": ["n_nationkey"],
+                "n_nationkey": ["s_nationkey"]
+            }
         }

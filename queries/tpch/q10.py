@@ -104,12 +104,12 @@ LIMIT
             ],
             'order_by': [
             ],
-            'join': [
-                "c_custkey",
-                "o_custkey",
-                "l_orderkey",
-                "o_orderkey",
-                "c_nationkey",
-                "n_nationkey"
-            ]
+            'join': {
+                "c_custkey": ["o_custkey"],
+                "o_custkey": ["c_custkey"],
+                "l_orderkey": ["o_orderkey"],
+                "o_orderkey": ["l_orderkey"],
+                "c_nationkey": ["n_nationkey"],
+                "n_nationkey": ["c_nationkey"]
+            }
         }
