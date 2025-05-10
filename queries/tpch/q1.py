@@ -81,5 +81,5 @@ class Q1(Query):
             ],
             'order_by': [
             ],
-            'join': []
+            'join': {}
         }

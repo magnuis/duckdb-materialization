@@ -66,6 +66,5 @@ WHERE
             ],
             'order_by': [
             ],
-            'join': [
-            ]
+            'join': {}
         }

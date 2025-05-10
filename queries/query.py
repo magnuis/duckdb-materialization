@@ -36,7 +36,10 @@ class Query:
             elif clause == "self_join":
                 for field, no_self_joins in col_list.items():
                     columns.extend([field] * 2 * no_self_joins)
+            elif clause == "where":
+                columns.extend(col_list)
             else:
+                # continue
                 columns.extend(col_list)
         return columns
 
