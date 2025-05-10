@@ -91,7 +91,7 @@ ORDER BY
             ],
             'where': [
                 "s_suppkey",
-                "ps_partkey"
+                "ps_partkey",
                 "p_name",
                 "ps_availqty",
                 "l_shipdate",

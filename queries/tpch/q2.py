@@ -107,7 +107,7 @@ FROM
         (
                 SELECT
                         {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey,
-                        {self._json(tbl='r', col='r_name', dt=dts['r_name'])} AS r_name
+                        {self._json(tbl='n', col='n_name', dt=dts['n_name'])} AS n_name
                 FROM
                         test_table r,
                         test_table n
@@ -138,7 +138,7 @@ WHERE
         )
 ORDER BY
         {self._json(tbl='s', col='s_acctbal', dt=dts['s_acctbal'])} DESC,
-        r_n_joined.r_name,
+        r_n_joined.n_name,
         {self._json(tbl='s', col='s_name', dt=dts['s_name'])},
         p_ps_joined.p_partkey
 LIMIT
@@ -178,7 +178,7 @@ LIMIT
                 "p_partkey",
                 "p_mfgr",
                 "n_nationkey",
-                "r_name",
+                "n_name",
                 "ps_supplycost",
             ],
             'where': [

@@ -143,7 +143,7 @@ class Q9(Query):
                 "l_suppkey",
                 "l_orderkey",
                 "l_extendedprice",
-                "l_dscount"
+                "l_discount"
             ],
             'where': [
                 "p_name"
@@ -159,6 +159,7 @@ class Q9(Query):
                 "ps_suppkey": [None],
                 "ps_partkey": [None],
                 "s_nationkey": ["n_nationkey"],
-                "n_nationkey": ["s_nationkey"]
+                "n_nationkey": ["s_nationkey"],
+                "o_orderkey": [None]
             }
         }

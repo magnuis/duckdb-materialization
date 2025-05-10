@@ -81,7 +81,7 @@ ORDER BY
             'select': [
                 "l_suppkey",
                 "l_extendedprice",
-                "l_discount"
+                "l_discount",
                 "s_suppkey",
                 "s_name",
                 "s_address",

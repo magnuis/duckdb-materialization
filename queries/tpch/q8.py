@@ -165,7 +165,7 @@ ORDER BY
                 "n_nationkey"
             ],
             'where': [
-                "p_type"
+                "p_type",
                 "r_name",
                 "o_orderdate",
             ],
