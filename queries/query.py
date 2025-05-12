@@ -59,6 +59,12 @@ class Query:
             - 'join': list of column names used in a join operation (including WHERE).
         """
 
+    def columns_used_in_join(self) -> dict[str, list[str | None]]:
+        """
+        Get the columns used in the join operation
+        """
+        return self.columns_used_with_position()["join"]
+
     def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
 
         used_columns = self.columns_used()
