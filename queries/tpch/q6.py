@@ -9,7 +9,16 @@ class Q6(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "l": ["l_extendedprice", "l_shipdate", "l_discount", "l_quantity"]
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 6, adjusted to current db materializaiton
 
@@ -18,18 +27,16 @@ class Q6(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS revenue
+    SUM({self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)})) AS revenue
 FROM
-    test_table l
+    extracted l
 WHERE
-    {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} >= DATE '1994-01-01'
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} < DATE '1995-01-01'
-    AND {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])} BETWEEN 0.05 AND 0.07
-    AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} < 24;
+    {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1994-01-01'
+    AND {self._json(tbl='l', col='l_shipdate', dts=dts)} < DATE '1995-01-01'
+    AND {self._json(tbl='l', col='l_discount', dts=dts)} BETWEEN 0.05 AND 0.07
+    AND {self._json(tbl='l', col='l_quantity', dts=dts)} < 24;
 
     """
 
@@ -55,7 +62,7 @@ WHERE
         """
         return {
             'select': [
-                "l_extendedprice", "l_discount"
+                "l_extendedprice", "l_discount",
             ],
             'where': [
                 "l_shipdate",

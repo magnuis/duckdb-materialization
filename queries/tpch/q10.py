@@ -9,7 +9,19 @@ class Q10(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "c": ["c_custkey", "c_name", "c_acctbal", "c_address", "c_phone", "c_comment", "c_nationkey"],
+            "o": ["o_orderdate", "o_custkey", "o_orderkey"],
+            "l": ["l_extendedprice", "l_discount", "l_returnflag", "l_orderkey"],
+            "n": ["n_name", "n_nationkey"]
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 10, adjusted to current db materializaiton
 
@@ -18,38 +30,36 @@ class Q10(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} AS c_custkey,
-    {self._json(tbl='c', col='c_name', dt=dts['c_name'])} AS c_name,
-    SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS revenue,
-    {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} AS c_acctbal,
-    {self._json(tbl='n', col='n_name', dt=dts['n_name'])} AS n_name,
-    {self._json(tbl='c', col='c_address', dt=dts['c_address'])} AS c_address,
-    {self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} AS c_phone,
-    {self._json(tbl='c', col='c_comment', dt=dts['c_comment'])} AS c_comment
+    {self._json(tbl='c', col='c_custkey', dts=dts)} AS c_custkey,
+    {self._json(tbl='c', col='c_name', dts=dts)} AS c_name,
+    SUM({self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)})) AS revenue,
+    {self._json(tbl='c', col='c_acctbal', dts=dts)} AS c_acctbal,
+    {self._json(tbl='n', col='n_name', dts=dts)} AS n_name,
+    {self._json(tbl='c', col='c_address', dts=dts)} AS c_address,
+    {self._json(tbl='c', col='c_phone', dts=dts)} AS c_phone,
+    {self._json(tbl='c', col='c_comment', dts=dts)} AS c_comment
 FROM
-    test_table c,
-    test_table o,
-    test_table l,
-    test_table n
+    extracted c,
+    extracted o,
+    extracted l,
+    extracted n
 WHERE
-    {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
-    AND {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}
-    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} >= DATE '1993-10-01'
-    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} < DATE '1994-01-01'
-    AND {self._json(tbl='l', col='l_returnflag', dt=dts['l_returnflag'])} = 'R'
-    AND {self._json(tbl='c', col='c_nationkey', dt=dts['c_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
+    {self._json(tbl='c', col='c_custkey', dts=dts)} = {self._json(tbl='o', col='o_custkey', dts=dts)}
+    AND {self._json(tbl='l', col='l_orderkey', dts=dts)} = {self._json(tbl='o', col='o_orderkey', dts=dts)}
+    AND {self._json(tbl='o', col='o_orderdate', dts=dts)} >= DATE '1993-10-01'
+    AND {self._json(tbl='o', col='o_orderdate', dts=dts)} < DATE '1994-01-01'
+    AND {self._json(tbl='l', col='l_returnflag', dts=dts)} = 'R'
+    AND {self._json(tbl='c', col='c_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
 GROUP BY
-    {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])},
-    {self._json(tbl='c', col='c_name', dt=dts['c_name'])},
-    {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])},
-    {self._json(tbl='c', col='c_phone', dt=dts['c_phone'])},
-    {self._json(tbl='n', col='n_name', dt=dts['n_name'])},
-    {self._json(tbl='c', col='c_address', dt=dts['c_address'])},
-    {self._json(tbl='c', col='c_comment', dt=dts['c_comment'])}
+    {self._json(tbl='c', col='c_custkey', dts=dts)},
+    {self._json(tbl='c', col='c_name', dts=dts)},
+    {self._json(tbl='c', col='c_acctbal', dts=dts)},
+    {self._json(tbl='c', col='c_phone', dts=dts)},
+    {self._json(tbl='n', col='n_name', dts=dts)},
+    {self._json(tbl='c', col='c_address', dts=dts)},
+    {self._json(tbl='c', col='c_comment', dts=dts)}
 ORDER BY
     revenue DESC
 LIMIT

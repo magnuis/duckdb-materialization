@@ -149,7 +149,7 @@ def compare_query_results(dfs: list[pd.DataFrame]):
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_small"
+    backup_path = f"./data/backup/{dataset}_tiny"
 
     if os.path.exists(db_path):
         os.remove(db_path)

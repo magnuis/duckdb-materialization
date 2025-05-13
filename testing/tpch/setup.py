@@ -104,9 +104,9 @@ STANDARD_SETUPS = {
 
 
 
-    "q2_l0": {
-        "materialization": ["p_mfgr", "n_name", "p_partkey", "ps_partkey"]
-    },
+    # "q2_l0": {
+    #     "materialization": ["p_mfgr", "n_name", "p_partkey", "ps_partkey"]
+    # },
     "no_materialization": {
         "materialization": [],
     },
@@ -129,38 +129,38 @@ STANDARD_SETUPS = {
     #         "l_shipdate"
     #     ]
     # },
-    "schema_based_materialization": {
-        "materialization": [
-            "l_orderkey",
-            "l_suppkey",
-            "l_partkey",
-            "l_returnflag",
-            'l_linestatus',
-            "l_quantity",
-            "l_tax",
-            "l_extendedprice",
-            "l_discount",
-            "l_commitdate",
-            "l_receiptdate",
-            "l_shipdate",
-            "l_shipmode",
-            "l_shipinstruct",
-            # "c_mktsegment",
-            # "c_name",
-            # "c_phone",
-            # "c_address",
-            # "c_comment",
-            # "s_name",
-            # "s_phone",
-            # "s_address",
-            # "s_comment",
-            # "p_name",
-            # "p_type",
-            # "p_partkey",
-            # # "p_size",
-            # # "p_mfgr"
-        ],
-    },
+    # "schema_based_materialization": {
+    #     "materialization": [
+    #         "l_orderkey",
+    #         "l_suppkey",
+    #         "l_partkey",
+    #         "l_returnflag",
+    #         'l_linestatus',
+    #         "l_quantity",
+    #         "l_tax",
+    #         "l_extendedprice",
+    #         "l_discount",
+    #         "l_commitdate",
+    #         "l_receiptdate",
+    #         "l_shipdate",
+    #         "l_shipmode",
+    #         "l_shipinstruct",
+    #         # "c_mktsegment",
+    #         # "c_name",
+    #         # "c_phone",
+    #         # "c_address",
+    #         # "c_comment",
+    #         # "s_name",
+    #         # "s_phone",
+    #         # "s_address",
+    #         # "s_comment",
+    #         # "p_name",
+    #         # "p_type",
+    #         # "p_partkey",
+    #         # # "p_size",
+    #         # # "p_mfgr"
+    #     ],
+    # },
 }
 
 

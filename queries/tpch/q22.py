@@ -9,7 +9,18 @@ class Q22(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "c1": ["c_acctbal", "c_phone"],
+            "c2": ["c_acctbal", "c_phone", "c_custkey"],
+            "o": ["o_custkey"],
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 22, adjusted to current db materializaiton
 
@@ -17,8 +28,6 @@ class Q22(Query):
         -------
         str
         """
-
-        dts = self._get_field_accesses(fields=fields)
 
         return f"""
 SELECT
@@ -28,28 +37,28 @@ SELECT
 FROM
     (
         SELECT
-            SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) AS cntrycode,
-            {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} AS c_acctbal
+            SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} FROM 1 FOR 2) AS cntrycode,
+            {self._json(tbl='c2', col='c_acctbal', dts=dts)} AS c_acctbal
         FROM
-            test_table c
+            extracted c2
         WHERE
-            SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
-            AND {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} > (
+            SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+            AND {self._json(tbl='c2', col='c_acctbal', dts=dts)} > (
                 SELECT
-                    AVG({self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])})
+                    AVG({self._json(tbl='c1', col='c_acctbal', dts=dts)})
                 FROM
-                    test_table c
+                    extracted c1
                 WHERE
-                    {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} > 0.00
-                    AND SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+                    {self._json(tbl='c1', col='c_acctbal', dts=dts)} > 0.00
+                    AND SUBSTRING({self._json(tbl='c1', col='c_phone', dts=dts)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
             )
             AND NOT EXISTS (
                 SELECT
                     *
                 FROM
-                    test_table o
+                    extracted o
                 WHERE
-                    {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])} = {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])}
+                    {self._json(tbl='o', col='o_custkey', dts=dts)} = {self._json(tbl='c2', col='c_custkey', dts=dts)}
             )
     ) AS custsale
 GROUP BY

@@ -9,7 +9,20 @@ class Q20(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "l": ["l_quantity", "l_shipdate", "l_suppkey", "l_partkey"],
+            "p": ["p_partkey", "p_name"],
+            "ps": ["ps_partkey", "ps_availqty", "ps_suppkey"],
+            "n": ["n_name", "n_nationkey"],
+            "s": ["s_name", "s_address", "s_suppkey", "s_nationkey"]
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 20, adjusted to current db materializaiton
 
@@ -18,46 +31,44 @@ class Q20(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])} AS s_name,
-    {self._json(tbl='s', col='s_address', dt=dts['s_address'])} AS s_address
+    {self._json(tbl='s', col='s_name', dts=dts)} AS s_name,
+    {self._json(tbl='s', col='s_address', dts=dts)} AS s_address
 FROM
-    test_table s,
-    test_table n
+    extracted s,
+    extracted n
 WHERE
-    {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} IN (
+    {self._json(tbl='s', col='s_suppkey', dts=dts)} IN (
         SELECT
-            {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
+            {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
         FROM
-            test_table ps
+            extracted ps
         WHERE
-            {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} IN (
+            {self._json(tbl='ps', col='ps_partkey', dts=dts)} IN (
                 SELECT
-                    {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])}
+                    {self._json(tbl='p', col='p_partkey', dts=dts)}
                 FROM
-                    test_table p
+                    extracted p
                 WHERE
-                    {self._json(tbl='p', col='p_name', dt=dts['p_name'])} LIKE 'forest%'
+                    {self._json(tbl='p', col='p_name', dts=dts)} LIKE 'forest%'
             )
-            AND {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])} > (
+            AND {self._json(tbl='ps', col='ps_availqty', dts=dts)} > (
                 SELECT
-                    0.5 * SUM({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])})
+                    0.5 * SUM({self._json(tbl='l', col='l_quantity', dts=dts)})
                 FROM
-                    test_table l
+                    extracted l
                 WHERE
-                    {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
-                    AND {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} = {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
-                    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} >= DATE '1994-01-01'
-                    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} < DATE '1995-01-01'
+                    {self._json(tbl='l', col='l_partkey', dts=dts)} = {self._json(tbl='ps', col='ps_partkey', dts=dts)}
+                    AND {self._json(tbl='l', col='l_suppkey', dts=dts)} = {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
+                    AND {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1994-01-01'
+                    AND {self._json(tbl='l', col='l_shipdate', dts=dts)} < DATE '1995-01-01'
             )
     )
-    AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-    AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'CANADA'
+    AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
+    AND {self._json(tbl='n', col='n_name', dts=dts)} = 'CANADA'
 ORDER BY
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])};
+    {self._json(tbl='s', col='s_name', dts=dts)};
     """
 
     def no_join_clauses(self) -> int:

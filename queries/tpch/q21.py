@@ -9,7 +9,21 @@ class Q21(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "s": ["s_nationkey", "s_name", "s_suppkey"],
+            "o": ["o_orderstatus", "o_orderkey"],
+            "n": ["n_nationkey", "n_name"],
+            "l1": ["l_orderkey", "l_suppkey", "l_receiptdate", "l_commitdate"],
+            "l2": ["l_orderkey", "l_suppkey"],
+            "l3": ["l_orderkey", "l_suppkey", "l_receiptdate", "l_commitdate"],
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 21, adjusted to current db materializaiton
 
@@ -18,52 +32,124 @@ class Q21(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
 
+#         return f"""
+# SELECT
+#     {self._json(tbl='s', col='s_name', dts=dts)} AS s_name,
+#     COUNT(*) AS numwait
+# FROM
+#     s,
+#     l1,
+#     o,
+#     n
+# WHERE
+#     {self._json(tbl='s', col='s_suppkey', dts=dts)} = {self._json(tbl='l1', col='l_suppkey', dts=dts)}
+#     AND {self._json(tbl='o', col='o_orderkey', dts=dts)} = {self._json(tbl='l1', col='l_orderkey', dts=dts)}
+#     AND {self._json(tbl='o', col='o_orderstatus', dts=dts)} = 'F'
+#     AND {self._json(tbl='l1', col='l_receiptdate', dts=dts)} > {self._json(tbl='l1', col='l_commitdate', dts=dts)}
+#     AND EXISTS (
+#         SELECT
+#             *
+#         FROM
+#             l2
+#         WHERE
+#             {self._json(tbl='l2', col='l_orderkey', dts=dts)} = {self._json(tbl='l1', col='l_orderkey', dts=dts)}
+#             AND {self._json(tbl='l2', col='l_suppkey', dts=dts)} <> {self._json(tbl='l1', col='l_suppkey', dts=dts)}
+#     )
+#     AND NOT EXISTS (
+#         SELECT
+#             *
+#         FROM
+#             l3
+#         WHERE
+#             {self._json(tbl='l3', col='l_orderkey', dts=dts)} = {self._json(tbl='l1', col='l_orderkey', dts=dts)}
+#             AND {self._json(tbl='l3', col='l_suppkey', dts=dts)} <> {self._json(tbl='l1', col='l_suppkey', dts=dts)}
+#             AND {self._json(tbl='l3', col='l_receiptdate', dts=dts)} > {self._json(tbl='l3', col='l_commitdate', dts=dts)}
+#     )
+#     AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
+#     AND {self._json(tbl='n', col='n_name', dts=dts)} = 'SAUDI ARABIA'
+# GROUP BY
+#     {self._json(tbl='s', col='s_name', dts=dts)}
+# ORDER BY
+#     numwait DESC,
+#     {self._json(tbl='s', col='s_name', dts=dts)}
+# LIMIT
+#     100;
+#     """
+
+# REWRITING TO AVOID CROSS PRODUCTS
         return f"""
+  , late_l1 AS (
+    SELECT *
+    FROM extracted AS l1
+    WHERE {self._json(tbl='l1', col='l_receiptdate', dts=dts)} 
+      > {self._json(tbl='l1', col='l_commitdate', dts=dts)}
+  ),
+
+  orders_with_other AS (
+    SELECT DISTINCT
+      {self._json(tbl='l2', col='l_orderkey', dts=dts)} AS l_orderkey
+    FROM extracted AS l2
+    JOIN late_l1 AS l1
+      ON {self._json(tbl='l2', col='l_orderkey', dts=dts)} 
+         = {self._json(tbl='l1', col='l_orderkey', dts=dts)}
+     AND {self._json(tbl='l2', col='l_suppkey', dts=dts)}  
+         <> {self._json(tbl='l1', col='l_suppkey', dts=dts)}
+  ),
+
+  orders_with_late_other AS (
+    SELECT DISTINCT
+      {self._json(tbl='l3', col='l_orderkey', dts=dts)} AS l_orderkey
+    FROM extracted AS l3
+    JOIN late_l1 AS l1
+      ON {self._json(tbl='l3', col='l_orderkey', dts=dts)} 
+         = {self._json(tbl='l1', col='l_orderkey', dts=dts)}
+     AND {self._json(tbl='l3', col='l_suppkey', dts=dts)}  
+         <> {self._json(tbl='l1', col='l_suppkey', dts=dts)}
+    WHERE {self._json(tbl='l3', col='l_receiptdate', dts=dts)} 
+          > {self._json(tbl='l3', col='l_commitdate', dts=dts)}
+  )
+
 SELECT
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])} AS s_name,
-    COUNT(*) AS numwait
-FROM
-    test_table s,
-    test_table l1,
-    test_table o,
-    test_table n
+    {self._json(tbl='s', col='s_name', dts=dts)} AS s_name,
+    COUNT(*)                               AS numwait
+FROM late_l1 AS l1
+
+  -- enforce “exists another supp” by an inner‐join to that CTE
+  JOIN orders_with_other AS owh
+    ON {self._json(tbl='l1', col='l_orderkey', dts=dts)} 
+       = owh.l_orderkey
+
+  LEFT JOIN orders_with_late_other AS owlo
+    ON {self._json(tbl='l1', col='l_orderkey', dts=dts)} 
+       = owlo.l_orderkey
+
+  JOIN extracted AS s
+    ON {self._json(tbl='s', col='s_suppkey', dts=dts)} 
+       = {self._json(tbl='l1', col='l_suppkey', dts=dts)}
+
+  JOIN extracted AS o
+    ON {self._json(tbl='o', col='o_orderkey', dts=dts)} 
+       = {self._json(tbl='l1', col='l_orderkey', dts=dts)}
+   AND {self._json(tbl='o', col='o_orderstatus', dts=dts)} = 'F'
+
+  JOIN extracted AS n
+    ON {self._json(tbl='n', col='n_nationkey', dts=dts)} 
+       = {self._json(tbl='s', col='s_nationkey', dts=dts)}
+   AND {self._json(tbl='n', col='n_name', dts=dts)}      = 'SAUDI ARABIA'
+
 WHERE
-    {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = {self._json(tbl='l1', col='l_suppkey', dt=dts['l_suppkey'])}
-    AND {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = {self._json(tbl='l1', col='l_orderkey', dt=dts['l_orderkey'])}
-    AND {self._json(tbl='o', col='o_orderstatus', dt=dts['o_orderstatus'])} = 'F'
-    AND {self._json(tbl='l1', col='l_receiptdate', dt=dts['l_receiptdate'])} > {self._json(tbl='l1', col='l_commitdate', dt=dts['l_commitdate'])}
-    AND EXISTS (
-        SELECT
-            *
-        FROM
-            test_table l2
-        WHERE
-            {self._json(tbl='l2', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='l1', col='l_orderkey', dt=dts['l_orderkey'])}
-            AND {self._json(tbl='l2', col='l_suppkey', dt=dts['l_suppkey'])} <> {self._json(tbl='l1', col='l_suppkey', dt=dts['l_suppkey'])}
-    )
-    AND NOT EXISTS (
-        SELECT
-            *
-        FROM
-            test_table l3
-        WHERE
-            {self._json(tbl='l3', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='l1', col='l_orderkey', dt=dts['l_orderkey'])}
-            AND {self._json(tbl='l3', col='l_suppkey', dt=dts['l_suppkey'])} <> {self._json(tbl='l1', col='l_suppkey', dt=dts['l_suppkey'])}
-            AND {self._json(tbl='l3', col='l_receiptdate', dt=dts['l_receiptdate'])} > {self._json(tbl='l3', col='l_commitdate', dt=dts['l_commitdate'])}
-    )
-    AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-    AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'SAUDI ARABIA'
+  owlo.l_orderkey IS NULL
+
 GROUP BY
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])}
+    {self._json(tbl='s', col='s_name', dts=dts)}
+
 ORDER BY
     numwait DESC,
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])}
-LIMIT
-    100;
+    {self._json(tbl='s', col='s_name', dts=dts)}
 
-    """
+LIMIT 100;
+"""
 
     def no_join_clauses(self) -> int:
         """

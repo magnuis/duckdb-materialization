@@ -6,19 +6,21 @@ class Query:
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def _get_query(self, dts: dict[str, dict[str, str]]) -> str:
         """
         Get the formatted query, adjusted to current db materializaiton
 
         Parameters
         ----------
-        fields : list[tuple[str, dict, bool]]
-            List of tuples of the fields in the database table.
+        dts : dict[str, dict[str, str]]
+            Dictionary with data types for give columns of CTEs.
+            E.g. {"o": {"o_orderkey": "extracted_list[1]::INT"}}
 
         Returns
         -------
         str
         """
+        raise NotImplementedError()
 
     def columns_used(self):
         """
@@ -45,7 +47,8 @@ class Query:
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """
-        Get the columns used in TPC-H Query 1 along with their position in the query 
+
+        Get the columns used in TPC-H Query 1 along with their position in the query
         (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -57,9 +60,19 @@ class Query:
             - 'group_by': list of column names used in the GROUP BY clause.
             - 'order_by': list of column names used in the ORDER BY clause.
             - 'join': list of column names used in a join operation (including WHERE).
-        """
 
-    def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
+        NOTE
+        Must be implemented by each subclass to list all cols in select/where/join/etc.
+        """
+        raise NotImplementedError()
+
+    def get_cte_setups(self) -> dict[str, list[str]]:
+        """
+        Get the CTE names and columns for this particular query
+        """
+        raise NotImplementedError()
+
+    def _get_field_types(self, fields: list[tuple[str, dict, bool]]) -> dict[str, str]:
 
         used_columns = self.columns_used()
 
@@ -77,9 +90,9 @@ class Query:
 
         return data_types
 
-    def _json(self, tbl: str, col: str, dt: str):
+    def _json(self, tbl: str, col: str, dts: dict[str, dict[str, str]]):
         """
-        Extract the column 
+        Extract the column
 
         Parameters
         ----------
@@ -87,19 +100,113 @@ class Query:
             The table alias to extract from
         col : str
             The column name to extract
-        dt : str | None
-            The date type of the column to extract
+        dts : dict[str, dict[str, str]]
+            Dictionary with data types for give columns of CTEs.
+            E.g. {"o": {"o_orderkey": "extracted_list[1]::INT"}}
 
         Returns
         -------
         str
-            The column extracted from json. If `dt` is None, there is no json extraction
+            The column extracted from json, or directly from respective CTE
 
         """
-        if dt is None:
-            return f"{tbl}.{col}"
+        col_alias = dts[tbl][col]
 
-        # elif dt == "VARCHAR":
-        #     return f"{tbl}.raw_json->>'{col}'"
+        return f"{tbl}.{col_alias}"
 
-        return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
+    def _get_cte(self, cte_name: str, cte_columns: list[str], field_types: dict[str, str]) -> tuple[str, dict[str, str]]:
+
+        cte_stmt = f"{cte_name} AS (SELECT "
+
+        col_accesses = dict()
+        cte_list = []
+
+        for cte_column in cte_columns:
+            field_type = field_types[cte_column]
+            if field_type is None:
+                col_accesses[cte_column] = cte_column
+                cte_stmt += f"{cte_column},"
+            else:
+                cte_list.append(cte_column)
+                # JSON arrays are 1-indexed -> use len(cte_list) after appending
+                col_accesses[cte_column] = f"extracted_list[{len(cte_list)}]::{field_type}"
+
+        if len(cte_list) == 0:
+            # Remove the last comma if all are materialized
+            cte_stmt = cte_stmt[:-1]
+        else:
+            # Prepare the json_extract statement
+            cte_stmt += f"json_extract_string({cte_name}.raw_json, ["
+            for cte_list_item in cte_list:
+                cte_stmt += f"'{cte_list_item}', "
+            # Remove the last comma
+            cte_stmt = cte_stmt[:-2]
+            cte_stmt += "]) AS extracted_list "
+
+        # End statement
+        cte_stmt += f" FROM test_table {cte_name})"
+
+        return cte_stmt, col_accesses
+
+    def get_query(
+            self,
+            fields: list[tuple[str, dict, bool]]
+    ):
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+
+        Parameters
+        ----------
+        fields : list[tuple[str, dict, bool]]
+            The field definitions, with the indexes in the tuple corresponding to
+            - column name
+            - JSON extraction string
+            - whether the field is materialized or not
+        """
+        cte_setups = self.get_cte_setups()
+        field_types = self._get_field_types(fields=fields)
+
+        # query_str = "WITH "
+        # field_accesses = dict()
+
+        # # Update with the individual CTEs
+        # for cte_name, cte_columns in cte_setups.items():
+        #     cte_stmt, cte_field_accesses = self._get_cte(cte_name=cte_name,
+        #                                                  cte_columns=cte_columns, field_types=field_types)
+        #     query_str += cte_stmt + ", "
+        #     field_accesses[cte_name] = cte_field_accesses
+
+        # # Remove trailing comma
+        # query_str = query_str[:-2]
+
+        # # Generer with {table_name} AS ()
+        # query_str += " " + self._get_query(dts=field_accesses)
+
+        # return query_str
+        # 1) flatten all columns across all aliases into one list (preserving order)
+
+        seen = set()
+        all_columns = []
+        for cols in cte_setups.values():
+            for col in cols:
+                if col not in seen:
+                    seen.add(col)
+                    all_columns.append(col)
+
+        # 2) emit exactly one CTE called "extracted"
+        cte_stmt, global_accesses = self._get_cte(
+            cte_name="extracted",
+            cte_columns=all_columns,
+            field_types=field_types
+        )
+
+        # 3) re-split the single accesses map back into per-alias maps
+        field_accesses = {}
+        for alias, cols in cte_setups.items():
+            field_accesses[alias] = {
+                col: global_accesses[col]
+                for col in cols
+            }
+
+        # 4) stitch together the final SQL
+        return f"WITH {cte_stmt} " + self._get_query(dts=field_accesses)

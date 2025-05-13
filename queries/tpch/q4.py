@@ -9,7 +9,17 @@ class Q4(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "o": ["o_orderpriority", "o_orderdate", "o_orderkey"],
+            "l": ["l_orderkey", "l_commitdate", "l_receiptdate"]
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 4, adjusted to current db materializaiton
 
@@ -18,25 +28,23 @@ class Q4(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='o', col='o_orderpriority', dt=dts['o_orderpriority'])} AS o_orderpriority,
+    {self._json(tbl='o', col='o_orderpriority', dts=dts)} AS o_orderpriority,
     COUNT(*) AS order_count
 FROM
-    test_table o
+    extracted o
 WHERE
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} >= DATE '1993-07-01'
-    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} < DATE '1993-07-01' + INTERVAL '3' MONTH
+    {self._json(tbl='o', col='o_orderdate', dts=dts)} >= DATE '1993-07-01'
+    AND {self._json(tbl='o', col='o_orderdate', dts=dts)} < DATE '1993-07-01' + INTERVAL '3' MONTH
     AND EXISTS (
         SELECT
             *
         FROM
-            test_table l
+            extracted l
         WHERE
-            {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}
-            AND {self._json(tbl='l', col='l_commitdate', dt=dts['l_commitdate'])} < {self._json(tbl='l', col='l_receiptdate', dt=dts['l_receiptdate'])}
+            {self._json(tbl='l', col='l_orderkey', dts=dts)} = {self._json(tbl='o', col='o_orderkey', dts=dts)}
+            AND {self._json(tbl='l', col='l_commitdate', dts=dts)} < {self._json(tbl='l', col='l_receiptdate', dts=dts)}
     )
 GROUP BY
     o_orderpriority
