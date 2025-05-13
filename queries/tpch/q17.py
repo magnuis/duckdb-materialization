@@ -29,25 +29,52 @@ class Q17(Query):
         str
         """
 
+#         return f"""
+# SELECT
+#     SUM({self._json(tbl='l1', col='l_extendedprice', dts=dts)}) / 7.0 AS avg_yearly
+# FROM
+#     extracted  l1,
+#     extracted  p
+# WHERE
+#     {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l1', col='l_partkey', dts=dts)}
+#     AND {self._json(tbl='p', col='p_brand', dts=dts)} = 'Brand#23'
+#     AND {self._json(tbl='p', col='p_container', dts=dts)} = 'MED BOX'
+#     AND {self._json(tbl='l1', col='l_quantity', dts=dts)} < (
+#         SELECT
+#             0.2 * AVG({self._json(tbl='l2', col='l_quantity', dts=dts)})
+#         FROM
+#             extracted l2
+#         WHERE
+#             {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l2', col='l_partkey', dts=dts)}
+#     );
+#     """
+
+# REWRITE TO AVOID CROSS PRODUCT
         return f"""
+, part_avg AS (
+  SELECT
+    {self._json(tbl='l2', col='l_partkey', dts=dts)}      AS partkey,
+    AVG({self._json(tbl='l2', col='l_quantity', dts=dts)}) * 0.2 AS qty_threshold
+  FROM extracted AS l2
+  GROUP BY
+    {self._json(tbl='l2', col='l_partkey', dts=dts)}
+)
+
 SELECT
     SUM({self._json(tbl='l1', col='l_extendedprice', dts=dts)}) / 7.0 AS avg_yearly
-FROM
-    extracted  l1,
-    extracted  p
+FROM extracted AS l1
+
+  JOIN extracted AS p
+    ON {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l1', col='l_partkey', dts=dts)}
+
+  JOIN part_avg AS pa
+    ON pa.partkey = {self._json(tbl='l1', col='l_partkey', dts=dts)}
+
 WHERE
-    {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l1', col='l_partkey', dts=dts)}
-    AND {self._json(tbl='p', col='p_brand', dts=dts)} = 'Brand#23'
+    {self._json(tbl='p', col='p_brand', dts=dts)}     = 'Brand#23'
     AND {self._json(tbl='p', col='p_container', dts=dts)} = 'MED BOX'
-    AND {self._json(tbl='l1', col='l_quantity', dts=dts)} < (
-        SELECT
-            0.2 * AVG({self._json(tbl='l2', col='l_quantity', dts=dts)})
-        FROM
-            extracted l2
-        WHERE
-            {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l2', col='l_partkey', dts=dts)}
-    );
-    """
+    AND {self._json(tbl='l1', col='l_quantity', dts=dts)} < pa.qty_threshold;
+"""
 
     def columns_used(self,) -> list[str]:
         """

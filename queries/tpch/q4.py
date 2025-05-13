@@ -28,30 +28,59 @@ class Q4(Query):
         str
         """
 
+#         return f"""
+# SELECT
+#     {self._json(tbl='o', col='o_orderpriority', dts=dts)} AS o_orderpriority,
+#     COUNT(*) AS order_count
+# FROM
+#     extracted o
+# WHERE
+#     {self._json(tbl='o', col='o_orderdate', dts=dts)} >= DATE '1993-07-01'
+#     AND {self._json(tbl='o', col='o_orderdate', dts=dts)} < DATE '1993-07-01' + INTERVAL '3' MONTH
+#     AND EXISTS (
+#         SELECT
+#             *
+#         FROM
+#             extracted l
+#         WHERE
+#             {self._json(tbl='l', col='l_orderkey', dts=dts)} = {self._json(tbl='o', col='o_orderkey', dts=dts)}
+#             AND {self._json(tbl='l', col='l_commitdate', dts=dts)} < {self._json(tbl='l', col='l_receiptdate', dts=dts)}
+#     )
+# GROUP BY
+#     o_orderpriority
+# ORDER BY
+#     o_orderpriority;
+#     """
+
+# REWRITE TO AVOID CROSS PRODUCT
         return f"""
+ , late_orders AS (
+  SELECT DISTINCT
+    {self._json(tbl='l', col='l_orderkey', dts=dts)} AS l_orderkey
+  FROM extracted AS l
+  WHERE
+    {self._json(tbl='l', col='l_commitdate', dts=dts)} 
+      < {self._json(tbl='l', col='l_receiptdate', dts=dts)}
+)
+
 SELECT
     {self._json(tbl='o', col='o_orderpriority', dts=dts)} AS o_orderpriority,
-    COUNT(*) AS order_count
-FROM
-    extracted o
+    COUNT(*)                                           AS order_count
+FROM extracted AS o
+
+  JOIN late_orders AS lo
+    ON {self._json(tbl='o', col='o_orderkey', dts=dts)} = lo.l_orderkey
+
 WHERE
     {self._json(tbl='o', col='o_orderdate', dts=dts)} >= DATE '1993-07-01'
-    AND {self._json(tbl='o', col='o_orderdate', dts=dts)} < DATE '1993-07-01' + INTERVAL '3' MONTH
-    AND EXISTS (
-        SELECT
-            *
-        FROM
-            extracted l
-        WHERE
-            {self._json(tbl='l', col='l_orderkey', dts=dts)} = {self._json(tbl='o', col='o_orderkey', dts=dts)}
-            AND {self._json(tbl='l', col='l_commitdate', dts=dts)} < {self._json(tbl='l', col='l_receiptdate', dts=dts)}
-    )
-GROUP BY
-    o_orderpriority
-ORDER BY
-    o_orderpriority;
+    AND {self._json(tbl='o', col='o_orderdate', dts=dts)} <  DATE '1993-07-01' + INTERVAL '3' MONTH
 
-    """
+GROUP BY
+    {self._json(tbl='o', col='o_orderpriority', dts=dts)}
+
+ORDER BY
+    {self._json(tbl='o', col='o_orderpriority', dts=dts)};
+"""
 
     def no_join_clauses(self) -> int:
         """
