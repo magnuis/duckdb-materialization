@@ -31,10 +31,10 @@ class Q3(Query):
 
         return f"""
 SELECT
-    {self._json(tbl='l', col='l_orderkey', dts=dts)} AS s_acctbal,
+    {self._json(tbl='l', col='l_orderkey', dts=dts)} AS l_orderkey,
     SUM( {self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)})) AS revenue,
     {self._json(tbl='o', col='o_orderdate', dts=dts)} AS o_orderdate,
-    {self._json(tbl='o', col='o_shippriority', dts=dts)} AS o_shippriority,
+    {self._json(tbl='o', col='o_shippriority', dts=dts)} AS o_shippriority
 FROM
     extracted c,
     extracted o,

@@ -136,7 +136,7 @@ class Query:
             cte_stmt = cte_stmt[:-1]
         else:
             # Prepare the json_extract statement
-            cte_stmt += f"json_extract_string({cte_name}.raw_json, ["
+            cte_stmt += "json_extract_string(raw_json, ["
             for cte_list_item in cte_list:
                 cte_stmt += f"'{cte_list_item}', "
             # Remove the last comma
@@ -144,7 +144,7 @@ class Query:
             cte_stmt += "]) AS extracted_list "
 
         # End statement
-        cte_stmt += f" FROM test_table {cte_name})"
+        cte_stmt += " FROM test_table)"
 
         return cte_stmt, col_accesses
 

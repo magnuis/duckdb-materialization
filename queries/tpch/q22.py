@@ -15,7 +15,7 @@ class Q22(Query):
         """
 
         return {
-            "c1": ["c_acctbal", "c_phone"],
+            "c1": ["c_acctbal", "c_phone", "c_custkey"],
             "c2": ["c_acctbal", "c_phone", "c_custkey"],
             "o": ["o_custkey"],
         }
@@ -29,43 +29,90 @@ class Q22(Query):
         str
         """
 
+#         return f"""
+# SELECT
+#     cntrycode,
+#     COUNT(*) AS numcust,
+#     SUM(c_acctbal) AS totacctbal
+# FROM
+#     (
+#         SELECT
+#             SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} FROM 1 FOR 2) AS cntrycode,
+#             {self._json(tbl='c2', col='c_acctbal', dts=dts)} AS c_acctbal
+#         FROM
+#             extracted c2
+#         WHERE
+#             SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+#             AND {self._json(tbl='c2', col='c_acctbal', dts=dts)} > (
+#                 SELECT
+#                     AVG({self._json(tbl='c1', col='c_acctbal', dts=dts)})
+#                 FROM
+#                     extracted c1
+#                 WHERE
+#                     {self._json(tbl='c1', col='c_acctbal', dts=dts)} > 0.00
+#                     AND SUBSTRING({self._json(tbl='c1', col='c_phone', dts=dts)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+#             )
+#             AND NOT EXISTS (
+#                 SELECT
+#                     *
+#                 FROM
+#                     extracted o
+#                 WHERE
+#                     {self._json(tbl='o', col='o_custkey', dts=dts)} = {self._json(tbl='c2', col='c_custkey', dts=dts)}
+#             )
+#     ) AS custsale
+# GROUP BY
+#     cntrycode
+# ORDER BY
+#     cntrycode;
+#     """
         return f"""
+, cust_no_orders AS (
+  SELECT DISTINCT
+    {self._json(tbl='c1', col='c_custkey', dts=dts)} AS c_custkey
+  FROM extracted AS c1
+  LEFT JOIN extracted AS o
+    ON {self._json(tbl='o', col='o_custkey', dts=dts)} 
+       = {self._json(tbl='c1', col='c_custkey', dts=dts)}
+  WHERE {self._json(tbl='o', col='o_custkey', dts=dts)} IS NULL
+)
+
 SELECT
     cntrycode,
-    COUNT(*) AS numcust,
+    COUNT(*)      AS numcust,
     SUM(c_acctbal) AS totacctbal
-FROM
-    (
-        SELECT
-            SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} FROM 1 FOR 2) AS cntrycode,
-            {self._json(tbl='c2', col='c_acctbal', dts=dts)} AS c_acctbal
-        FROM
-            extracted c2
-        WHERE
-            SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
-            AND {self._json(tbl='c2', col='c_acctbal', dts=dts)} > (
-                SELECT
-                    AVG({self._json(tbl='c1', col='c_acctbal', dts=dts)})
-                FROM
-                    extracted c1
-                WHERE
-                    {self._json(tbl='c1', col='c_acctbal', dts=dts)} > 0.00
-                    AND SUBSTRING({self._json(tbl='c1', col='c_phone', dts=dts)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
-            )
-            AND NOT EXISTS (
-                SELECT
-                    *
-                FROM
-                    extracted o
-                WHERE
-                    {self._json(tbl='o', col='o_custkey', dts=dts)} = {self._json(tbl='c2', col='c_custkey', dts=dts)}
-            )
-    ) AS custsale
+FROM (
+    SELECT
+        SUBSTRING({self._json(tbl='c2', col='c_phone',   dts=dts)} 
+                  FROM 1 FOR 2)                          AS cntrycode,
+        {self._json(tbl='c2', col='c_acctbal', dts=dts)}       AS c_acctbal
+    FROM extracted AS c2
+
+      JOIN cust_no_orders AS cno
+        ON {self._json(tbl='c2', col='c_custkey', dts=dts)} 
+           = cno.c_custkey
+
+    WHERE
+        SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} 
+                  FROM 1 FOR 2)
+          IN ('13','31','23','29','30','18','17')
+      AND {self._json(tbl='c2', col='c_acctbal', dts=dts)} 
+          > (
+            SELECT AVG({self._json(tbl='c1', col='c_acctbal', dts=dts)})
+            FROM extracted AS c1
+            WHERE
+              {self._json(tbl='c1', col='c_acctbal', dts=dts)} > 0.00
+              AND SUBSTRING({self._json(tbl='c1', col='c_phone', dts=dts)} 
+                            FROM 1 FOR 2)
+                  IN ('13','31','23','29','30','18','17')
+          )
+) AS custsale
+
 GROUP BY
     cntrycode
 ORDER BY
     cntrycode;
-    """
+"""
 
     def no_join_clauses(self) -> int:
         """
