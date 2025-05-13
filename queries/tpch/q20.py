@@ -31,45 +31,95 @@ class Q20(Query):
         str
         """
 
+#         return f"""
+# SELECT
+#     {self._json(tbl='s', col='s_name', dts=dts)} AS s_name,
+#     {self._json(tbl='s', col='s_address', dts=dts)} AS s_address
+# FROM
+#     extracted s,
+#     extracted n
+# WHERE
+#     {self._json(tbl='s', col='s_suppkey', dts=dts)} IN (
+#         SELECT
+#             {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
+#         FROM
+#             extracted ps
+#         WHERE
+#             {self._json(tbl='ps', col='ps_partkey', dts=dts)} IN (
+#                 SELECT
+#                     {self._json(tbl='p', col='p_partkey', dts=dts)}
+#                 FROM
+#                     extracted p
+#                 WHERE
+#                     {self._json(tbl='p', col='p_name', dts=dts)} LIKE 'forest%'
+#             )
+#             AND {self._json(tbl='ps', col='ps_availqty', dts=dts)} > (
+#                 SELECT
+#                     0.5 * SUM({self._json(tbl='l', col='l_quantity', dts=dts)})
+#                 FROM
+#                     extracted l
+#                 WHERE
+#                     {self._json(tbl='l', col='l_partkey', dts=dts)} = {self._json(tbl='ps', col='ps_partkey', dts=dts)}
+#                     AND {self._json(tbl='l', col='l_suppkey', dts=dts)} = {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
+#                     AND {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1994-01-01'
+#                     AND {self._json(tbl='l', col='l_shipdate', dts=dts)} < DATE '1995-01-01'
+#             )
+#     )
+#     AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
+#     AND {self._json(tbl='n', col='n_name', dts=dts)} = 'CANADA'
+# ORDER BY
+#     {self._json(tbl='s', col='s_name', dts=dts)};
+#     """
         return f"""
+  , p_forest AS (
+    SELECT
+      {self._json(tbl='p', col='p_partkey', dts=dts)} AS partkey
+    FROM extracted AS p
+    WHERE {self._json(tbl='p', col='p_name', dts=dts)} LIKE 'forest%'
+  ),
+
+  supply_sum AS (
+    SELECT
+      {self._json(tbl='l', col='l_partkey', dts=dts)} AS partkey,
+      {self._json(tbl='l', col='l_suppkey', dts=dts)} AS suppkey,
+      SUM({self._json(tbl='l', col='l_quantity', dts=dts)})        AS total_qty
+    FROM extracted AS l
+    WHERE
+      {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1994-01-01'
+      AND {self._json(tbl='l', col='l_shipdate', dts=dts)} <  DATE '1995-01-01'
+    GROUP BY
+      partkey, suppkey
+  ),
+
+  ps_available AS (
+    SELECT
+      {self._json(tbl='ps', col='ps_partkey', dts=dts)} AS partkey,
+      {self._json(tbl='ps', col='ps_suppkey', dts=dts)} AS suppkey
+    FROM extracted AS ps
+    JOIN p_forest AS pf
+      ON {self._json(tbl='ps', col='ps_partkey', dts=dts)} = pf.partkey
+    JOIN supply_sum AS ss
+      ON ss.partkey = {self._json(tbl='ps', col='ps_partkey', dts=dts)}
+     AND ss.suppkey = {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
+    WHERE
+      {self._json(tbl='ps', col='ps_availqty', dts=dts)} > 0.5 * ss.total_qty
+  )
+
 SELECT
-    {self._json(tbl='s', col='s_name', dts=dts)} AS s_name,
+    {self._json(tbl='s', col='s_name',   dts=dts)} AS s_name,
     {self._json(tbl='s', col='s_address', dts=dts)} AS s_address
-FROM
-    extracted s,
-    extracted n
-WHERE
-    {self._json(tbl='s', col='s_suppkey', dts=dts)} IN (
-        SELECT
-            {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
-        FROM
-            extracted ps
-        WHERE
-            {self._json(tbl='ps', col='ps_partkey', dts=dts)} IN (
-                SELECT
-                    {self._json(tbl='p', col='p_partkey', dts=dts)}
-                FROM
-                    extracted p
-                WHERE
-                    {self._json(tbl='p', col='p_name', dts=dts)} LIKE 'forest%'
-            )
-            AND {self._json(tbl='ps', col='ps_availqty', dts=dts)} > (
-                SELECT
-                    0.5 * SUM({self._json(tbl='l', col='l_quantity', dts=dts)})
-                FROM
-                    extracted l
-                WHERE
-                    {self._json(tbl='l', col='l_partkey', dts=dts)} = {self._json(tbl='ps', col='ps_partkey', dts=dts)}
-                    AND {self._json(tbl='l', col='l_suppkey', dts=dts)} = {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
-                    AND {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1994-01-01'
-                    AND {self._json(tbl='l', col='l_shipdate', dts=dts)} < DATE '1995-01-01'
-            )
-    )
-    AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
-    AND {self._json(tbl='n', col='n_name', dts=dts)} = 'CANADA'
+FROM extracted AS s
+
+  JOIN ps_available AS pa
+    ON {self._json(tbl='s', col='s_suppkey', dts=dts)} = pa.suppkey
+
+  JOIN extracted AS n
+    ON {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
+   AND {self._json(tbl='n', col='n_name',      dts=dts)} = 'CANADA'
+
 ORDER BY
     {self._json(tbl='s', col='s_name', dts=dts)};
-    """
+"""
 
     def no_join_clauses(self) -> int:
         """
