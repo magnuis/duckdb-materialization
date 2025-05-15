@@ -125,7 +125,7 @@ class Query:
             field_type = field_types[cte_column]
             if field_type is None:
                 col_accesses[cte_column] = cte_column
-                cte_stmt += f"{cte_column},"
+                cte_stmt += f"{cte_column}, "
             else:
                 cte_list.append(cte_column)
                 # JSON arrays are 1-indexed -> use len(cte_list) after appending
@@ -133,7 +133,7 @@ class Query:
 
         if len(cte_list) == 0:
             # Remove the last comma if all are materialized
-            cte_stmt = cte_stmt[:-1]
+            cte_stmt = cte_stmt[:-2]
         else:
             # Prepare the json_extract statement
             cte_stmt += "json_extract_string(raw_json, ["
