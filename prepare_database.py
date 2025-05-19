@@ -93,10 +93,10 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
         con.execute(query)
         con.execute("CHECKPOINT;")
 
-        if all_materialized:
-            con.execute(
-                "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;")
-            con.execute("CHECKPOINT;")
+        # if all_materialized:
+        #     con.execute(
+        #         "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;")
+        #     con.execute("CHECKPOINT;")
 
         end_time = time()
         time_taken = end_time - start_time

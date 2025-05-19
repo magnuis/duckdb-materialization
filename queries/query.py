@@ -1,3 +1,10 @@
+from enum import Enum
+
+
+class MaterializationStrategy(Enum):
+    FIRST_ITERATION = 1
+
+
 class Query:
     """
     Base class for queries used in this project
@@ -210,3 +217,33 @@ class Query:
 
         # 4) stitch together the final SQL
         return f"WITH {cte_stmt} " + self._get_query(dts=field_accesses)
+
+    def _first_iteration(self) -> dict[str, int]:
+        columns_used = set(self.columns_used())
+        columns_used_with_position = self.columns_used_with_position()
+        join_columns = set(
+            list(columns_used_with_position["join"].keys()) + list(columns_used_with_position.get("self_join", {}).keys()))
+        where_columns = set(columns_used_with_position["where"])
+        group_by_columns = columns_used_with_position["group_by"]
+        select_columns = columns_used_with_position["select"]
+
+        weights = {}
+        for col in columns_used:
+            if col in join_columns and col in where_columns:
+                weight = 5
+            elif (col in join_columns or col in where_columns) and col in select_columns:
+                weight = 4
+            elif col in join_columns or col in where_columns:
+                weight = 3
+            elif col in group_by_columns:
+                weight = 2
+            else:
+                weight = 1
+            weights[col] = weight
+        return weights
+
+    def get_column_weights(self, strategy: MaterializationStrategy):
+        if strategy == MaterializationStrategy.FIRST_ITERATION:
+            return self._first_iteration()
+        else:
+            raise NotImplementedError("No method matching")
