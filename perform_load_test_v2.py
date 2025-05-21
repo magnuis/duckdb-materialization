@@ -139,7 +139,7 @@ def _calculate_field_frequency(load: list[str], field_distribution: pd.DataFrame
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_tiny"
+    backup_path = f"./data/backup/{dataset}_medium"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -377,7 +377,7 @@ def main():
                                     materialization=fields_to_materialize
                                 )
                                 print(
-                                    f"Executed {query_name}, load {load_no} in time {result["Average (last 4 runs)"]}")
+                                    f"Executed {query_name}, load {load_no} in time {result['Average (last 4 runs)']}")
 
                         # Update results_df
                         if isinstance(result, dict):
