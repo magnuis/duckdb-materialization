@@ -286,8 +286,8 @@ def add_rankings(df):
 def prepare_single_join_data(df):
     """Extract and prepare data for single join analysis"""
     # Filter for single join cases
-    single_join_df = df[(df["Total Frequency"] == 1) &
-                        (df["Join Frequency"] == 1)].copy()
+    single_join_df = df[(df["Join Frequency"] == 1) &
+                        (df["Where Frequency"] == 0)].copy()
 
     # Add join-specific rankings
     single_join_df["Query Join Rank"] = single_join_df.groupby(
@@ -334,8 +334,8 @@ def prepare_single_join_data(df):
 def prepare_single_where_data(df):
     """Extract and prepare data for single WHERE clause analysis"""
     # Filter for single WHERE cases
-    single_where_df = df[(df["Total Frequency"] == 1) &
-                         (df["Where Frequency"] == 1)].copy()
+    single_where_df = df[(df["Where Frequency"] == 1) &
+                         (df["Join Frequency"] == 0)].copy()
 
     # Add WHERE-specific rankings
     single_where_df["Query Where Percentile"] = single_where_df.groupby("Query")[
@@ -454,6 +454,21 @@ def get_label_for_frequency_combination(row):
     labels = ["Join", "Where", "Select", "Group By"]
     active = [l for f, l in zip(freqs, labels) if f == 1]
     return ", ".join(active) if active else "Other"
+
+
+def get_simplified_category(row):
+    """Convert to simplified categories: Join, Where, Join and Where, or Other"""
+    join_freq = row["Join Frequency"]
+    where_freq = row["Where Frequency"]
+
+    if join_freq == 1 and where_freq == 0:
+        return "Join"
+    elif join_freq == 0 and where_freq == 1:
+        return "Where"
+    elif join_freq == 1 and where_freq == 1:
+        return "Join and Where"
+    else:
+        return "Other"
 
 
 def binarize_frequencies(df, cols):
@@ -637,6 +652,10 @@ def analyze_binarized_frequencies(df, percentile_threshold=PERCENTILE_THRESHOLD)
     # Add labels
     binary_df["Label"] = binary_df.apply(
         get_label_for_frequency_combination, axis=1)
+
+    # Add simplified category labels
+    binary_df["Simplified Category"] = binary_df.apply(
+        get_simplified_category, axis=1)
 
     # Define grouping columns
     group_cols = [f"{col} Frequency" for col in frequency_cols]
@@ -853,16 +872,6 @@ def main():
 
         fig, ax = plot_scatter(
             results_df_negative_improvement['Previous Time'],
-            results_df_negative_improvement['Relative Improvement'],
-            'Negative Relative Improvement vs Previous Execution Time',
-            'Previous Execution Time (s)',
-            'Relative Improvement',
-            colorby=results_df_negative_improvement['Query']
-        )
-        plt.close(fig)
-
-        fig, ax = plot_scatter(
-            results_df_negative_improvement['Previous Time'],
             results_df_negative_improvement['Improvement'],
             'Negative Improvement vs Previous Execution Time (by Materialization)',
             'Previous Execution Time (s)',
@@ -871,39 +880,8 @@ def main():
         )
         plt.close(fig)
 
-        fig, ax = plot_scatter(
-            results_df_negative_improvement['Previous Time'],
-            results_df_negative_improvement['Relative Improvement'],
-            'Negative Relative Improvement vs Previous Execution Time (by Materialization)',
-            'Previous Execution Time (s)',
-            'Relative Improvement',
-            colorby=results_df_negative_improvement['Materialization']
-        )
-        plt.close(fig)
-
     # Analyze frequency patterns
     counts_query, counts_global = analyze_frequency_patterns(results_df)
-
-    # Create bar plots for frequency patterns
-    fig, ax = plot_bar(
-        counts_query['Label'],
-        counts_query['Normalized'],
-        f'Normalized Counts (Query Percentile ≥ {PERCENTILE_THRESHOLD})',
-        'Frequency Combination',
-        'Filtered / Total',
-        annotate=counts_query['TotalCount']
-    )
-    plt.close(fig)
-
-    fig, ax = plot_bar(
-        counts_global['Label'],
-        counts_global['Normalized'],
-        f'Normalized Counts (Global Percentile ≥ {PERCENTILE_THRESHOLD})',
-        'Frequency Combination',
-        'Filtered / Total',
-        annotate=counts_global['TotalCount']
-    )
-    plt.close(fig)
 
     # Analyze binarized frequency patterns
     binary_df, binary_counts_query, binary_counts_global = analyze_binarized_frequencies(
@@ -974,6 +952,52 @@ def main():
         'Distribution of Global Percentiles by Category',
         'Category',
         'Global Percentile'
+    )
+    plt.close(fig)
+
+    # Create violin plots for simplified categories
+    simplified_categories = ["Join", "Where", "Join and Where", "Other"]
+
+    query_violin_simplified = {
+        category: binary_df[binary_df['Simplified Category']
+                            == category]['Query Percentile']
+        for category in simplified_categories
+    }
+
+    global_violin_simplified = {
+        category: binary_df[binary_df['Simplified Category']
+                            == category]['Global Percentile']
+        for category in simplified_categories
+    }
+
+    fig, ax = plot_violin(
+        query_violin_simplified,
+        'Distribution of Query Percentiles by Simplified Category',
+        'Category',
+        'Query Percentile'
+    )
+    plt.close(fig)
+
+    fig, ax = plot_violin(
+        global_violin_simplified,
+        'Distribution of Global Percentiles by Simplified Category',
+        'Category',
+        'Global Percentile'
+    )
+    plt.close(fig)
+
+    # Create improvement sum bar plot for simplified categories
+    simplified_sum_data = binary_df.groupby('Simplified Category')[
+        'Improvement'].sum()
+    simplified_count_data = binary_df.groupby('Simplified Category').size()
+
+    fig, ax = plot_bar(
+        simplified_sum_data.index,
+        simplified_sum_data.values,
+        'Sum of Improvement by Simplified Category',
+        'Category',
+        'Sum of Improvement',
+        annotate=simplified_count_data.values
     )
     plt.close(fig)
 
