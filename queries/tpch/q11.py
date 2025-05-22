@@ -84,6 +84,7 @@ ORDER BY
             'where': [
                 "ps_supplycost",
                 "ps_availqty",
+                "n_name",
                 "n_name"
             ],
             'group_by': [
