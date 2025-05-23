@@ -125,7 +125,7 @@ LIMIT
             "c_custkey": False,
             "o_custkey": False,
             "l_orderkey": False,
-            "o_orderkey": False,
+            "o_orderkey": False
         }
 
         return field_map.get(field, False)
