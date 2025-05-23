@@ -12,10 +12,8 @@ from prepare_database import prepare_database, get_db_size
 import testing.tpch.setup as tpch_setup
 from queries.query import Query
 
-RANDOM_GEN = random.Random()
-RANDOM_GEN.seed(0)
 CHARS = string.ascii_letters + string.digits + " "
-LINES_TO_INSERT = 500
+LINES_TO_INSERT = 1
 
 BASE_PATH = os.curdir
 PATHS_TO_REMOVE = []
@@ -35,8 +33,7 @@ TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 
 def _create_fresh_db(dataset: str):
     db_path = BASE_PATH + f"/data/db/{dataset}.duckdb"
-    print(db_path)
-    backup_path = BASE_PATH + f"/data/backup/{dataset}_bigbigger"
+    backup_path = BASE_PATH + f"/data/backup/{dataset}_tiny"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -68,25 +65,23 @@ def _create_connection(dataset: str, test: str = "temp") -> tuple[duckdb.DuckDBP
     return con, copy_db_path
 
 
-def _rand_int(min: int = 0, max: int = 1000000):
-    return RANDOM_GEN.randint(min, max)
+def _generate_json(seed: int, dataset: str, orig_table: str = None):
+    random_gen = random.Random()
+    random_gen.seed(seed)
 
+    def _rand_int(min: int = 0, max: int = 1000000):
+        return random_gen.randint(min, max)
 
-def _rand_float():
-    return _rand_int() + RANDOM_GEN.random()
+    def _rand_float():
+        return _rand_int() + random_gen.random()
 
+    def _rand_varchar(str_length: int = None):
+        if str_length is None:
+            str_length = _rand_int(min=10, max=50)
+        return "".join(random_gen.choice(CHARS) for _ in range(str_length))
 
-def _rand_varchar(str_length: int = None):
-    if str_length is None:
-        str_length = _rand_int(min=10, max=50)
-    return "".join(RANDOM_GEN.choice(CHARS) for _ in range(str_length))
-
-
-def _rand_date():
-    return f"{_rand_int(min=1990, max=2025)}-{_rand_int(min=1, max=12):02d}-{_rand_int(min=1, max=28):02d}"
-
-
-def _generate_json(dataset: str, orig_table: str = None):
+    def _rand_date():
+        return f"{_rand_int(min=1990, max=2025)}-{_rand_int(min=1, max=12):02d}-{_rand_int(min=1, max=28):02d}"
 
     table_structures: Dict[str, Dict] = {
         "tpch": {
@@ -169,31 +164,48 @@ def _generate_json(dataset: str, orig_table: str = None):
 
     if orig_table is None:
         tables = list(table_structures[dataset].keys())
-        orig_table = RANDOM_GEN.choice(tables)
+        orig_table = random_gen.choice(tables)
 
     return table_structures[dataset][orig_table]
 
 
 def _update_query(fields: list[tuple[str, dict, bool]], row_id: int):
-    update_query = "UPDATE test_table SET "
+    materialize_fields = {}
+    col_types = {}
+
     for field, query, materialize in fields:
         if materialize:
-            update_query += f"{field} = {query['access']}, "
+            materialize_fields[field] = query['type']
+            col_types[field] = query['type']
 
-    update_query = update_query[:-2] + f' WHERE rowid = {row_id};'
+    stringified_fields = [f"'{field}'" for field in materialize_fields.keys()]
+
+    update_assigns = []
+    for idx, (field, data_type) in enumerate(materialize_fields.items(), start=1):
+        update_assigns.append(
+            f"{field} = extracted.json_arr[{idx}]::{data_type}")
+
+    update_query = f"""
+    WITH extracted AS (
+        SELECT json_extract_string(raw_json, [{", ".join(stringified_fields)}]) AS json_arr
+        FROM test_table
+    )
+    UPDATE test_table SET
+        {', '.join(update_assigns)}
+    FROM extracted
+    WHERE test_table.rowid = {row_id};
+    """
     return update_query
 
 
 def _perform_test(
     con: duckdb.DuckDBPyConnection,
     fields: list[tuple[str, dict, bool]],
-    dataset: str = "tpch"
-
+    dataset: str = "tpch",
 ):
-
     execution_time = 0
-    for _ in range(LINES_TO_INSERT):
-        data_row = _generate_json(dataset=dataset)
+    for i in range(LINES_TO_INSERT):
+        data_row = _generate_json(seed=i, dataset=dataset)
 
         # Insert new row
         insert_query = f"INSERT INTO test_table (raw_json) VALUES ({data_row});"
@@ -239,12 +251,15 @@ def main():
     timed_loads = dict()
 
     results_df = pd.DataFrame(
-        columns=["Load", "Test", "Materialization", "Write time", "DB Size"])
+        columns=["Load", "Test", "Materialization", "Write time", "DB Size", "Materialization Time"])
 
     # Create fresh db
     _create_fresh_db(dataset=dataset)
-    prev_load = 0
 
+    # Create new db connection
+    db_connection, db_path = _create_connection(dataset=dataset)
+
+    prev_load = 0
     for loads_df_row in loads_df.itertuples():
         load_time = time.time()
 
@@ -252,17 +267,24 @@ def main():
         test_name: str = loads_df_row[2]
         materialized_fields: str = loads_df_row[3]
 
-        # Create new db connection
-        db_connection, db_path = _create_connection(dataset=dataset)
-
         materialized_fields_list = materialized_fields.replace(
             "[", "").replace("]", "").replace(" ", "").replace("'", "").split(",")
 
+        if '' in materialized_fields_list:
+            materialized_fields_list.remove('')
+
+        # No materialization
+        if len(materialized_fields_list) <= 0:
+            write_time = 0
+            db_size = 0
+            prepare_time = 0
+
         # Don't repeat tests
-        if materialized_fields in timed_loads:
+        elif materialized_fields in timed_loads:
             print(f"{materialized_fields} already encountered")
             write_time = timed_loads[materialized_fields]["write_time"]
             db_size = timed_loads[materialized_fields]["db_size"]
+            prepare_time = timed_loads[materialized_fields]["prepare_time"]
 
         else:
 
@@ -273,27 +295,17 @@ def main():
                     (field, access_query, field in materialized_fields_list))
 
             # Prepare database
-            prepare_database(con=db_connection, fields=fields)
+            prepare_time = prepare_database(con=db_connection, fields=fields)
 
-            try:
-
-                # Run test
-                write_time = _perform_test(
-                    con=db_connection, fields=fields, dataset=dataset)
-            except Exception as e:
-                for field in fields:
-                    print(field)
-                print(duckdb.execute("SELECT * FROM test_table LIMIT 1;").fetchdf())
-                assert False
+            # Run test
+            write_time = _perform_test(
+                con=db_connection, fields=fields, dataset=dataset)
 
             # FIXME @herman3h se over og se om dette er gjort riktig
             db_size = get_db_size(db_connection)
 
-            # Close connection
-            db_connection.close()
-
             timed_loads[materialized_fields] = {
-                "write_time": write_time, "db_size": db_size}
+                "write_time": write_time, "db_size": db_size, "prepare_time": prepare_time}
 
         results_df = pd.concat([
             results_df,
@@ -302,7 +314,8 @@ def main():
                 "Test": test_name,
                 "Materialization": materialized_fields_list,
                 "Write time": write_time,
-                "DB Size": db_size
+                "DB Size": db_size,
+                "Materialization Time": prepare_time
                 # TODO add other relevant db sizes
             }])
         ], ignore_index=True)
@@ -312,6 +325,8 @@ def main():
             load_time = time.time()
             prev_load = load_no
 
+    # Close connection
+    db_connection.close()
     # Write results back to `results_path`
     results_df.to_csv(results_path + "/write_times.csv")
 

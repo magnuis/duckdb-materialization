@@ -1,5 +1,5 @@
 import os
-from time import time
+import time
 import duckdb
 
 
@@ -51,41 +51,65 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
     materialized = False
     all_materialized = True
-    materialize_fields = []
+    materialize_fields = {}
+    col_types = {}
+
     for field, query, materialize in fields:
         # Drop column if it exists
         con.execute(f"ALTER TABLE test_table DROP COLUMN IF EXISTS {field};")
 
         if materialize:
-            alter_query += f"ALTER TABLE test_table ADD {field} {query['type']};"
-            update_query += f"{field} = {query['access']}, "
-            materialize_fields.append(field)
+            # alter_query += f"ALTER TABLE test_table ADD {field} {query['type']};"
+            # update_query += f"{field} = {query['access']}, "
+            # materialize_fields.append(field)
+            materialize_fields[field] = query['type']
+            col_types[field] = query['type']
 
         materialized |= materialize
         all_materialized &= materialize
 
-    if materialized:
-        update_query = update_query[:-2] + ';'
-        query = alter_query + " " + update_query
+    # Do nothing if not fields to materialize
+    if len(materialize_fields.keys()) == 0:
+        if include_print:
+            print("No fields to materialize.")
+        return time_taken
 
-        if all_materialized:
-            pass
-            # query += "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;"
-        query += " END TRANSACTION;"
+    # Build ALTER statements
+    alter_parts = []
+    for field in materialize_fields.keys():
+        alter_parts.append(
+            f"ALTER TABLE test_table ADD COLUMN {field} {col_types[field]};"
+        )
+    alter_sql = "\n".join(alter_parts)
 
-        start_time = time()
+    stringified_fields = [f"'{field}'" for field in materialize_fields.keys()]
+    cte_sql = f"""
+    WITH extracted AS (
+        SELECT rowid, json_extract_string(raw_json, [{", ".join(stringified_fields)}]) AS json_arr
+        FROM test_table
+    )
+    """
 
-        con.execute(query)
-        con.execute("CHECKPOINT;")
+    update_assigns = []
+    for idx, (field, data_type) in enumerate(materialize_fields.items(), start=1):
+        update_assigns.append(
+            f"{field} = extracted.json_arr[{idx}]::{data_type}")
 
-        if all_materialized:
-            # con.execute(
-            #     "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;")
-            con.execute("CHECKPOINT;")
+    update_sql = f"""
+        UPDATE test_table SET
+            {', '.join(update_assigns)}
+        FROM extracted
+        WHERE test_table.rowid = extracted.rowid;
+    """
+    full_sql = alter_sql + cte_sql + update_sql
 
-        end_time = time()
-        time_taken = end_time - start_time
-    # print(f"Time taken to alter table: {time_taken} seconds")
+    start_time = time.perf_counter()
+
+    con.execute(full_sql)
+    end_time = time.perf_counter()
+    time_taken = end_time - start_time
+
+    con.execute("CHECKPOINT;")
 
     if include_print:
         print('------------------------------')
