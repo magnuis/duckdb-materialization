@@ -83,11 +83,10 @@ ORDER BY
             }
         }
 
-    def join_field_has_filter(self, field: str) -> bool | None:
+    def get_join_field_has_filter(self, field: str) -> str | None:
         """
-        Check if the table of the the join field has a filter
+        Query specific implementation of the join field filter
         """
-        assert field in self.columns_used()
 
         field_map = {
             "c_custkey": False,

@@ -64,8 +64,15 @@ class Query:
         Check if the table of the the join field has a filter
         """
         assert field in self.columns_used()
+        assert field in self.columns_used_with_position()["join"]
 
-        return False
+        return self.get_join_field_has_filter(field)
+
+    def get_join_field_has_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the join field filter
+        """
+        raise NotImplementedError("Subclass must implement this method")
 
     def columns_used_in_join(self) -> dict[str, list[str | None]]:
         """
