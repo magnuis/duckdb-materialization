@@ -117,3 +117,20 @@ LIMIT
                 "l_suppkey": 2
             }
         }
+
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+
+        field_map = {
+            "s_suppkey": False,
+            "l_suppkey": False,
+            "o_orderkey": True,
+            "l_orderkey": False,
+            "s_nationkey": False,
+            "n_nationkey": True
+        }
+
+        return field_map.get(field, False)

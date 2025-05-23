@@ -98,3 +98,18 @@ LIMIT
             }
 
         }
+
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+
+        field_map = {
+            "c_custkey": True,
+            "o_custkey": True,
+            "l_orderkey": True,
+            "o_orderkey": True
+        }
+
+        return field_map.get(field, False)

@@ -97,3 +97,25 @@ ORDER BY
                 "r_regionkey": ["n_regionkey"]
             }
         }
+
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+
+        field_map = {
+            "c_custkey": False,
+            "o_custkey": True,
+            "l_orderkey": False,
+            "o_orderkey": True,
+            "l_suppkey": False,
+            "s_suppkey": False,
+            "c_nationkey": False,
+            "s_nationkey": False,
+            "n_nationkey": False,
+            "n_regionkey": False,
+            "r_regionkey": True
+        }
+
+        return field_map.get(field, False)

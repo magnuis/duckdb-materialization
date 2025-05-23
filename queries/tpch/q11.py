@@ -25,7 +25,7 @@ SELECT
     {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} AS ps_partkey,
     SUM({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])}) AS value
 FROM
-    test_table ps,
+    test_table    ,
     test_table s,
     test_table n
 WHERE
@@ -99,3 +99,18 @@ ORDER BY
                 "n_nationkey": ["s_nationkey", "s_nationkey"]
             }
         }
+
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+
+        field_map = {
+            "ps_suppkey": False,
+            "s_suppkey": False,
+            "s_nationkey": False,
+            "n_nationkey": True,
+        }
+
+        return field_map.get(field, False)

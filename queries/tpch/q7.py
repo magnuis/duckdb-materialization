@@ -113,3 +113,23 @@ ORDER BY
                 "c_nationkey": ["n_nationkey"]
             }
         }
+
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+
+        field_map = {
+            "s_suppkey": False,
+            "l_suppkey": True,
+            "o_orderkey": False,
+            "l_orderkey": True,
+            "c_custkey": False,
+            "o_custkey": False,
+            "s_nationkey": False,
+            "n_nationkey": True,
+            "c_nationkey": False
+        }
+
+        return field_map.get(field, False)

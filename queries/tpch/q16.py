@@ -105,3 +105,16 @@ ORDER BY
                 "ps_partkey": ["p_partkey"]
             }
         }
+
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+
+        field_map = {
+            "p_partkey": True,
+            "ps_partkey": False
+        }
+
+        return field_map.get(field, False)

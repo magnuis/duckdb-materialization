@@ -203,3 +203,22 @@ LIMIT
                 "n_nationkey": ["s_nationkey"]
             }
         }
+
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+
+        field_map = {
+            "p_partkey": True,
+            "ps_partkey": False,
+            "n_regionkey": False,
+            "r_regionkey": True,
+            "s_suppkey": False,
+            "s_nationkey": False,
+            "ps_suppkey": False,
+            "n_nationkey": False
+        }
+
+        return field_map.get(field, False)

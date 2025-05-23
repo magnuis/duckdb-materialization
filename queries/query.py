@@ -59,6 +59,14 @@ class Query:
             - 'join': list of column names used in a join operation (including WHERE).
         """
 
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+
+        return False
+
     def columns_used_in_join(self) -> dict[str, list[str | None]]:
         """
         Get the columns used in the join operation
