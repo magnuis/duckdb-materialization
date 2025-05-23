@@ -81,21 +81,18 @@ def _perform_test(
     for i in range(ITERATIONS):
         start_time = time.perf_counter()
         # Execute the query
-        try:
-            con.execute(query)
-        except duckdb.duckdb.BinderException:
-            print(query_name)
-            print(query)
-            assert False
+
+        con.execute(query)
+
         end_time = time.perf_counter()
         execution_time = end_time - start_time
         execution_times.append(execution_time)
         row[f"Iteration {i}"] = execution_time
 
-        # Calculate the average time of the last 4 runs and store it
-        # avg_time = -1
-        avg_time = sum(execution_times[1:]) / (ITERATIONS - 1)
-        row['Average (last 4 runs)'] = avg_time
+    # Calculate the average time of the last 4 runs and store it
+    # avg_time = -1
+    avg_time = sum(execution_times[1:]) / (ITERATIONS - 1)
+    row['Average (last 4 runs)'] = avg_time
 
     return row
 
@@ -166,7 +163,6 @@ def perform_test():
         # Iterate over the queries
         for query_name, query_obj in queries.items():
             query = query_obj.get_query(fields=fields)
-            # print(query)
 
             # Check if the materialization is relevant for the current query
             if _is_relevant_query(query=query_obj, materialization=materialize_columns, q=query_name):
