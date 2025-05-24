@@ -25,7 +25,7 @@ SELECT
     {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} AS ps_partkey,
     SUM({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])}) AS value
 FROM
-    test_table    ,
+    test_table ps,
     test_table s,
     test_table n
 WHERE
@@ -113,3 +113,15 @@ ORDER BY
         }
 
         return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "ps_supplycost": False,
+            "ps_availqty": False,
+            "n_name": True,
+        }
+
+        return field_map[field]

@@ -79,7 +79,7 @@ class Q9(Query):
                             lp_joined.l_extendedprice * (1 - lp_joined.l_discount) - {self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * lp_joined.l_discount AS amount
                     FROM
                             (
-                                    select 
+                                    SELECT 
                                             {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} AS l_partkey,
                                             {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} AS l_suppkey,
                                             {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} AS l_orderkey,
@@ -181,3 +181,13 @@ class Q9(Query):
         }
 
         return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_name": True
+        }
+
+        return field_map[field]

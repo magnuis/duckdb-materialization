@@ -129,3 +129,14 @@ LIMIT
         }
 
         return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "o_orderdate": True,
+            "l_returnflag": True
+        }
+
+        return field_map[field]

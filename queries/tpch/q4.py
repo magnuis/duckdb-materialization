@@ -91,8 +91,20 @@ ORDER BY
         """
 
         field_map = {
-            "l_orderkey": False,
-            "o_orderkey": False,
+            "l_orderkey": True,
+            "o_orderkey": True,
         }
 
         return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "o_orderdate": True,
+            "l_commitdate": False,
+            "l_receiptdate": False
+        }
+
+        return field_map[field]

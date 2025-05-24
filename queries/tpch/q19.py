@@ -107,8 +107,23 @@ WHERE
         """
 
         field_map = {
-            "p_partkey": True,
+            "p_partkey": False,
             "l_partkey": True
         }
 
         return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_brand": False,
+            "p_container": False,
+            "l_quantity": False,
+            "p_size": False,
+            "l_shipmode": True,
+            "l_shipinstruct": True
+        }
+
+        return field_map[field]

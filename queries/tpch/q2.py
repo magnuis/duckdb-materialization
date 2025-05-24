@@ -220,4 +220,16 @@ LIMIT
             "n_nationkey": False
         }
 
-        return field_map.get(field, False)
+        return field_map[field]
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_size": True,
+            "p_type": True,
+            "r_name": True,
+        }
+
+        return field_map[field]

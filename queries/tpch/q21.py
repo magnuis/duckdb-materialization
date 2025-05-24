@@ -73,7 +73,7 @@ LIMIT
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """
-        Get the underlying column names used in the query along with their position 
+        Get the underlying column names used in the query along with their position
         in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -133,3 +133,16 @@ LIMIT
         }
 
         return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "o_orderstatus": True,
+            "l_receiptdate": False,
+            "l_commitdate": False,
+            "n_name": True
+        }
+
+        return field_map[field]

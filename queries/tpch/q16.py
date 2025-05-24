@@ -117,3 +117,18 @@ ORDER BY
         }
 
         return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+
+        field_map = {
+            "p_brand": True,
+            "p_type": True,
+            "p_size": True,
+            "ps_suppkey": False,
+            "s_comment": True
+        }
+
+        return field_map[field]
