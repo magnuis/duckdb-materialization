@@ -141,3 +141,5 @@ ORDER BY
             "n_name": True,
             "l_shipdate": True
         }
+
+        return field_map[field]
