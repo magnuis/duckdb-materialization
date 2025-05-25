@@ -101,6 +101,12 @@ class Query:
         """
         return self.columns_used_with_position()["select"]
 
+    def columns_used_in_where(self) -> list[str]:
+        """
+        Get the columns used in the where operation
+        """
+        return self.columns_used_with_position()["where"]
+
     def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
 
         used_columns = self.columns_used()
