@@ -125,7 +125,7 @@ ORDER BY
 
         field_map = {
             "p_brand": True,
-            "p_type": True,
+            "p_type": False,
             "p_size": True,
             "ps_suppkey": False,
             "s_comment": True
