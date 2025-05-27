@@ -28,6 +28,11 @@ DATASETS = {
         "queries": tpch_setup.QUERIES,
         "tests_map": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
+    },
+    "yelp": {
+        "queries": yelp_setup.QUERIES,
+        "tests_map": yelp_setup.STANDARD_SETUPS,
+        "column_map": yelp_setup.COLUMN_MAP,
     }
 }
 
@@ -100,7 +105,6 @@ def _perform_test(
             df_row[f"Iteration {j}"] = execution_time
 
             if j == 0:
-
                 first_run_result = result.copy()
 
         # Collect the result from the first run
@@ -140,6 +144,8 @@ def compare_query_results(dfs: list[pd.DataFrame]):
             print(f"Query {i}: Results do not match.")
             for df in results:
                 print(f"Query result:\n{df}")
+                for col in df.columns:
+                    print(f"Column {col}: {df[col].unique()}")
                 for col in df.columns:
                     print(f"Column {col}: {df[col].unique()}")
             success = False
@@ -187,13 +193,13 @@ def perform_tests():
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description="Run performance tests on different datasets.")
-    parser.add_argument("dataset", nargs="?", default="tpch", choices=["tpch"],
+    parser.add_argument("dataset", nargs="?", default="tpch", choices=["tpch", "yelp"],
                         help="The dataset to run tests on (tpch, yelp, twitter, or all)")
     args = parser.parse_args()
 
-    # datasets_to_test = DATASETS.keys() if args.dataset == "all" else [
-    #     args.dataset]
-    datasets_to_test = ['tpch']
+    datasets_to_test = DATASETS.keys() if args.dataset == "all" else [
+        args.dataset]
+    # datasets_to_test = ['tpch']
 
     for dataset in datasets_to_test:
         if not os.path.exists(f"./results/single-queries/{dataset}"):
@@ -282,11 +288,29 @@ GROUP BY all
             #       db_connection.execute(
             #           "CALL pragma_database_size();").fetch_df())
             db_size = get_db_size(con=duckdb.connect(db_path))
+            results = db_connection.execute(
+                """
+SELECT 
+    'test_table' AS table_name,
+    (SELECT block_size FROM pragma_database_size()) AS block_size,
+    COUNT(DISTINCT block_id) AS num_blocks,
+    COUNT(DISTINCT block_id) * (SELECT block_size FROM pragma_database_size()) AS num_bytes
+FROM pragma_storage_info('test_table')
+GROUP BY all
+""").fetchdf()
+            # print(results)
+            # print("DB size after test:",
+            #       db_connection.execute(
+            #           "CALL pragma_database_size();").fetch_df())
+            db_size = get_db_size(con=duckdb.connect(db_path))
             db_connection.close()
 
             meta_results.append({
                 "Test": test,
                 "Time taken": time_taken,
+                "Blocks used": db_size[0],
+                "Block size": db_size[1],
+                "Database size": db_size[2],
                 "Blocks used": db_size[0],
                 "Block size": db_size[1],
                 "Database size": db_size[2],

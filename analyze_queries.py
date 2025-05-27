@@ -9,6 +9,10 @@ DATASETS = {
     "tpch": {
         "queries": tpch_setup.QUERIES,
         "column_map": tpch_setup.COLUMN_MAP,
+    },
+    "yelp": {
+        "queries": yelp_setup.QUERIES,
+        "column_map": yelp_setup.COLUMN_MAP,
     }
 }
 

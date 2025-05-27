@@ -14,12 +14,22 @@ import pandas as pd
 
 import testing.tpch.setup as tpch_setup
 import testing.yelp.setup as yelp_setup
+import testing.yelp.setup as yelp_setup
 from analyze_queries import analyze_queries
 from prepare_database import prepare_database, get_db_size
 
 if not os.path.isdir("./results"):
     os.mkdir("./results")
 
+if not os.path.isdir("./results/load-based"):
+    os.mkdir("./results/load-based")
+
+# MATERIALIZE_TRESHOLDS = [0.30, 0.35, 0.4, 0.45,
+#                          0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.80, 0.85]
+MATERIALIZE_TRESHOLDS = [0.30, 0.4, 0.5, 0.6, 0.7, 0.8]
+QUERY_PROPORTIONS = [3, 4, 5]
+MAJORITY_PROPORTIONS = [0.75, 0.80, 0.90]
+QUERIES_IN_LOAD = 500
 if not os.path.isdir("./results/load-based"):
     os.mkdir("./results/load-based")
 
