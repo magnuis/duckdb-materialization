@@ -149,5 +149,10 @@ class Query:
 
         # elif dt == "VARCHAR":
         #     return f"{tbl}.raw_json->>'{col}'"
+        access_query = f"json_extract_string({tbl}.raw_json, '{col}')"
+        if dt != 'VARCHAR':
+            access_query += f'::{dt}'
+        return access_query
 
-        return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
+        # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
+        # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
