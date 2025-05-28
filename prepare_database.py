@@ -19,8 +19,9 @@ def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dic
                               include_print=include_print)
 
     _create_view(con=con, fields=fields)
+    con.execute("CHECKPOINT;")
 
-    con.execute("ANALYZE")
+    con.execute("ANALYZE;")
     return time_taken
 
 

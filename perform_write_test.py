@@ -13,10 +13,10 @@ import testing.tpch.setup as tpch_setup
 from queries.query import Query
 
 CHARS = string.ascii_letters + string.digits + " "
-LINES_TO_INSERT = 1
+LINES_TO_INSERT = 5000
 
 BASE_PATH = os.curdir
-PATHS_TO_REMOVE = []
+PATHS_TO_REMOVE = set()
 
 DATASETS = {
     "tpch": {
@@ -33,13 +33,12 @@ TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 
 def _create_fresh_db(dataset: str):
     db_path = BASE_PATH + f"/data/db/{dataset}.duckdb"
-    backup_path = BASE_PATH + f"/data/backup/{dataset}_tiny"
+    backup_path = BASE_PATH + f"/data/backup/{dataset}_bigger"
 
     if os.path.exists(db_path):
         os.remove(db_path)
 
     with duckdb.connect(db_path) as con:
-        con.execute("SET default_block_size = '16384'")
         con.execute(f"IMPORT DATABASE '{backup_path}';")
 
 
@@ -54,11 +53,10 @@ def _create_connection(dataset: str, test: str = "temp") -> tuple[duckdb.DuckDBP
     # Copy original db
     shutil.copy(original_db_path, copy_db_path)
 
-    PATHS_TO_REMOVE.append(copy_db_path)
+    PATHS_TO_REMOVE.add(copy_db_path)
 
     # Reconnect to db
     con = duckdb.connect(copy_db_path)
-    con.execute("SET default_block_size = '16384'")
 
     con.execute("CHECKPOINT;")
 
@@ -173,10 +171,15 @@ def _update_query(fields: list[tuple[str, dict, bool]], row_id: int):
     materialize_fields = {}
     col_types = {}
 
+    has_materialization = False
+
     for field, query, materialize in fields:
         if materialize:
             materialize_fields[field] = query['type']
             col_types[field] = query['type']
+            has_materialization = True
+    if not has_materialization:
+        return None
 
     stringified_fields = [f"'{field}'" for field in materialize_fields.keys()]
 
@@ -189,6 +192,7 @@ def _update_query(fields: list[tuple[str, dict, bool]], row_id: int):
     WITH extracted AS (
         SELECT json_extract_string(raw_json, [{", ".join(stringified_fields)}]) AS json_arr
         FROM test_table
+        WHERE rowid = {row_id}
     )
     UPDATE test_table SET
         {', '.join(update_assigns)}
@@ -220,10 +224,11 @@ def _perform_test(
 
         # Update columns with json data
         update_query = _update_query(fields=fields, row_id=row_id)
-        start_time = time.perf_counter()
-        con.execute(update_query)
-        end_time = time.perf_counter()
-        execution_time += end_time - start_time
+        if update_query is not None:
+            start_time = time.perf_counter()
+            con.execute(update_query)
+            end_time = time.perf_counter()
+            execution_time += end_time - start_time
 
     return execution_time
 
@@ -251,18 +256,24 @@ def main():
     timed_loads = dict()
 
     results_df = pd.DataFrame(
-        columns=["Load", "Test", "Materialization", "Write time", "DB Size", "Materialization Time"])
+        columns=["Load", "Test", "Materialization", "Write time", "DB Size Before", "DB Size After", "Materialization Time"])
 
     # Create fresh db
     _create_fresh_db(dataset=dataset)
-
     # Create new db connection
     db_connection, db_path = _create_connection(dataset=dataset)
 
     prev_load = 0
     for loads_df_row in loads_df.itertuples():
+        # for field in list(column_map.keys()) + [None, None, None]:
+        # if field is not None:
+        # continue
+
         load_time = time.time()
 
+        # load_no = 11
+        # test_name: str = field if field is not None else "no_materialization"
+        # materialized_fields_list = [field] if field is not None else []
         load_no: str = loads_df_row[1]
         test_name: str = loads_df_row[2]
         materialized_fields: str = loads_df_row[3]
@@ -274,16 +285,20 @@ def main():
             materialized_fields_list.remove('')
 
         # No materialization
+        # if False:
+            # pass
         if len(materialized_fields_list) <= 0:
             write_time = 0
-            db_size = 0
+            db_size_before = 0
+            db_size_after = 0
             prepare_time = 0
 
         # Don't repeat tests
         elif materialized_fields in timed_loads:
             print(f"{materialized_fields} already encountered")
             write_time = timed_loads[materialized_fields]["write_time"]
-            db_size = timed_loads[materialized_fields]["db_size"]
+            db_size_before = timed_loads[materialized_fields]["db_size_before"]
+            db_size_after = timed_loads[materialized_fields]["db_size_after"]
             prepare_time = timed_loads[materialized_fields]["prepare_time"]
 
         else:
@@ -294,18 +309,27 @@ def main():
                 fields.append(
                     (field, access_query, field in materialized_fields_list))
 
+            # Get db size before materialization
+            db_size_before = get_db_size(db_connection)
             # Prepare database
             prepare_time = prepare_database(con=db_connection, fields=fields)
+
+            # Get db size before materialization
+            # FIXME @herman3h se over og se om dette er gjort riktig
+            db_size_after = get_db_size(db_connection)
 
             # Run test
             write_time = _perform_test(
                 con=db_connection, fields=fields, dataset=dataset)
+            print(
+                f"Time taken to write {materialized_fields_list}: {write_time}")
 
-            # FIXME @herman3h se over og se om dette er gjort riktig
-            db_size = get_db_size(db_connection)
+            db_connection.execute("CHECKPOINT;")
 
             timed_loads[materialized_fields] = {
-                "write_time": write_time, "db_size": db_size, "prepare_time": prepare_time}
+                #     "write_time": write_time, "db_size": db_size, "prepare_time": prepare_time}
+                # timed_loads[str(materialized_fields_list)] = {
+                "write_time": write_time, "db_size_before": db_size_before, "db_size_after": db_size_after, "prepare_time": prepare_time}
 
         results_df = pd.concat([
             results_df,
@@ -314,7 +338,8 @@ def main():
                 "Test": test_name,
                 "Materialization": materialized_fields_list,
                 "Write time": write_time,
-                "DB Size": db_size,
+                "DB Size Before": db_size_before,
+                "DB Size After": db_size_after,
                 "Materialization Time": prepare_time
                 # TODO add other relevant db sizes
             }])
