@@ -9,18 +9,7 @@ class Q22(Query):
     def __init__(self):
         pass
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "c1": ["c_acctbal", "c_phone", "c_custkey"],
-            "c2": ["c_acctbal", "c_phone", "c_custkey"],
-            "o": ["o_custkey"],
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 22, adjusted to current db materializaiton
 
@@ -29,90 +18,45 @@ class Q22(Query):
         str
         """
 
-#         return f"""
-# SELECT
-#     cntrycode,
-#     COUNT(*) AS numcust,
-#     SUM(c_acctbal) AS totacctbal
-# FROM
-#     (
-#         SELECT
-#             SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} FROM 1 FOR 2) AS cntrycode,
-#             {self._json(tbl='c2', col='c_acctbal', dts=dts)} AS c_acctbal
-#         FROM
-#             extracted c2
-#         WHERE
-#             SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
-#             AND {self._json(tbl='c2', col='c_acctbal', dts=dts)} > (
-#                 SELECT
-#                     AVG({self._json(tbl='c1', col='c_acctbal', dts=dts)})
-#                 FROM
-#                     extracted c1
-#                 WHERE
-#                     {self._json(tbl='c1', col='c_acctbal', dts=dts)} > 0.00
-#                     AND SUBSTRING({self._json(tbl='c1', col='c_phone', dts=dts)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
-#             )
-#             AND NOT EXISTS (
-#                 SELECT
-#                     *
-#                 FROM
-#                     extracted o
-#                 WHERE
-#                     {self._json(tbl='o', col='o_custkey', dts=dts)} = {self._json(tbl='c2', col='c_custkey', dts=dts)}
-#             )
-#     ) AS custsale
-# GROUP BY
-#     cntrycode
-# ORDER BY
-#     cntrycode;
-#     """
-        return f"""
-, cust_no_orders AS (
-  SELECT DISTINCT
-    {self._json(tbl='c1', col='c_custkey', dts=dts)} AS c_custkey
-  FROM extracted AS c1
-  LEFT JOIN extracted AS o
-    ON {self._json(tbl='o', col='o_custkey', dts=dts)} 
-       = {self._json(tbl='c1', col='c_custkey', dts=dts)}
-  WHERE {self._json(tbl='o', col='o_custkey', dts=dts)} IS NULL
-)
+        dts = self._get_field_accesses(fields=fields)
 
+        return f"""
 SELECT
     cntrycode,
-    COUNT(*)      AS numcust,
+    COUNT(*) AS numcust,
     SUM(c_acctbal) AS totacctbal
-FROM (
-    SELECT
-        SUBSTRING({self._json(tbl='c2', col='c_phone',   dts=dts)} 
-                  FROM 1 FOR 2)                          AS cntrycode,
-        {self._json(tbl='c2', col='c_acctbal', dts=dts)}       AS c_acctbal
-    FROM extracted AS c2
-
-      JOIN cust_no_orders AS cno
-        ON {self._json(tbl='c2', col='c_custkey', dts=dts)} 
-           = cno.c_custkey
-
-    WHERE
-        SUBSTRING({self._json(tbl='c2', col='c_phone', dts=dts)} 
-                  FROM 1 FOR 2)
-          IN ('13','31','23','29','30','18','17')
-      AND {self._json(tbl='c2', col='c_acctbal', dts=dts)} 
-          > (
-            SELECT AVG({self._json(tbl='c1', col='c_acctbal', dts=dts)})
-            FROM extracted AS c1
-            WHERE
-              {self._json(tbl='c1', col='c_acctbal', dts=dts)} > 0.00
-              AND SUBSTRING({self._json(tbl='c1', col='c_phone', dts=dts)} 
-                            FROM 1 FOR 2)
-                  IN ('13','31','23','29','30','18','17')
-          )
-) AS custsale
-
+FROM
+    (
+        SELECT
+            SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) AS cntrycode,
+            {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} AS c_acctbal
+        FROM
+            test_table c
+        WHERE
+            SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+            AND {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} > (
+                SELECT
+                    AVG({self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])})
+                FROM
+                    test_table c
+                WHERE
+                    {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} > 0.00
+                    AND SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+            )
+            AND NOT EXISTS (
+                SELECT
+                    *
+                FROM
+                    test_table o
+                WHERE
+                    {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])} = {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])}
+            )
+    ) AS custsale
 GROUP BY
     cntrycode
 ORDER BY
     cntrycode;
-"""
+    """
 
     def no_join_clauses(self) -> int:
         """
@@ -172,14 +116,30 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
 
         field_map = {
-            "c_phone": True,
-            "c_acctbal": True
+            "c_phone": 2,
+            "c_acctbal": 2
         }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "o_custkey": 1,
+            "c_custkey": 0
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]

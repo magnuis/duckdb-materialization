@@ -9,17 +9,7 @@ class Q4(Query):
     def __init__(self):
         pass
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "o": ["o_orderpriority", "o_orderdate", "o_orderkey"],
-            "l": ["l_orderkey", "l_commitdate", "l_receiptdate"]
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 4, adjusted to current db materializaiton
 
@@ -28,59 +18,32 @@ class Q4(Query):
         str
         """
 
-#         return f"""
-# SELECT
-#     {self._json(tbl='o', col='o_orderpriority', dts=dts)} AS o_orderpriority,
-#     COUNT(*) AS order_count
-# FROM
-#     extracted o
-# WHERE
-#     {self._json(tbl='o', col='o_orderdate', dts=dts)} >= DATE '1993-07-01'
-#     AND {self._json(tbl='o', col='o_orderdate', dts=dts)} < DATE '1993-07-01' + INTERVAL '3' MONTH
-#     AND EXISTS (
-#         SELECT
-#             *
-#         FROM
-#             extracted l
-#         WHERE
-#             {self._json(tbl='l', col='l_orderkey', dts=dts)} = {self._json(tbl='o', col='o_orderkey', dts=dts)}
-#             AND {self._json(tbl='l', col='l_commitdate', dts=dts)} < {self._json(tbl='l', col='l_receiptdate', dts=dts)}
-#     )
-# GROUP BY
-#     o_orderpriority
-# ORDER BY
-#     o_orderpriority;
-#     """
+        dts = self._get_field_accesses(fields=fields)
 
-# REWRITE TO AVOID CROSS PRODUCT
         return f"""
- , late_orders AS (
-  SELECT DISTINCT
-    {self._json(tbl='l', col='l_orderkey', dts=dts)} AS l_orderkey
-  FROM extracted AS l
-  WHERE
-    {self._json(tbl='l', col='l_commitdate', dts=dts)} 
-      < {self._json(tbl='l', col='l_receiptdate', dts=dts)}
-)
-
 SELECT
-    {self._json(tbl='o', col='o_orderpriority', dts=dts)} AS o_orderpriority,
-    COUNT(*)                                           AS order_count
-FROM extracted AS o
-
-  JOIN late_orders AS lo
-    ON {self._json(tbl='o', col='o_orderkey', dts=dts)} = lo.l_orderkey
-
+    {self._json(tbl='o', col='o_orderpriority', dt=dts['o_orderpriority'])} AS o_orderpriority,
+    COUNT(*) AS order_count
+FROM
+    test_table o
 WHERE
-    {self._json(tbl='o', col='o_orderdate', dts=dts)} >= DATE '1993-07-01'
-    AND {self._json(tbl='o', col='o_orderdate', dts=dts)} <  DATE '1993-07-01' + INTERVAL '3' MONTH
-
+    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} >= DATE '1993-07-01'
+    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} < DATE '1993-07-01' + INTERVAL '3' MONTH
+    AND EXISTS (
+        SELECT
+            *
+        FROM
+            test_table l
+        WHERE
+            {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}
+            AND {self._json(tbl='l', col='l_commitdate', dt=dts['l_commitdate'])} < {self._json(tbl='l', col='l_receiptdate', dt=dts['l_receiptdate'])}
+    )
 GROUP BY
-    {self._json(tbl='o', col='o_orderpriority', dts=dts)}
-
+    o_orderpriority
 ORDER BY
-    {self._json(tbl='o', col='o_orderpriority', dts=dts)};
-"""
+    o_orderpriority;
+
+    """
 
     def no_join_clauses(self) -> int:
         """
@@ -134,14 +97,31 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "o_orderdate": True,
-            "l_commitdate": False,
-            "l_receiptdate": False
+            "o_orderdate": 1,
+            "l_commitdate": 0,
+            "l_receiptdate": 0
         }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+
+        field_map = {
+            "l_orderkey": 0,
+            "o_orderkey": 0,
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]

@@ -9,17 +9,7 @@ class Q15(Query):
     def __init__(self):
         pass
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "l": ["l_suppkey", "l_extendedprice", "l_discount", "l_shipdate"],
-            "s": ["s_suppkey", "s_name", "s_address", "s_phone"]
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 15s
 , adjusted to current db materializaiton
@@ -29,30 +19,32 @@ class Q15(Query):
         str
         """
 
+        dts = self._get_field_accesses(fields=fields)
+
         return f"""
-, revenue (supplier_no, total_revenue) AS (
+WITH revenue (supplier_no, total_revenue) AS (
     SELECT
-        {self._json(tbl='l', col='l_suppkey', dts=dts)} AS l_suppkey,
-        SUM({self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)})) AS total_revenue
+        {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} AS l_suppkey,
+        SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS total_revenue
     FROM
-        extracted l
+        test_table l
     WHERE
-        {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1996-01-01'
-        AND {self._json(tbl='l', col='l_shipdate', dts=dts)} < DATE '1996-04-01'
+        {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} >= DATE '1996-01-01'
+        AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} < DATE '1996-04-01'
     GROUP BY
-        {self._json(tbl='l', col='l_suppkey', dts=dts)}
+        {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])}
 )
 SELECT
-    {self._json(tbl='s', col='s_suppkey', dts=dts)} AS s_suppkey,
-    {self._json(tbl='s', col='s_name', dts=dts)} AS s_name,
-    {self._json(tbl='s', col='s_address', dts=dts)} AS s_address,
-    {self._json(tbl='s', col='s_phone', dts=dts)} AS s_phone,
+    {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} AS s_suppkey,
+    {self._json(tbl='s', col='s_name', dt=dts['s_name'])} AS s_name,
+    {self._json(tbl='s', col='s_address', dt=dts['s_address'])} AS s_address,
+    {self._json(tbl='s', col='s_phone', dt=dts['s_phone'])} AS s_phone,
     total_revenue
 FROM
-    extracted s,
+    test_table s,
     revenue
 WHERE
-    {self._json(tbl='s', col='s_suppkey', dts=dts)} = revenue.supplier_no
+    {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = revenue.supplier_no
     AND total_revenue = (
         SELECT
             MAX(total_revenue)
@@ -60,7 +52,7 @@ WHERE
             revenue
     )
 ORDER BY
-    {self._json(tbl='s', col='s_suppkey', dts=dts)};
+    {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])};
 
     """
 
@@ -120,12 +112,27 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "l_shipdate": True
+            "l_shipdate": 1
         }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "s_suppkey": 1
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]

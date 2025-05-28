@@ -9,21 +9,7 @@ class Q11(Query):
     def __init__(self):
         pass
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "ps1": ["ps_supplycost", "ps_availqty", "ps_suppkey"],
-            "s1": ["s_nationkey", "s_suppkey"],
-            "n1": ["n_nationkey", "n_name"],
-            "ps2": ["ps_supplycost", "ps_availqty", "ps_suppkey", "ps_partkey"],
-            "s2": ["s_nationkey", "s_suppkey"],
-            "n2": ["n_nationkey", "n_name"],
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 11, adjusted to current db materializaiton
 
@@ -32,32 +18,34 @@ class Q11(Query):
         str
         """
 
+        dts = self._get_field_accesses(fields=fields)
+
         return f"""
 SELECT
-    {self._json(tbl='ps2', col='ps_partkey', dts=dts)} AS ps_partkey,
-    SUM({self._json(tbl='ps2', col='ps_supplycost', dts=dts)} * {self._json(tbl='ps2', col='ps_availqty', dts=dts)}) AS value
+    {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} AS ps_partkey,
+    SUM({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])}) AS value
 FROM
-    extracted ps2,
-    extracted s2,
-    extracted n2
+    test_table ps,
+    test_table s,
+    test_table n
 WHERE
-    {self._json(tbl='ps2', col='ps_suppkey', dts=dts)} = {self._json(tbl='s2', col='s_suppkey', dts=dts)}
-    AND {self._json(tbl='s2', col='s_nationkey', dts=dts)} = {self._json(tbl='n2', col='n_nationkey', dts=dts)}
-    AND {self._json(tbl='n2', col='n_name', dts=dts)} = 'GERMANY'
+    {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} = {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])}
+    AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
+    AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'GERMANY'
 GROUP BY
-    {self._json(tbl='ps2', col='ps_partkey', dts=dts)}
+    {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
 HAVING
-    SUM({self._json(tbl='ps2', col='ps_supplycost', dts=dts)} * {self._json(tbl='ps2', col='ps_availqty', dts=dts)}) > (
+    SUM({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])}) > (
         SELECT
-            SUM({self._json(tbl='ps1', col='ps_supplycost', dts=dts)} * {self._json(tbl='ps1', col='ps_availqty', dts=dts)}) * 0.0001
+            SUM({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])}) * 0.0001
         FROM
-            extracted ps1,
-            extracted s1,
-            extracted n1
+            test_table ps,
+            test_table s,
+            test_table n
         WHERE
-            {self._json(tbl='ps1', col='ps_suppkey', dts=dts)} = {self._json(tbl='s1', col='s_suppkey', dts=dts)}
-            AND {self._json(tbl='s1', col='s_nationkey', dts=dts)} = {self._json(tbl='n1', col='n_nationkey', dts=dts)}
-            AND {self._json(tbl='n1', col='n_name', dts=dts)} = 'GERMANY'
+            {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} = {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])}
+            AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
+            AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'GERMANY'
     )
 ORDER BY
     value DESC,
@@ -126,14 +114,32 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "ps_supplycost": False,
-            "ps_availqty": False,
-            "n_name": True,
+            "ps_supplycost": 0,
+            "ps_availqty": 0,
+            "n_name": 2,
         }
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "ps_suppkey": 2,
+            "s_suppkey": 2,
+            "s_nationkey": 2,
+            "n_nationkey": 0,
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]

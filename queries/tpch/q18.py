@@ -9,19 +9,7 @@ class Q18(Query):
     def __init__(self):
         pass
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "c": ["c_name", "c_custkey"],
-            "o": ["o_orderkey", "o_orderdate", "o_totalprice", "o_custkey"],
-            "l1": ["l_quantity", "l_orderkey"],
-            "l2": ["l_quantity", "l_orderkey"],
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 18, adjusted to current db materializaiton
 
@@ -30,40 +18,42 @@ class Q18(Query):
         str
         """
 
+        dts = self._get_field_accesses(fields=fields)
+
         return f"""
 SELECT
-    {self._json(tbl='c', col='c_name', dts=dts)} AS c_name,
-    {self._json(tbl='c', col='c_custkey', dts=dts)} AS c_custkey,
-    {self._json(tbl='o', col='o_orderkey', dts=dts)} AS o_orderkey,
-    {self._json(tbl='o', col='o_orderdate', dts=dts)} AS o_orderdate,
-    {self._json(tbl='o', col='o_totalprice', dts=dts)} AS o_totalprice,
-    SUM({self._json(tbl='l2', col='l_quantity', dts=dts)}) AS total_quantity
+    {self._json(tbl='c', col='c_name', dt=dts['c_name'])} AS c_name,
+    {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} AS c_custkey,
+    {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} AS o_orderkey,
+    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} AS o_orderdate,
+    {self._json(tbl='o', col='o_totalprice', dt=dts['o_totalprice'])} AS o_totalprice,
+    SUM({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])}) AS total_quantity
 FROM
-    extracted c,
-    extracted o,
-    extracted l2
+    test_table c,
+    test_table o,
+    test_table l
 WHERE
-    {self._json(tbl='o', col='o_orderkey', dts=dts)} IN (
+    {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} IN (
         SELECT
-            {self._json(tbl='l1', col='l_orderkey', dts=dts)}
+            {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])}
         FROM
-            extracted l1
+            test_table l
         GROUP BY
-            {self._json(tbl='l1', col='l_orderkey', dts=dts)}
+            {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])}
         HAVING
-            SUM({self._json(tbl='l1', col='l_quantity', dts=dts)}) > 300
+            SUM({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])}) > 300
     )
-    AND {self._json(tbl='c', col='c_custkey', dts=dts)} = {self._json(tbl='o', col='o_custkey', dts=dts)}
-    AND {self._json(tbl='o', col='o_orderkey', dts=dts)} = {self._json(tbl='l2', col='l_orderkey', dts=dts)}
+    AND {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
+    AND {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])}
 GROUP BY
-    {self._json(tbl='c', col='c_name', dts=dts)},
-    {self._json(tbl='c', col='c_custkey', dts=dts)},
-    {self._json(tbl='o', col='o_orderkey', dts=dts)},
-    {self._json(tbl='o', col='o_orderdate', dts=dts)},
-    {self._json(tbl='o', col='o_totalprice', dts=dts)}
+    {self._json(tbl='c', col='c_name', dt=dts['c_name'])},
+    {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])},
+    {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])},
+    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])},
+    {self._json(tbl='o', col='o_totalprice', dt=dts['o_totalprice'])}
 ORDER BY
-    {self._json(tbl='o', col='o_totalprice', dts=dts)} DESC,
-    {self._json(tbl='o', col='o_orderdate', dts=dts)}
+    {self._json(tbl='o', col='o_totalprice', dt=dts['o_totalprice'])} DESC,
+    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])}
 LIMIT
     100;
     """
@@ -139,13 +129,31 @@ LIMIT
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "o_orderkey": False,
-            "l_quantity": False
+            "o_orderkey": 0,
+            "l_quantity": 0
         }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "c_custkey": 1,
+            "o_custkey": 1,
+            "l_orderkey": 1,
+            "o_orderkey": 0
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]

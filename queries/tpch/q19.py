@@ -9,17 +9,7 @@ class Q19(Query):
     def __init__(self):
         pass
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "l": ["l_extendedprice", "l_discount", "l_quantity", "l_shipmode", "l_shipinstruct", "l_partkey"],
-            "p": ["p_brand", "p_container", "p_size", "p_partkey"]
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 19, adjusted to current db materializaiton
 
@@ -28,41 +18,43 @@ class Q19(Query):
         str
         """
 
+        dts = self._get_field_accesses(fields=fields)
+
         return f"""
 SELECT
-    SUM({self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)})) AS revenue
+    SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS revenue
 FROM
-    extracted l,
-    extracted p
+    test_table l,
+    test_table p
 WHERE
     (
-        {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l', col='l_partkey', dts=dts)}
-        AND {self._json(tbl='p', col='p_brand', dts=dts)} = 'Brand#12'
-        AND {self._json(tbl='p', col='p_container', dts=dts)} IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
-        AND {self._json(tbl='l', col='l_quantity', dts=dts)} BETWEEN 1 AND 11
-        AND {self._json(tbl='p', col='p_size', dts=dts)} BETWEEN 1 AND 5
-        AND {self._json(tbl='l', col='l_shipmode', dts=dts)} IN ('AIR', 'AIR REG')
-        AND {self._json(tbl='l', col='l_shipinstruct', dts=dts)} = 'DELIVER IN PERSON'
+        {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
+        AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} = 'Brand#12'
+        AND {self._json(tbl='p', col='p_container', dt=dts['p_container'])} IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+        AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} BETWEEN 1 AND 11
+        AND {self._json(tbl='p', col='p_size', dt=dts['p_size'])} BETWEEN 1 AND 5
+        AND {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])} IN ('AIR', 'AIR REG')
+        AND {self._json(tbl='l', col='l_shipinstruct', dt=dts['l_shipinstruct'])} = 'DELIVER IN PERSON'
     )
     OR
     (
-        {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l', col='l_partkey', dts=dts)}
-        AND {self._json(tbl='p', col='p_brand', dts=dts)} = 'Brand#23'
-        AND {self._json(tbl='p', col='p_container', dts=dts)} IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
-        AND {self._json(tbl='l', col='l_quantity', dts=dts)} BETWEEN 10 AND 20
-        AND {self._json(tbl='p', col='p_size', dts=dts)} BETWEEN 1 AND 10
-        AND {self._json(tbl='l', col='l_shipmode', dts=dts)} IN ('AIR', 'AIR REG')
-        AND {self._json(tbl='l', col='l_shipinstruct', dts=dts)} = 'DELIVER IN PERSON'
+        {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
+        AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} = 'Brand#23'
+        AND {self._json(tbl='p', col='p_container', dt=dts['p_container'])} IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+        AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} BETWEEN 10 AND 20
+        AND {self._json(tbl='p', col='p_size', dt=dts['p_size'])} BETWEEN 1 AND 10
+        AND {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])} IN ('AIR', 'AIR REG')
+        AND {self._json(tbl='l', col='l_shipinstruct', dt=dts['l_shipinstruct'])} = 'DELIVER IN PERSON'
     )
     OR
     (
-        {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l', col='l_partkey', dts=dts)}
-        AND {self._json(tbl='p', col='p_brand', dts=dts)} = 'Brand#34'
-        AND {self._json(tbl='p', col='p_container', dts=dts)} IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
-        AND {self._json(tbl='l', col='l_quantity', dts=dts)} BETWEEN 20 AND 30
-        AND {self._json(tbl='p', col='p_size', dts=dts)} BETWEEN 1 AND 15
-        AND {self._json(tbl='l', col='l_shipmode', dts=dts)} IN ('AIR', 'AIR REG')
-        AND {self._json(tbl='l', col='l_shipinstruct', dts=dts)} = 'DELIVER IN PERSON'
+        {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
+        AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} = 'Brand#34'
+        AND {self._json(tbl='p', col='p_container', dt=dts['p_container'])} IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+        AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} BETWEEN 20 AND 30
+        AND {self._json(tbl='p', col='p_size', dt=dts['p_size'])} BETWEEN 1 AND 15
+        AND {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])} IN ('AIR', 'AIR REG')
+        AND {self._json(tbl='l', col='l_shipinstruct', dt=dts['l_shipinstruct'])} = 'DELIVER IN PERSON'
     );
 
     """
@@ -121,17 +113,33 @@ WHERE
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "p_brand": False,
-            "p_container": False,
-            "l_quantity": False,
-            "p_size": False,
-            "l_shipmode": True,
-            "l_shipinstruct": True
+            "p_brand": 0,
+            "p_container": 0,
+            "l_quantity": 0,
+            "p_size": 0,
+            "l_shipmode": 1,
+            "l_shipinstruct": 1
         }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_partkey": 1,
+            "l_partkey": 0
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]

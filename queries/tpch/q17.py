@@ -9,18 +9,7 @@ class Q17(Query):
     def __init__(self):
         pass
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "l1": ["l_extendedprice", "l_quantity", "l_partkey"],
-            "l2": ["l_quantity", "l_partkey"],
-            "p": ["p_partkey", "p_brand", "p_container"],
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 17, adjusted to current db materializaiton
 
@@ -29,52 +18,27 @@ class Q17(Query):
         str
         """
 
-#         return f"""
-# SELECT
-#     SUM({self._json(tbl='l1', col='l_extendedprice', dts=dts)}) / 7.0 AS avg_yearly
-# FROM
-#     extracted  l1,
-#     extracted  p
-# WHERE
-#     {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l1', col='l_partkey', dts=dts)}
-#     AND {self._json(tbl='p', col='p_brand', dts=dts)} = 'Brand#23'
-#     AND {self._json(tbl='p', col='p_container', dts=dts)} = 'MED BOX'
-#     AND {self._json(tbl='l1', col='l_quantity', dts=dts)} < (
-#         SELECT
-#             0.2 * AVG({self._json(tbl='l2', col='l_quantity', dts=dts)})
-#         FROM
-#             extracted l2
-#         WHERE
-#             {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l2', col='l_partkey', dts=dts)}
-#     );
-#     """
+        dts = self._get_field_accesses(fields=fields)
 
-# REWRITE TO AVOID CROSS PRODUCT
         return f"""
-, part_avg AS (
-  SELECT
-    {self._json(tbl='l2', col='l_partkey', dts=dts)}      AS partkey,
-    AVG({self._json(tbl='l2', col='l_quantity', dts=dts)}) * 0.2 AS qty_threshold
-  FROM extracted AS l2
-  GROUP BY
-    {self._json(tbl='l2', col='l_partkey', dts=dts)}
-)
-
 SELECT
-    SUM({self._json(tbl='l1', col='l_extendedprice', dts=dts)}) / 7.0 AS avg_yearly
-FROM extracted AS l1
-
-  JOIN extracted AS p
-    ON {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l1', col='l_partkey', dts=dts)}
-
-  JOIN part_avg AS pa
-    ON pa.partkey = {self._json(tbl='l1', col='l_partkey', dts=dts)}
-
+    SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])}) / 7.0 AS avg_yearly
+FROM
+    test_table l,
+    test_table p
 WHERE
-    {self._json(tbl='p', col='p_brand', dts=dts)}     = 'Brand#23'
-    AND {self._json(tbl='p', col='p_container', dts=dts)} = 'MED BOX'
-    AND {self._json(tbl='l1', col='l_quantity', dts=dts)} < pa.qty_threshold;
-"""
+    {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
+    AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} = 'Brand#23'
+    AND {self._json(tbl='p', col='p_container', dt=dts['p_container'])} = 'MED BOX'
+    AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} < (
+        SELECT
+            0.2 * AVG({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])})
+        FROM
+            test_table l
+        WHERE
+            {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
+    );
+    """
 
     def columns_used(self,) -> list[str]:
         """
@@ -146,14 +110,30 @@ WHERE
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "p_brand": True,
-            "p_container": True,
-            "l_quantity": False
+            "p_brand": 1,
+            "p_container": 1,
+            "l_quantity": 0
         }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_partkey": 0,
+            "l_partkey": 1,
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]

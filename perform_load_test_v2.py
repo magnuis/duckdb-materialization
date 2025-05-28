@@ -114,7 +114,7 @@ def _generate_loads(distributions: list[int], queries: dict[str, Query]) -> dict
     return load_confs
 
 
-def _calculate_field_frequency(load: list[str], field_distribution: pd.DataFrame):
+def _calculate_field_priority(load: list[str], field_distribution: pd.DataFrame):
     # Copy to not alter original df
     field_distribution = field_distribution.copy()
     field_names = field_distribution.columns.drop("query")
@@ -139,7 +139,7 @@ def _calculate_field_frequency(load: list[str], field_distribution: pd.DataFrame
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_medium"
+    backup_path = f"./data/backup/{dataset}_tiny"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -298,8 +298,7 @@ def main():
                 for query_name, query_obj in queries.items():
                     query_frequency = load.count(query_name)
                     # TODO dynamic
-                    _field_weights = query_obj.get_column_weights(
-                        strategy=MaterializationStrategy.FIRST_ITERATION)
+                    _field_weights = query_obj.get_column_weights()
                     for field, weight in _field_weights.items():
                         field_weights[field] += weight * query_frequency
 
@@ -377,7 +376,7 @@ def main():
                                     materialization=fields_to_materialize
                                 )
                                 print(
-                                    f"Executed {query_name}, load {load_no} in time {result['Average (last 4 runs)']}")
+                                    f"Executed {query_name}, load {load_no}, materialization {fields_to_materialize} in time {result['Average (last 4 runs)']}")
 
                         # Update results_df
                         if isinstance(result, dict):
@@ -423,7 +422,7 @@ def main():
                 loads_df.to_csv(result_dir + f"/load{load_no}_results.csv")
 
                 print(
-                    f"Time taken for load {load_no}: {load_test_time - time.time()}")
+                    f"Time taken for load {load_no}: {time.time() - load_test_time}")
 
     # Write results to csv
     results_df.to_csv(result_dir + "/results.csv")

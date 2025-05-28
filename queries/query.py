@@ -5,6 +5,10 @@ class MaterializationStrategy(Enum):
     FIRST_ITERATION = 1
 
 
+POOR_FIELD_WEIGHT = 0.02
+GOOD_FIELD_WEIGHT = 0.72
+
+
 class Query:
     """
     Base class for queries used in this project
@@ -13,7 +17,7 @@ class Query:
     def __init__(self):
         pass
 
-    def _get_query(self, dts: dict[str, dict[str, str]]) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted query, adjusted to current db materializaiton
 
@@ -29,7 +33,7 @@ class Query:
         """
         raise NotImplementedError()
 
-    def columns_used(self):
+    def columns_used(self) -> list[str]:
         """
         Get the columns used in the query
 
@@ -82,9 +86,16 @@ class Query:
 
         return self.get_join_field_has_filter(field)
 
-    def get_join_field_has_filter(self, field: str) -> str | None:
+    def get_join_field_has_filter(self, field: str) -> bool:
         """
         Query specific implementation of the join field filter
+        """
+        raise NotImplementedError("Subclass must implement this method")
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        The number of times a there is a direct filter on the table of the JOIN field.
+        Raise ValueError if the field is not a join field.
         """
         raise NotImplementedError("Subclass must implement this method")
 
@@ -97,9 +108,15 @@ class Query:
 
         return self.get_where_field_has_direct_filter(field)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
-        Query specific implementation of the where field has direct filter
+        Query specific implementation of the where field has directly applicable filter
+        """
+        raise NotImplementedError("Subclass must implement this method")
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the join field has no direct filter
         """
         raise NotImplementedError("Subclass must implement this method")
 
@@ -139,7 +156,7 @@ class Query:
 
         return data_types
 
-    def _json(self, tbl: str, col: str, dts: dict[str, dict[str, str]]):
+    def _json(self, tbl: str, col: str, dt: str | None):
         """
         Extract the column
 
@@ -159,6 +176,7 @@ class Query:
             The column extracted from json. If `dt` is None, there is no json extraction
 
         """
+        # dt = dts.get(col)
         if dt is None:
             return f"{tbl}.{col}"
 
@@ -171,3 +189,22 @@ class Query:
 
         # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
         # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
+
+    def get_column_weights(self):
+        weights = {
+            field: POOR_FIELD_WEIGHT for field in self.columns_used()
+        }
+
+        for clause, col_list in self.columns_used_with_position().items():
+            if clause == "join":
+                for field in col_list.keys():
+                    weights[field] += GOOD_FIELD_WEIGHT * \
+                        self.get_join_field_has_no_direct_filter(field)
+            elif clause == "where":
+                for field in col_list:
+                    weights[field] += GOOD_FIELD_WEIGHT * \
+                        self.get_where_field_has_direct_filter(field)
+
+        if 's_nationkey' in weights:
+            weights['s_nationkey'] = 0
+        return weights

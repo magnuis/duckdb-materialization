@@ -55,21 +55,7 @@ class Q9(Query):
 #     o_year DESC;
 #     """
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "ps": ["ps_supplycost", "ps_partkey", "ps_suppkey"],
-            "l": ["l_partkey", "l_suppkey", "l_orderkey", "l_extendedprice", "l_discount"],
-            "o": ["o_orderdate", "o_orderkey"],
-            "p": ["p_name", "p_partkey"],
-            "n": ["n_name", "n_nationkey"],
-            "s": ["s_suppkey", "s_nationkey"]
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 9, adjusted to current db materializaiton
 
@@ -77,6 +63,8 @@ class Q9(Query):
         -------
         str
         """
+
+        dts = self._get_field_accesses(fields=fields)
 
         return f"""
     SELECT
@@ -86,9 +74,9 @@ class Q9(Query):
     FROM
             (
                     SELECT
-                            {self._json(tbl='n', col='n_name', dts=dts)}  AS nation,
-                            EXTRACT(YEAR FROM {self._json(tbl='o', col='o_orderdate', dts=dts)})  AS o_year,
-                            lp_joined.l_extendedprice * (1 - lp_joined.l_discount) - {self._json(tbl='ps', col='ps_supplycost', dts=dts)} * lp_joined.l_discount AS amount
+                            {self._json(tbl='n', col='n_name', dt=dts['n_name'])}  AS nation,
+                            EXTRACT(YEAR FROM {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])})  AS o_year,
+                            lp_joined.l_extendedprice * (1 - lp_joined.l_discount) - {self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * lp_joined.l_discount AS amount
                     FROM
                             (
                                     SELECT 
@@ -99,22 +87,22 @@ class Q9(Query):
                                             {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])} AS l_discount
 
                                     FROM
-                                            extracted p,
-                                            extracted l
+                                            test_table p,
+                                            test_table l
                                     WHERE
-                                            {self._json(tbl='p', col='p_name', dts=dts)} like '%green%'
-                                            AND {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l', col='l_partkey', dts=dts)}
+                                            {self._json(tbl='p', col='p_name', dt=dts['p_name'])} like '%green%'
+                                            AND {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
                             ) AS lp_joined,
-                            extracted s,
-                            extracted ps,
-                            extracted o,
-                            extracted n
+                            test_table s,
+                            test_table ps,
+                            test_table o,
+                            test_table n
                     WHERE
-                            {self._json(tbl='s', col='s_suppkey', dts=dts)} = lp_joined.l_suppkey
-                            AND {self._json(tbl='ps', col='ps_suppkey', dts=dts)} = lp_joined.l_suppkey
-                            AND {self._json(tbl='ps', col='ps_partkey', dts=dts)} = lp_joined.l_partkey
-                            AND {self._json(tbl='o', col='o_orderkey', dts=dts)} = lp_joined.l_orderkey
-                            AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
+                            {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = lp_joined.l_suppkey
+                            AND {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} = lp_joined.l_suppkey
+                            AND {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} = lp_joined.l_partkey
+                            AND {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = lp_joined.l_orderkey
+                            AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
             ) AS profit
     GROUP BY
             nation,
@@ -194,12 +182,34 @@ class Q9(Query):
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "p_name": True
+            "p_name": 1
         }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_partkey": 0,
+            "l_partkey": 1,
+            "s_suppkey": 1,
+            "ps_suppkey": 1,
+            "ps_partkey": 1,
+            "s_nationkey": 1,
+            "n_nationkey": 1,
+            "o_orderkey": 1
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]

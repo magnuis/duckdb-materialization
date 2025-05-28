@@ -9,20 +9,7 @@ class Q20(Query):
     def __init__(self):
         pass
 
-    def get_cte_setups(self) -> str:
-        """
-        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
-        """
-
-        return {
-            "l": ["l_quantity", "l_shipdate", "l_suppkey", "l_partkey"],
-            "p": ["p_partkey", "p_name"],
-            "ps": ["ps_partkey", "ps_availqty", "ps_suppkey"],
-            "n": ["n_name", "n_nationkey"],
-            "s": ["s_name", "s_address", "s_suppkey", "s_nationkey"]
-        }
-
-    def _get_query(self, dts) -> str:
+    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
         Get the formatted TPC-H query 20, adjusted to current db materializaiton
 
@@ -31,95 +18,47 @@ class Q20(Query):
         str
         """
 
-#         return f"""
-# SELECT
-#     {self._json(tbl='s', col='s_name', dts=dts)} AS s_name,
-#     {self._json(tbl='s', col='s_address', dts=dts)} AS s_address
-# FROM
-#     extracted s,
-#     extracted n
-# WHERE
-#     {self._json(tbl='s', col='s_suppkey', dts=dts)} IN (
-#         SELECT
-#             {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
-#         FROM
-#             extracted ps
-#         WHERE
-#             {self._json(tbl='ps', col='ps_partkey', dts=dts)} IN (
-#                 SELECT
-#                     {self._json(tbl='p', col='p_partkey', dts=dts)}
-#                 FROM
-#                     extracted p
-#                 WHERE
-#                     {self._json(tbl='p', col='p_name', dts=dts)} LIKE 'forest%'
-#             )
-#             AND {self._json(tbl='ps', col='ps_availqty', dts=dts)} > (
-#                 SELECT
-#                     0.5 * SUM({self._json(tbl='l', col='l_quantity', dts=dts)})
-#                 FROM
-#                     extracted l
-#                 WHERE
-#                     {self._json(tbl='l', col='l_partkey', dts=dts)} = {self._json(tbl='ps', col='ps_partkey', dts=dts)}
-#                     AND {self._json(tbl='l', col='l_suppkey', dts=dts)} = {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
-#                     AND {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1994-01-01'
-#                     AND {self._json(tbl='l', col='l_shipdate', dts=dts)} < DATE '1995-01-01'
-#             )
-#     )
-#     AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
-#     AND {self._json(tbl='n', col='n_name', dts=dts)} = 'CANADA'
-# ORDER BY
-#     {self._json(tbl='s', col='s_name', dts=dts)};
-#     """
+        dts = self._get_field_accesses(fields=fields)
+
         return f"""
-  , p_forest AS (
-    SELECT
-      {self._json(tbl='p', col='p_partkey', dts=dts)} AS partkey
-    FROM extracted AS p
-    WHERE {self._json(tbl='p', col='p_name', dts=dts)} LIKE 'forest%'
-  ),
-
-  supply_sum AS (
-    SELECT
-      {self._json(tbl='l', col='l_partkey', dts=dts)} AS partkey,
-      {self._json(tbl='l', col='l_suppkey', dts=dts)} AS suppkey,
-      SUM({self._json(tbl='l', col='l_quantity', dts=dts)})        AS total_qty
-    FROM extracted AS l
-    WHERE
-      {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1994-01-01'
-      AND {self._json(tbl='l', col='l_shipdate', dts=dts)} <  DATE '1995-01-01'
-    GROUP BY
-      partkey, suppkey
-  ),
-
-  ps_available AS (
-    SELECT
-      {self._json(tbl='ps', col='ps_partkey', dts=dts)} AS partkey,
-      {self._json(tbl='ps', col='ps_suppkey', dts=dts)} AS suppkey
-    FROM extracted AS ps
-    JOIN p_forest AS pf
-      ON {self._json(tbl='ps', col='ps_partkey', dts=dts)} = pf.partkey
-    JOIN supply_sum AS ss
-      ON ss.partkey = {self._json(tbl='ps', col='ps_partkey', dts=dts)}
-     AND ss.suppkey = {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
-    WHERE
-      {self._json(tbl='ps', col='ps_availqty', dts=dts)} > 0.5 * ss.total_qty
-  )
-
 SELECT
-    {self._json(tbl='s', col='s_name',   dts=dts)} AS s_name,
-    {self._json(tbl='s', col='s_address', dts=dts)} AS s_address
-FROM extracted AS s
-
-  JOIN ps_available AS pa
-    ON {self._json(tbl='s', col='s_suppkey', dts=dts)} = pa.suppkey
-
-  JOIN extracted AS n
-    ON {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
-   AND {self._json(tbl='n', col='n_name',      dts=dts)} = 'CANADA'
-
+    {self._json(tbl='s', col='s_name', dt=dts['s_name'])} AS s_name,
+    {self._json(tbl='s', col='s_address', dt=dts['s_address'])} AS s_address
+FROM
+    test_table s,
+    test_table n
+WHERE
+    {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} IN (
+        SELECT
+            {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
+        FROM
+            test_table ps
+        WHERE
+            {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} IN (
+                SELECT
+                    {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])}
+                FROM
+                    test_table p
+                WHERE
+                    {self._json(tbl='p', col='p_name', dt=dts['p_name'])} LIKE 'forest%'
+            )
+            AND {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])} > (
+                SELECT
+                    0.5 * SUM({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])})
+                FROM
+                    test_table l
+                WHERE
+                    {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
+                    AND {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} = {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
+                    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} >= DATE '1994-01-01'
+                    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} < DATE '1995-01-01'
+            )
+    )
+    AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
+    AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'CANADA'
 ORDER BY
-    {self._json(tbl='s', col='s_name', dts=dts)};
-"""
+    {self._json(tbl='s', col='s_name', dt=dts['s_name'])};
+    """
 
     def no_join_clauses(self) -> int:
         """
@@ -188,17 +127,36 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "s_suppkey": False,
-            "ps_partkey": False,
-            "p_name": True,
-            "ps_availqty": False,
-            "l_shipdate": True,
-            "n_name": True
+            "s_suppkey": 0,
+            "ps_partkey": 0,
+            "p_name": 1,
+            "ps_availqty": 0,
+            "l_shipdate": 1,
+            "n_name": 1
         }
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
+
+    def get_join_field_has_no_direct_filter(self, field: str) -> int:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "l_partkey": 0,
+            "ps_partkey": 1,
+            "l_suppkey": 0,
+            "ps_suppkey": 1,
+            "s_nationkey": 1,
+            "n_nationkey": 0
+        }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a JOIN field")
 
         return field_map[field]
