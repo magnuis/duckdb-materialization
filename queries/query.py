@@ -28,7 +28,84 @@ class Query:
         -------
         list[str]
         """
-        return []
+        columns = []
+        for clause, col_list in self.columns_used_with_position().items():
+            if clause == "join":
+                for field, join_fields in col_list.items():
+                    columns.extend([field] * len(join_fields))
+            elif clause == "self_join":
+                for field, no_self_joins in col_list.items():
+                    columns.extend([field] * 2 * no_self_joins)
+            elif clause == "where":
+                columns.extend(col_list)
+            else:
+                # continue
+                columns.extend(col_list)
+        return columns
+
+    def columns_used_with_position(self) -> dict[str, list[str]]:
+        """
+        Get the columns used in TPC-H Query 1 along with their position in the query 
+        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
+
+        Returns
+        -------
+        dict
+            A dictionary with the following keys:
+            - 'select': list of column names used in the SELECT clause.
+            - 'where': list of column names used in the WHERE clause that are not joins.
+            - 'group_by': list of column names used in the GROUP BY clause.
+            - 'order_by': list of column names used in the ORDER BY clause.
+            - 'join': list of column names used in a join operation (including WHERE).
+        """
+
+    def join_field_has_filter(self, field: str) -> bool | None:
+        """
+        Check if the table of the the join field has a filter
+        """
+        assert field in self.columns_used()
+        assert field in self.columns_used_with_position()["join"]
+
+        return self.get_join_field_has_filter(field)
+
+    def get_join_field_has_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the join field filter
+        """
+        raise NotImplementedError("Subclass must implement this method")
+
+    def where_field_has_direct_filter(self, field: str) -> bool | None:
+        """
+        Check if the where field has a direct filter
+        """
+        assert field in self.columns_used()
+        assert field in self.columns_used_with_position()["where"]
+
+        return self.get_where_field_has_direct_filter(field)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        raise NotImplementedError("Subclass must implement this method")
+
+    def columns_used_in_join(self) -> dict[str, list[str | None]]:
+        """
+        Get the columns used in the join operation
+        """
+        return self.columns_used_with_position()["join"]
+
+    def columns_used_in_select(self) -> list[str]:
+        """
+        Get the columns used in the select operation
+        """
+        return self.columns_used_with_position()["select"]
+
+    def columns_used_in_where(self) -> list[str]:
+        """
+        Get the columns used in the where operation
+        """
+        return self.columns_used_with_position()["where"]
 
     def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
 
@@ -72,5 +149,10 @@ class Query:
 
         # elif dt == "VARCHAR":
         #     return f"{tbl}.raw_json->>'{col}'"
+        access_query = f"json_extract_string({tbl}.raw_json, '{col}')"
+        if dt != 'VARCHAR':
+            access_query += f'::{dt}'
+        return access_query
 
-        return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
+        # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
+        # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"

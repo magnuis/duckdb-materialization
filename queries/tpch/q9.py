@@ -79,10 +79,9 @@ class Q9(Query):
                             lp_joined.l_extendedprice * (1 - lp_joined.l_discount) - {self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * lp_joined.l_discount AS amount
                     FROM
                             (
-                                    select 
+                                    SELECT 
                                             {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} AS l_partkey,
                                             {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} AS l_suppkey,
-                                            {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} AS l_partkey,
                                             {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} AS l_orderkey,
                                             {self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} AS l_extendedprice,
                                             {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])} AS l_discount
@@ -99,7 +98,7 @@ class Q9(Query):
                             test_table o,
                             test_table n
                     WHERE
-                            {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} =  lp_joined.l_suppkey
+                            {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = lp_joined.l_suppkey
                             AND {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} = lp_joined.l_suppkey
                             AND {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} = lp_joined.l_partkey
                             AND {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = lp_joined.l_orderkey
@@ -114,30 +113,81 @@ class Q9(Query):
 
     """
 
-    def columns_used(self,) -> list[str]:
+    def no_join_clauses(self) -> int:
         """
-        Get the columns used in TPC-H query 9
+        Returns the number of join clauses in the query
+        """
+        return 6
+
+    def columns_used_with_position(self) -> dict[str, list[str]]:
+        """
+        Get the underlying column names used in the query along with their position 
+        in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
         -------
-        list[str]
+        dict
+            A dictionary with the following keys:
+            - 'select': list of underlying column names used in the SELECT clause.
+            - 'where': list of underlying column names used in the WHERE clause that are not joins.
+            - 'group_by': list of underlying column names used in the GROUP BY clause.
+            - 'order_by': list of underlying column names used in the ORDER BY clause.
+            - 'join': list of underlying column names used in a join operation (including WHERE)
+        """
+        return {
+            'select': [
+                "n_name",
+                "o_orderdate",
+                "ps_supplycost",
+                "l_partkey",
+                "l_suppkey",
+                "l_orderkey",
+                "l_extendedprice",
+                "l_discount"
+            ],
+            'where': [
+                "p_name"
+            ],
+            'group_by': [
+            ],
+            'order_by': [
+            ],
+            'join': {
+                "p_partkey": ["l_partkey"],
+                "l_partkey": ["p_partkey"],
+                "s_suppkey": [None],
+                "ps_suppkey": [None],
+                "ps_partkey": [None],
+                "s_nationkey": ["n_nationkey"],
+                "n_nationkey": ["s_nationkey"],
+                "o_orderkey": [None]
+            }
+        }
+
+    def get_join_field_has_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the join field filter
         """
 
-        return [
-            "n_name",
-            "o_orderdate",
-            "l_extendedprice",
-            "l_discount",
-            "ps_supplycost",
-            "s_suppkey",
-            "l_suppkey",
-            "ps_suppkey",
-            "ps_partkey",
-            "l_partkey",
-            "p_partkey",
-            "o_orderkey",
-            "l_orderkey",
-            "s_nationkey",
-            "n_nationkey",
-            "p_name"
-        ]
+        field_map = {
+            "p_partkey": True,
+            "l_partkey": False,
+            "s_suppkey": False,
+            "ps_suppkey": False,
+            "ps_partkey": False,
+            "s_nationkey": False,
+            "n_nationkey": False,
+            "o_orderkey": False
+        }
+
+        return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_name": True
+        }
+
+        return field_map[field]

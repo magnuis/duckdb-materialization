@@ -107,7 +107,7 @@ FROM
         (
                 SELECT
                         {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey,
-                        {self._json(tbl='r', col='r_name', dt=dts['r_name'])} AS n_name
+                        {self._json(tbl='n', col='n_name', dt=dts['n_name'])} AS n_name
                 FROM
                         test_table r,
                         test_table n
@@ -121,14 +121,16 @@ WHERE
         AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = r_n_joined.n_nationkey
         AND p_ps_joined.ps_supplycost = (
                 SELECT
-                        min({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])})
+                        min({self._json(tbl='ps', col='ps_supplycost',
+                                        dt=dts['ps_supplycost'])})
                 FROM
                         test_table s,
                         test_table ps,
                         test_table n,
                         test_table r
                 WHERE
-                        p_ps_joined.p_partkey = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
+                        p_ps_joined.p_partkey = {self._json(
+                                            tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
                         AND {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
                         AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
                         AND {self._json(tbl='n', col='n_regionkey', dt=dts['n_regionkey'])} = {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])}
@@ -143,33 +145,91 @@ LIMIT
         100;
         """
 
-    def columns_used(self,) -> list[str]:
+    def no_join_clauses(self) -> int:
         """
-        Get the columns used in TPC-H query 2
+        Returns the number of join clauses in the query
+        """
+        return 4
+
+    def columns_used_with_position(self,) -> dict[str, list[str]]:
+        """
+        Get the columns used in TPC-H Query 1 along with their position in the query 
+        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
         -------
-        list[str]
+        dict
+            A dictionary with the following keys:
+            - 'select': list of column names used in the SELECT clause.
+            - 'where': list of column names used in the WHERE clause that are not joins.
+            - 'group_by': list of column names used in the GROUP BY clause.
+            - 'order_by': list of column names used in the ORDER BY clause.
+            - 'join': list of column names used in a join operation (including WHERE)
+        """
+        return {
+            'select': [
+                "s_acctbal",
+                "s_name",
+                "s_address",
+                "s_phone",
+                "s_comment",
+                "ps_suppkey",
+                "ps_supplycost",
+                "p_partkey",
+                "p_mfgr",
+                "n_nationkey",
+                "n_name",
+                "ps_supplycost",
+            ],
+            'where': [
+                "p_size",
+                "p_type",
+                "r_name",
+                "r_name"
+            ],
+            'group_by': [],
+            'order_by': [
+                "s_acctbal",
+                "s_name"
+            ],
+            'join': {
+                "p_partkey": ["ps_partkey"],
+                "ps_partkey": ["p_partkey", None],
+                "n_regionkey": ["r_regionkey", "r_regionkey"],
+                "r_regionkey": ["n_regionkey", "n_regionkey"],
+                "s_suppkey": [None, "ps_suppkey"],
+                "s_nationkey": [None, "n_nationkey"],
+                "ps_suppkey": ["s_suppkey"],
+                "n_nationkey": ["s_nationkey"]
+            }
+        }
+
+    def get_join_field_has_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the join field filter
         """
 
-        return [
-            "s_name",
-            "n_name",
-            "p_partkey",
-            "p_mfgr",
-            "s_address",
-            "s_phone",
-            "s_comment",
-            "ps_partkey",
-            "ps_suppkey",
-            "s_suppkey",
-            "p_size",
-            "p_type",
-            "s_nationkey",
-            "n_nationkey",
-            "n_regionkey",
-            "r_regionkey",
-            "r_name",
-            "ps_supplycost",
-            "s_acctbal"
-        ]
+        field_map = {
+            "p_partkey": True,
+            "ps_partkey": False,
+            "n_regionkey": False,
+            "r_regionkey": True,
+            "s_suppkey": False,
+            "s_nationkey": False,
+            "ps_suppkey": False,
+            "n_nationkey": False
+        }
+
+        return field_map[field]
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_size": True,
+            "p_type": True,
+            "r_name": True,
+        }
+
+        return field_map[field]

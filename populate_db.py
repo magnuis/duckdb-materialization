@@ -9,7 +9,7 @@ import pyarrow.parquet as pq
 
 CONFIG = {
     "tpch": {
-        "json_path": './data/tpch/tpch_json_medium.json',
+        "json_path": './data/tpch/bigbigger_tpch_json.json',
     }
 }
 
@@ -107,7 +107,7 @@ def _prepare_dirs(dataset: str):
     if not os.path.isdir(DB_PATH):
         os.mkdir(DB_PATH)
 
-    backup_path = f"{BACKUP_PATH}/{dataset}_medium"
+    backup_path = f"{BACKUP_PATH}/{dataset}_bigbigger"
     try:
         os.mkdir(backup_path)
     except FileExistsError:
@@ -123,7 +123,7 @@ def populate_db():
     """
     dataset = 'tpch'  # TODO dynamic/take from args
     config = CONFIG[dataset]
-    backup_path = f"{BACKUP_PATH}/{dataset}_medium"
+    backup_path = f"{BACKUP_PATH}/{dataset}_bigbigger"
     db_path = f"{DB_PATH}/{dataset}.db"
 
     # Prepare db and backup directories

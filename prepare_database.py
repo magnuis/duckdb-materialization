@@ -29,6 +29,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
     Alter the table for the given field
 
     If the field should be materialized, and does not exist, create it.
+
     If the field should not be materialized but is present, drop column
 
     Parameters

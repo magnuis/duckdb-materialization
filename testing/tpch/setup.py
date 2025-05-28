@@ -1,3 +1,5 @@
+from queries.query import Query
+
 from queries.tpch.q1 import Q1
 from queries.tpch.q2 import Q2
 from queries.tpch.q3 import Q3
@@ -21,32 +23,32 @@ from queries.tpch.q20 import Q20
 from queries.tpch.q21 import Q21
 from queries.tpch.q22 import Q22
 
-QUERIES = {
-    # 'q1': Q1(),
-    # 'q2': Q2(),
+QUERIES: dict[str, Query] = {
+    'q1': Q1(),
+    'q2': Q2(),
     'q3': Q3(),
-    # 'q4': Q4(),
+    'q4': Q4(),
     # 'q5': Q5(),
-    # 'q6': Q6(),
-    # 'q7': Q7(),
-    # 'q8': Q8(),
-    # 'q9': Q9(),
-    # 'q10': Q10(),
-    # 'q11': Q11(),
-    # 'q12': Q12(),
-    # 'q13': Q13(),
-    # 'q14': Q14(),
-    # 'q15': Q15(),
-    # 'q16': Q16(),
-    # 'q17': Q17(),
-    # 'q18': Q18(),
-    # 'q19': Q19(),
-    # 'q20': Q20(),
-    # 'q21': Q21(),
-    # 'q22': Q22(),
-    # # 'q23',
-    # # 'q24',
-    # # 'q25'
+    'q6': Q6(),
+    'q7': Q7(),
+    'q8': Q8(),
+    'q9': Q9(),
+    'q10': Q10(),
+    'q11': Q11(),
+    'q12': Q12(),
+    'q13': Q13(),
+    'q14': Q14(),
+    'q15': Q15(),
+    'q16': Q16(),
+    'q17': Q17(),
+    'q18': Q18(),
+    'q19': Q19(),
+    'q20': Q20(),
+    'q21': Q21(),
+    'q22': Q22(),
+    # 'q23',
+    # 'q24',
+    # 'q25'
 }
 
 LOAD_BASED_MATERIALIZATION = [
@@ -107,7 +109,7 @@ STANDARD_SETUPS = {
     # },
     "q3_l2_m11": {
         "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal', 'l_extendedprice']
-    }
+    },
     # "test": {
     #     "materialization": ["s_suppkey"],
     # },
@@ -150,18 +152,20 @@ STANDARD_SETUPS = {
     # "q4m400l9_13field": {
     #     "materialization": ['l_orderkey', 'l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 'o_orderkey', 'p_partkey', 's_suppkey', 's_name', 's_address', 's_nationkey'],
     # },
-    # "q5_075_1": {
-    #     "materialization": ['l_extendedprice', 'o_orderdate', 'r_name', 'l_orderkey', 'l_discount', 's_nationkey', 'o_custkey', 'c_nationkey', 'c_custkey', 's_suppkey', 'n_name', 'o_orderkey']
-    # },
-    # "q5_075_2": {
-    #     "materialization": ['l_suppkey', 'c_nationkey', 's_suppkey', 'l_discount', 'l_orderkey', 'r_name', 'o_orderdate', 'l_extendedprice', 'n_name', 'o_orderkey', 'c_custkey', 'n_regionkey']
-    # },
-    # "no_materialization": {
-    #     "materialization": [],
-    # },
-    # "full_materialization": {
-    #     "materialization": None,
-    # },
+
+
+
+
+
+    "q2_l0": {
+        "materialization": ["p_mfgr", "n_name", "p_partkey", "ps_partkey"]
+    },
+    "no_materialization": {
+        "materialization": [],
+    },
+    "full_materialization": {
+        "materialization": None,
+    },
     # "load_based_materialization": {
     #     "materialization": [
     #         "l_extendedprice",

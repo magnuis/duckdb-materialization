@@ -103,16 +103,13 @@ FROM
                         ) AS p_l_joined,
                         (
                                 SELECT
-                                        {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])} AS r_regionkey,
-                                        {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey,
-                                        {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])} AS n_regionkey
-
+                                        {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey
                                 FROM
                                         test_table r,
                                         test_table n1
                                 WHERE
                                         {self._json(tbl='r', col='r_name', dt=dts['r_name'])} = 'AMERICA'
-                                        AND {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])} = {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])}
+                                        AND {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])} = {self._json(tbl='n1', col='n_regionkey', dt=dts['n_regionkey'])}
                         ) AS r_n1_joined,
 
                         test_table o,
@@ -134,33 +131,92 @@ ORDER BY
         o_year;
     """
 
-    def columns_used(self,) -> list[str]:
+    def no_join_clauses(self) -> int:
         """
-        Get the columns used in TPC-H query 8
+        Returns the number of join clauses in the query
+        """
+        return 7
+
+    def columns_used_with_position(self) -> dict[str, list[str]]:
+        """
+        Get the underlying column names used in the query along with their position 
+        in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
         -------
-        list[str]
+        dict
+            A dictionary with the following keys:
+            - 'select': list of underlying column names used in the SELECT clause.
+            - 'where': list of underlying column names used in the WHERE clause that are not joins.
+            - 'group_by': list of underlying column names used in the GROUP BY clause.
+            - 'order_by': list of underlying column names used in the ORDER BY clause.
+            - 'join': list of underlying column names used in a join operation (including WHERE)
+        """
+        return {
+            'select': [
+                "o_orderdate",
+                "n_name",
+                "p_partkey",
+                "l_extendedprice",
+                "l_discount",
+                "l_orderkey",
+                "l_partkey",
+                "l_suppkey",
+                "n_nationkey"
+            ],
+            'where': [
+                "p_type",
+                "r_name",
+                "o_orderdate",
+            ],
+            'group_by': [
+            ],
+            'order_by': [
+            ],
+            'join': {
+                "p_partkey": ["l_partkey"],
+                "l_partkey": ["p_partkey"],
+                "r_regionkey": ["n_regionkey"],
+                "n_regionkey": ["r_regionkey"],
+                "s_suppkey": [None],
+                "o_orderkey": [None],
+                "o_custkey": ["c_custkey"],
+                "c_custkey": ["o_custkey"],
+                "c_nationkey": [None],
+                "s_nationkey": ["n_nationkey"],
+                "n_nationkey": ["s_nationkey"]
+            }
+        }
+
+    def get_join_field_has_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the join field filter
         """
 
-        return [
-            "o_orderdate",
-            "l_extendedprice",
-            "l_discount",
-            "n_name",
-            "p_partkey",
-            "l_partkey",
-            "s_suppkey",
-            "l_suppkey",
-            "l_orderkey",
-            "o_orderkey",
-            "o_custkey",
-            "c_custkey",
-            "r_regionkey",
-            "n_regionkey",
-            "c_nationkey",
-            "n_nationkey",
-            "r_name",
-            "s_nationkey",
-            "p_type"
-        ]
+        field_map = {
+            "p_partkey": True,
+            "l_partkey": False,
+            "r_regionkey": True,
+            "n_regionkey": False,
+            "s_suppkey": False,
+            "o_orderkey": True,
+            "o_custkey": True,
+            "c_custkey": False,
+            "c_nationkey": False,
+            "s_nationkey": False,
+            "n_nationkey": False
+        }
+
+        return field_map.get(field, False)
+
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "p_type": True,
+            "r_name": True,
+            "o_orderdate": True
+        }
+
+        return field_map[field]

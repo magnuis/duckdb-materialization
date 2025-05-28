@@ -18,7 +18,6 @@ class Q1(Query):
         str
         """
 
-        # TODO use more performant e.g. dict for loopup
         dts = self._get_field_accesses(fields=fields)
 
         return f"""
@@ -45,22 +44,52 @@ class Q1(Query):
         l_linestatus;
     """
 
-    def columns_used(self,) -> list[str]:
+    def no_join_clauses(self) -> int:
         """
-        Get the columns used in TPC-H query 1
+        Returns the number of join clauses in the query
+        """
+        return 0
+
+    def columns_used_with_position(self,) -> dict[str, list[str]]:
+        """
+        Get the columns used in TPC-H Query 1 along with their position in the query 
+        (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
         -------
-        list[str]
+        dict
+            A dictionary with the following keys:
+            - 'select': list of column names used in the SELECT clause.
+            - 'where': list of column names used in the WHERE clause that are not joins.
+            - 'group_by': list of column names used in the GROUP BY clause.
+            - 'order_by': list of column names used in the ORDER BY clause.
+            - 'join': list of column names used in a join operation (including WHERE).
         """
+        return {
+            'select': [
+                "l_returnflag",
+                "l_linestatus",
+                "l_quantity",
+                "l_extendedprice",
+                "l_discount",
+                "l_tax"
+            ],
+            'where': [
+                "l_shipdate"
+            ],
+            'group_by': [
+            ],
+            'order_by': [
+            ],
+            'join': {}
+        }
 
-        return [
-            "l_returnflag",
-            "l_linestatus",
-            "l_quantity",
-            "l_extendedprice",
-            "l_discount",
-            "l_tax",
-            "l_quantity",
-            "l_shipdate"
-        ]
+    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+        """
+        Query specific implementation of the where field has direct filter
+        """
+        field_map = {
+            "l_shipdate": True
+        }
+
+        return field_map[field]
