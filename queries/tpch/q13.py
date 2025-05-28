@@ -9,7 +9,17 @@ class Q13(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "c": ["c_custkey"],
+            "o": ["o_comment", "o_custkey", "o_orderkey"]
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 13, adjusted to current db materializaiton
 
@@ -18,8 +28,6 @@ class Q13(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
     c_count,
@@ -27,14 +35,14 @@ SELECT
 FROM
     (
         SELECT
-            {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} AS c_custkey,
-            COUNT({self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}) AS c_count
+            {self._json(tbl='c', col='c_custkey', dts=dts)} AS c_custkey,
+            COUNT({self._json(tbl='o', col='o_orderkey', dts=dts)}) AS c_count
         FROM
-            test_table c LEFT OUTER JOIN test_table o ON
-                {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
-                AND {self._json(tbl='o', col='o_comment', dt=dts['o_comment'])} NOT LIKE '%special%requests%'
+            extracted c LEFT OUTER JOIN extracted o ON
+                {self._json(tbl='c', col='c_custkey', dts=dts)} = {self._json(tbl='o', col='o_custkey', dts=dts)}
+                AND {self._json(tbl='o', col='o_comment', dts=dts)} NOT LIKE '%special%requests%'
         GROUP BY
-            {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])}
+            {self._json(tbl='c', col='c_custkey', dts=dts)}
     ) AS c_orders
 GROUP BY
     c_count

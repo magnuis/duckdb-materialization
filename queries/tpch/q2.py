@@ -22,14 +22,14 @@ class Q2(Query):
 
 #         return f"""
 # SELECT
-#     {self._json(tbl='s', col='s_acctbal', dt=dts['s_acctbal'])} AS s_acctbal,
-#     {self._json(tbl='s', col='s_name', dt=dts['s_name'])} AS s_name,
-#     {self._json(tbl='n', col='n_name', dt=dts['n_name'])} AS n_name,
-#     {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} AS p_partkey,
-#     {self._json(tbl='p', col='p_mfgr', dt=dts['p_mfgr'])} AS p_mfgr,
-#     {self._json(tbl='s', col='s_address', dt=dts['s_address'])} AS s_address,
-#     {self._json(tbl='s', col='s_phone', dt=dts['s_phone'])} AS s_phone,
-#     {self._json(tbl='s', col='s_comment', dt=dts['s_comment'])} AS s_comment,
+#     {self._json(tbl='s', col='s_acctbal', dts=dts)} AS s_acctbal,
+#     {self._json(tbl='s', col='s_name', dts=dts)} AS s_name,
+#     {self._json(tbl='n', col='n_name', dts=dts)} AS n_name,
+#     {self._json(tbl='p', col='p_partkey', dts=dts)} AS p_partkey,
+#     {self._json(tbl='p', col='p_mfgr', dts=dts)} AS p_mfgr,
+#     {self._json(tbl='s', col='s_address', dts=dts)} AS s_address,
+#     {self._json(tbl='s', col='s_phone', dts=dts)} AS s_phone,
+#     {self._json(tbl='s', col='s_comment', dts=dts)} AS s_comment,
 # FROM
 #     test_table p,
 #     test_table s,
@@ -37,27 +37,27 @@ class Q2(Query):
 #     test_table n,
 #     test_table r
 # WHERE
-#     {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
-#     AND {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
-#     AND {self._json(tbl='p', col='p_size', dt=dts['p_size'])} = 15
-#     AND {self._json(tbl='p', col='p_type', dt=dts['p_type'])}  LIKE '%BRASS'
-#     AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-#     AND {self._json(tbl='n', col='n_regionkey', dt=dts['n_regionkey'])} = {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])}
-#     AND {self._json(tbl='r', col='r_name', dt=dts['r_name'])} = 'EUROPE'
-#     AND {self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} = (
+#     {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='ps', col='ps_partkey', dts=dts)}
+#     AND {self._json(tbl='s', col='s_suppkey', dts=dts)} = {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
+#     AND {self._json(tbl='p', col='p_size', dts=dts)} = 15
+#     AND {self._json(tbl='p', col='p_type', dts=dts)}  LIKE '%BRASS'
+#     AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
+#     AND {self._json(tbl='n', col='n_regionkey', dts=dts)} = {self._json(tbl='r', col='r_regionkey', dts=dts)}
+#     AND {self._json(tbl='r', col='r_name', dts=dts)} = 'EUROPE'
+#     AND {self._json(tbl='ps', col='ps_supplycost', dts=dts)} = (
 #         SELECT
-#             MIN({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])})
+#             MIN({self._json(tbl='ps', col='ps_supplycost', dts=dts)})
 #         FROM
 #             test_table s,
 #             test_table ps,
 #             test_table n,
 #             test_table r
 #         WHERE
-#             {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
-#             AND {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
-#             AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-#             AND {self._json(tbl='n', col='n_regionkey', dt=dts['n_regionkey'])} = {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])}
-#             AND {self._json(tbl='r', col='r_name', dt=dts['r_name'])} = 'EUROPE'
+#             {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='ps', col='ps_partkey', dts=dts)}
+#             AND {self._json(tbl='s', col='s_suppkey', dts=dts)} = {self._json(tbl='ps', col='ps_suppkey', dts=dts)}
+#             AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n', col='n_nationkey', dts=dts)}
+#             AND {self._json(tbl='n', col='n_regionkey', dts=dts)} = {self._json(tbl='r', col='r_regionkey', dts=dts)}
+#             AND {self._json(tbl='r', col='r_name', dts=dts)} = 'EUROPE'
 #     )
 # ORDER BY
 #     s_acctbal DESC,
@@ -67,8 +67,25 @@ class Q2(Query):
 # LIMIT
 #     100;
 #     """
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+        return {
+            "p1": ["p_partkey", "p_mfgr", "p_size", "p_type"],
+            "ps1": ["ps_suppkey", "ps_supplycost", "ps_partkey"],
+            "r1": ["r_name", "r_regionkey"],
+            "n1": ["n_nationkey", "n_name", "n_regionkey"],
+            "s1": ["s_nationkey", "s_suppkey"],
+            "ps2": ["ps_supplycost", "ps_partkey", "ps_suppkey"],
+            "n2": ["n_nationkey", "n_regionkey"],
+            "r2": ["r_name", "r_regionkey"],
+            "s2": ["s_name", "s_acctbal", "s_nationkey", "s_suppkey", "s_address", "s_phone", "s_comment"],
+
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 2, adjusted to current db materializaiton
 
@@ -77,69 +94,67 @@ class Q2(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-        {self._json(tbl='s', col='s_acctbal', dt=dts['s_acctbal'])} AS s_acctbal,
-        {self._json(tbl='s', col='s_name', dt=dts['s_name'])} AS s_name,
+        {self._json(tbl='s2', col='s_acctbal', dts=dts)} AS s_acctbal,
+        {self._json(tbl='s2', col='s_name', dts=dts)} AS s_name,
         r_n_joined.n_name,
         p_ps_joined.p_partkey,
         p_ps_joined.p_mfgr,
-        {self._json(tbl='s', col='s_address', dt=dts['s_address'])} AS s_address,
-        {self._json(tbl='s', col='s_phone', dt=dts['s_phone'])} AS s_phone,
-        {self._json(tbl='s', col='s_comment', dt=dts['s_comment'])} AS s_comment
+        {self._json(tbl='s2', col='s_address', dts=dts)} AS s_address,
+        {self._json(tbl='s2', col='s_phone', dts=dts)} AS s_phone,
+        {self._json(tbl='s2', col='s_comment', dts=dts)} AS s_comment
 FROM
         (
                 SELECT
-                        {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} AS ps_suppkey,
-                        {self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} AS ps_supplycost,
-                        {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} AS p_partkey,
-                        {self._json(tbl='p', col='p_mfgr', dt=dts['p_mfgr'])} AS p_mfgr
+                        {self._json(tbl='ps1', col='ps_suppkey', dts=dts)} AS ps_suppkey,
+                        {self._json(tbl='ps1', col='ps_supplycost', dts=dts)} AS ps_supplycost,
+                        {self._json(tbl='p1', col='p_partkey', dts=dts)} AS p_partkey,
+                        {self._json(tbl='p1', col='p_mfgr', dts=dts)} AS p_mfgr
                 FROM
-                        test_table p,
-                        test_table ps
+                        extracted p1,
+                        extracted ps1
                 WHERE
-                        {self._json(tbl='p', col='p_size', dt=dts['p_size'])} = 15
-                        AND {self._json(tbl='p', col='p_type', dt=dts['p_type'])} like '%BRASS'
-                        AND {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
+                        {self._json(tbl='p1', col='p_size', dts=dts)} = 15
+                        AND {self._json(tbl='p1', col='p_type', dts=dts)} like '%BRASS'
+                        AND {self._json(tbl='p1', col='p_partkey', dts=dts)} = {self._json(tbl='ps1', col='ps_partkey', dts=dts)}
         ) AS p_ps_joined,
         (
                 SELECT
-                        {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey,
-                        {self._json(tbl='n', col='n_name', dt=dts['n_name'])} AS n_name
+                        {self._json(tbl='n1', col='n_nationkey', dts=dts)} AS n_nationkey,
+                        {self._json(tbl='n1', col='n_name', dts=dts)} AS n_name
                 FROM
-                        test_table r,
-                        test_table n
+                        extracted r1,
+                        extracted n1
                 WHERE
-                        {self._json(tbl='r', col='r_name', dt=dts['r_name'])} = 'EUROPE'
-                        AND {self._json(tbl='n', col='n_regionkey', dt=dts['n_regionkey'])} = {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])}
+                        {self._json(tbl='r1', col='r_name', dts=dts)} = 'EUROPE'
+                        AND {self._json(tbl='n1', col='n_regionkey', dts=dts)} = {self._json(tbl='r1', col='r_regionkey', dts=dts)}
         ) AS r_n_joined,
-        test_table s
+        extracted s2
 WHERE
-        {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = p_ps_joined.ps_suppkey
-        AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = r_n_joined.n_nationkey
+        {self._json(tbl='s2', col='s_suppkey', dts=dts)} = p_ps_joined.ps_suppkey
+        AND {self._json(tbl='s2', col='s_nationkey', dts=dts)} = r_n_joined.n_nationkey
         AND p_ps_joined.ps_supplycost = (
                 SELECT
-                        min({self._json(tbl='ps', col='ps_supplycost',
-                                        dt=dts['ps_supplycost'])})
+                        min({self._json(tbl='ps2', col='ps_supplycost',
+                                        dts=dts)})
                 FROM
-                        test_table s,
-                        test_table ps,
-                        test_table n,
-                        test_table r
+                        extracted s1,
+                        extracted ps2,
+                        extracted n2,
+                        extracted r2
                 WHERE
                         p_ps_joined.p_partkey = {self._json(
-                                            tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
-                        AND {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
-                        AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-                        AND {self._json(tbl='n', col='n_regionkey', dt=dts['n_regionkey'])} = {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])}
-                        AND {self._json(tbl='r', col='r_name', dt=dts['r_name'])} = 'EUROPE'
+                                            tbl='ps2', col='ps_partkey', dts=dts)}
+                        AND {self._json(tbl='s1', col='s_suppkey', dts=dts)} = {self._json(tbl='ps2', col='ps_suppkey', dts=dts)}
+                        AND {self._json(tbl='s1', col='s_nationkey', dts=dts)} = {self._json(tbl='n2', col='n_nationkey', dts=dts)}
+                        AND {self._json(tbl='n2', col='n_regionkey', dts=dts)} = {self._json(tbl='r2', col='r_regionkey', dts=dts)}
+                        AND {self._json(tbl='r2', col='r_name', dts=dts)} = 'EUROPE'
         )
 ORDER BY
-        {self._json(tbl='s', col='s_acctbal', dt=dts['s_acctbal'])} DESC,
+        {self._json(tbl='s2', col='s_acctbal', dts=dts)} DESC,
         r_n_joined.n_name,
-        {self._json(tbl='s', col='s_name', dt=dts['s_name'])},
+        {self._json(tbl='s2', col='s_name', dts=dts)},
         p_ps_joined.p_partkey
 LIMIT
         100;

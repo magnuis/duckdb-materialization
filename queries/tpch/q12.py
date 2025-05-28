@@ -9,7 +9,17 @@ class Q12(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "l": ["l_shipmode", "l_commitdate", "l_receiptdate", "l_shipdate", "l_orderkey"],
+            "o": ["o_orderkey", "o_orderpriority"]
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 12, adjusted to current db materializaiton
 
@@ -18,33 +28,31 @@ class Q12(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])} AS l_shipmode,
+    {self._json(tbl='l', col='l_shipmode', dts=dts)} AS l_shipmode,
     SUM(CASE
-            WHEN {self._json(tbl='o', col='o_orderpriority', dt=dts['o_orderpriority'])} = '1-URGENT' OR {self._json(tbl='o', col='o_orderpriority', dt=dts['o_orderpriority'])} = '2-HIGH' THEN 1
+            WHEN {self._json(tbl='o', col='o_orderpriority', dts=dts)} = '1-URGENT' OR {self._json(tbl='o', col='o_orderpriority', dts=dts)} = '2-HIGH' THEN 1
             ELSE 0
         END) AS high_line_count,
     SUM(CASE
-            WHEN {self._json(tbl='o', col='o_orderpriority', dt=dts['o_orderpriority'])} <> '1-URGENT' AND {self._json(tbl='o', col='o_orderpriority', dt=dts['o_orderpriority'])} <> '2-HIGH' THEN 1
+            WHEN {self._json(tbl='o', col='o_orderpriority', dts=dts)} <> '1-URGENT' AND {self._json(tbl='o', col='o_orderpriority', dts=dts)} <> '2-HIGH' THEN 1
             ELSE 0
         END) AS low_line_count
 FROM
-    test_table o,
-    test_table l
+    extracted o,
+    extracted l
 WHERE
-    {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])}
-    AND {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])} IN ('MAIL', 'SHIP')
-    AND {self._json(tbl='l', col='l_commitdate', dt=dts['l_commitdate'])}  < {self._json(tbl='l', col='l_receiptdate', dt=dts['l_receiptdate'])}
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])}  < {self._json(tbl='l', col='l_commitdate', dt=dts['l_commitdate'])}
-    AND {self._json(tbl='l', col='l_receiptdate', dt=dts['l_receiptdate'])} >= DATE '1994-01-01'
-    AND {self._json(tbl='l', col='l_receiptdate', dt=dts['l_receiptdate'])} < DATE '1995-01-01'
+    {self._json(tbl='o', col='o_orderkey', dts=dts)} = {self._json(tbl='l', col='l_orderkey', dts=dts)}
+    AND {self._json(tbl='l', col='l_shipmode', dts=dts)} IN ('MAIL', 'SHIP')
+    AND {self._json(tbl='l', col='l_commitdate', dts=dts)}  < {self._json(tbl='l', col='l_receiptdate', dts=dts)}
+    AND {self._json(tbl='l', col='l_shipdate', dts=dts)}  < {self._json(tbl='l', col='l_commitdate', dts=dts)}
+    AND {self._json(tbl='l', col='l_receiptdate', dts=dts)} >= DATE '1994-01-01'
+    AND {self._json(tbl='l', col='l_receiptdate', dts=dts)} < DATE '1995-01-01'
 GROUP BY
-    {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])}
+    {self._json(tbl='l', col='l_shipmode', dts=dts)}
 ORDER BY
-    {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])};
+    {self._json(tbl='l', col='l_shipmode', dts=dts)};
     """
 
     def no_join_clauses(self) -> int:

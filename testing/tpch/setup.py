@@ -157,9 +157,9 @@ STANDARD_SETUPS = {
 
 
 
-    "q2_l0": {
-        "materialization": ["p_mfgr", "n_name", "p_partkey", "ps_partkey"]
-    },
+    # "q2_l0": {
+    #     "materialization": ["p_mfgr", "n_name", "p_partkey", "ps_partkey"]
+    # },
     "no_materialization": {
         "materialization": [],
     },

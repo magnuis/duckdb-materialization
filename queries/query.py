@@ -1,3 +1,10 @@
+from enum import Enum
+
+
+class MaterializationStrategy(Enum):
+    FIRST_ITERATION = 1
+
+
 class Query:
     """
     Base class for queries used in this project
@@ -6,19 +13,21 @@ class Query:
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def _get_query(self, dts: dict[str, dict[str, str]]) -> str:
         """
         Get the formatted query, adjusted to current db materializaiton
 
         Parameters
         ----------
-        fields : list[tuple[str, dict, bool]]
-            List of tuples of the fields in the database table.
+        dts : dict[str, dict[str, str]]
+            Dictionary with data types for give columns of CTEs.
+            E.g. {"o": {"o_orderkey": "extracted_list[1]::INT"}}
 
         Returns
         -------
         str
         """
+        raise NotImplementedError()
 
     def columns_used(self):
         """
@@ -45,7 +54,8 @@ class Query:
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """
-        Get the columns used in TPC-H Query 1 along with their position in the query 
+
+        Get the columns used in TPC-H Query 1 along with their position in the query
         (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -57,7 +67,11 @@ class Query:
             - 'group_by': list of column names used in the GROUP BY clause.
             - 'order_by': list of column names used in the ORDER BY clause.
             - 'join': list of column names used in a join operation (including WHERE).
+
+        NOTE
+        Must be implemented by each subclass to list all cols in select/where/join/etc.
         """
+        raise NotImplementedError()
 
     def join_field_has_filter(self, field: str) -> bool | None:
         """
@@ -125,9 +139,9 @@ class Query:
 
         return data_types
 
-    def _json(self, tbl: str, col: str, dt: str):
+    def _json(self, tbl: str, col: str, dts: dict[str, dict[str, str]]):
         """
-        Extract the column 
+        Extract the column
 
         Parameters
         ----------
@@ -135,8 +149,9 @@ class Query:
             The table alias to extract from
         col : str
             The column name to extract
-        dt : str | None
-            The date type of the column to extract
+        dts : dict[str, dict[str, str]]
+            Dictionary with data types for give columns of CTEs.
+            E.g. {"o": {"o_orderkey": "extracted_list[1]::INT"}}
 
         Returns
         -------

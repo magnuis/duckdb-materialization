@@ -9,7 +9,17 @@ class Q14(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "p": ["p_partkey", "p_type"],
+            "l": ["l_extendedprice", "l_discount", "l_partkey", "l_shipdate"],
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 14, adjusted to current db materializaiton
 
@@ -18,23 +28,21 @@ class Q14(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
     100.00 * SUM(
         CASE
-            WHEN {self._json(tbl='p', col='p_type', dt=dts['p_type'])} LIKE 'PROMO%' THEN {self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})
+            WHEN {self._json(tbl='p', col='p_type', dts=dts)} LIKE 'PROMO%' THEN {self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)})
             ELSE 0
         END
-    ) / SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS promo_revenue
+    ) / SUM({self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)})) AS promo_revenue
 FROM
-    test_table l,
-    test_table p
+    extracted l,
+    extracted p
 WHERE
-    {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} = {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} 
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} >= DATE '1995-09-01'
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} < DATE '1995-10-01';
+    {self._json(tbl='l', col='l_partkey', dts=dts)} = {self._json(tbl='p', col='p_partkey', dts=dts)} 
+    AND {self._json(tbl='l', col='l_shipdate', dts=dts)} >= DATE '1995-09-01'
+    AND {self._json(tbl='l', col='l_shipdate', dts=dts)} < DATE '1995-10-01';
 
     """
 

@@ -9,7 +9,21 @@ class Q7(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "c": ["c_custkey", "c_nationkey"],
+            "l": ["l_shipdate", "l_extendedprice", "l_discount", "l_suppkey", "l_orderkey"],
+            "o": ["o_custkey", "o_orderkey"],
+            "n1": ["n_name", "n_nationkey"],
+            "n2": ["n_name", "n_nationkey"],
+            "s": ["s_suppkey", "s_nationkey"],
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 7, adjusted to current db materializaiton
 
@@ -17,8 +31,6 @@ class Q7(Query):
         -------
         str
         """
-
-        dts = self._get_field_accesses(fields=fields)
 
         return f"""
 SELECT
@@ -29,28 +41,28 @@ SELECT
 FROM
     (
         SELECT
-            {self._json(tbl='n1', col='n_name', dt=dts['n_name'])} AS supp_nation,
-            {self._json(tbl='n2', col='n_name', dt=dts['n_name'])} AS cust_nation,
-            EXTRACT(YEAR FROM {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])}) AS l_year,
-            {self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])}) AS volume
+            {self._json(tbl='n1', col='n_name', dts=dts)} AS supp_nation,
+            {self._json(tbl='n2', col='n_name', dts=dts)} AS cust_nation,
+            EXTRACT(YEAR FROM {self._json(tbl='l', col='l_shipdate', dts=dts)}) AS l_year,
+            {self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)}) AS volume
         FROM
-            test_table s,
-            test_table l,
-            test_table o,
-            test_table c,
-            test_table n1,
-            test_table n2
+            extracted s,
+            extracted l,
+            extracted o,
+            extracted c,
+            extracted n1,
+            extracted n2
         WHERE
-            {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])}
-            AND {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])}
-            AND {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
-            AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])}
-            AND {self._json(tbl='c', col='c_nationkey', dt=dts['c_nationkey'])} = {self._json(tbl='n2', col='n_nationkey', dt=dts['n_nationkey'])}
+            {self._json(tbl='s', col='s_suppkey', dts=dts)} = {self._json(tbl='l', col='l_suppkey', dts=dts)}
+            AND {self._json(tbl='o', col='o_orderkey', dts=dts)} = {self._json(tbl='l', col='l_orderkey', dts=dts)}
+            AND {self._json(tbl='c', col='c_custkey', dts=dts)} = {self._json(tbl='o', col='o_custkey', dts=dts)}
+            AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n1', col='n_nationkey', dts=dts)}
+            AND {self._json(tbl='c', col='c_nationkey', dts=dts)} = {self._json(tbl='n2', col='n_nationkey', dts=dts)}
             AND (
-                ({self._json(tbl='n1', col='n_name', dt=dts['n_name'])} = 'FRANCE' AND {self._json(tbl='n2', col='n_name', dt=dts['n_name'])} = 'GERMANY')
-                OR ({self._json(tbl='n1', col='n_name', dt=dts['n_name'])} = 'GERMANY' AND {self._json(tbl='n2', col='n_name', dt=dts['n_name'])} = 'FRANCE')
+                ({self._json(tbl='n1', col='n_name', dts=dts)} = 'FRANCE' AND {self._json(tbl='n2', col='n_name', dts=dts)} = 'GERMANY')
+                OR ({self._json(tbl='n1', col='n_name', dts=dts)} = 'GERMANY' AND {self._json(tbl='n2', col='n_name', dts=dts)} = 'FRANCE')
             )
-            AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} BETWEEN DATE '1995-01-01' AND DATE '1996-12-31'
+            AND {self._json(tbl='l', col='l_shipdate', dts=dts)} BETWEEN DATE '1995-01-01' AND DATE '1996-12-31'
     ) AS shipping
 GROUP BY
     supp_nation,

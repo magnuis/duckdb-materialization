@@ -60,7 +60,23 @@ class Q8(Query):
 #     o_year;
 #     """
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "p": ["p_partkey", "p_type"],
+            "l": ["l_extendedprice", "l_discount", "l_orderkey", "l_partkey", "l_suppkey"],
+            "r": ["r_name", "r_regionkey"],
+            "n1": ["n_nationkey", "n_regionkey", "n_name"],
+            "n2": ["n_nationkey", "n_name"],
+            "o": ["o_custkey", "o_orderdate", "o_orderkey"],
+            "c": ["c_nationkey", "c_custkey"],
+            "s": ["s_nationkey", "s_suppkey"]
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 8, adjusted to current db materializaiton
 
@@ -68,8 +84,6 @@ class Q8(Query):
         -------
         str
         """
-
-        dts = self._get_field_accesses(fields=fields)
 
         return f"""
 SELECT
@@ -81,49 +95,48 @@ SELECT
 FROM
         (
                 SELECT
-                        extract(year FROM {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])}) AS o_year,
+                        extract(year FROM {self._json(tbl='o', col='o_orderdate', dts=dts)}) AS o_year,
                         p_l_joined.l_extendedprice * (1  - p_l_joined.l_discount) AS volume,
-                        {self._json(tbl='n2', col='n_name', dt=dts['n_name'])} AS nation
+                        {self._json(tbl='n2', col='n_name', dts=dts)} AS nation
                 FROM
                         (
                                 SELECT
-                                        {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} AS p_partkey,
-                                        {self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} AS l_extendedprice,
-                                        {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])} AS l_discount,
-                                        {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} AS l_orderkey,
-                                        {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} AS l_partkey,
-                                        {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} AS l_suppkey
+                                        {self._json(tbl='p', col='p_partkey', dts=dts)} AS p_partkey,
+                                        {self._json(tbl='l', col='l_extendedprice', dts=dts)} AS l_extendedprice,
+                                        {self._json(tbl='l', col='l_discount', dts=dts)} AS l_discount,
+                                        {self._json(tbl='l', col='l_orderkey', dts=dts)} AS l_orderkey,
+                                        {self._json(tbl='l', col='l_partkey', dts=dts)} AS l_partkey,
+                                        {self._json(tbl='l', col='l_suppkey', dts=dts)} AS l_suppkey
                                 FROM 
-                                        test_table p,
-                                        test_table l
+                                        extracted p,
+                                        extracted l
                                 WHERE
-                                        {self._json(tbl='p', col='p_type', dt=dts['p_type'])} = 'ECONOMY ANODIZED STEEL'
-                                        AND {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
+                                        {self._json(tbl='p', col='p_type', dts=dts)} = 'ECONOMY ANODIZED STEEL'
+                                        AND {self._json(tbl='p', col='p_partkey', dts=dts)} = {self._json(tbl='l', col='l_partkey', dts=dts)}
 
                         ) AS p_l_joined,
                         (
                                 SELECT
-                                        {self._json(tbl='n1', col='n_nationkey', dt=dts['n_nationkey'])} AS n_nationkey
+                                        {self._json(tbl='n1', col='n_nationkey', dts=dts)} AS n_nationkey
                                 FROM
-                                        test_table r,
-                                        test_table n1
+                                        extracted r,
+                                        extracted n1
                                 WHERE
-                                        {self._json(tbl='r', col='r_name', dt=dts['r_name'])} = 'AMERICA'
-                                        AND {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])} = {self._json(tbl='n1', col='n_regionkey', dt=dts['n_regionkey'])}
+                                        {self._json(tbl='r', col='r_name', dts=dts)} = 'AMERICA'
+                                        AND {self._json(tbl='r', col='r_regionkey', dts=dts)} = {self._json(tbl='n1', col='n_regionkey', dts=dts)}
                         ) AS r_n1_joined,
-
-                        test_table o,
-                        test_table c,
-                        test_table s,
-                        test_table n2
+                        extracted o,
+                        extracted c,
+                        extracted s,
+                        extracted n2
                 WHERE
 
-                        {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = p_l_joined.l_suppkey
-                        AND p_l_joined.l_orderkey = {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}
-                        AND {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])} = {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])}
-                        AND {self._json(tbl='c', col='c_nationkey', dt=dts['c_nationkey'])} = r_n1_joined.n_nationkey
-                        AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n2', col='n_nationkey', dt=dts['n_nationkey'])}
-                        AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} BETWEEN DATE '1995-01-01' AND DATE '1996-12-31'
+                        {self._json(tbl='s', col='s_suppkey', dts=dts)} = p_l_joined.l_suppkey
+                        AND p_l_joined.l_orderkey = {self._json(tbl='o', col='o_orderkey', dts=dts)}
+                        AND {self._json(tbl='o', col='o_custkey', dts=dts)} = {self._json(tbl='c', col='c_custkey', dts=dts)}
+                        AND {self._json(tbl='c', col='c_nationkey', dts=dts)} = r_n1_joined.n_nationkey
+                        AND {self._json(tbl='s', col='s_nationkey', dts=dts)} = {self._json(tbl='n2', col='n_nationkey', dts=dts)}
+                        AND {self._json(tbl='o', col='o_orderdate', dts=dts)} BETWEEN DATE '1995-01-01' AND DATE '1996-12-31'
         ) AS all_nations
 GROUP BY
         o_year

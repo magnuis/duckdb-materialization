@@ -9,7 +9,18 @@ class Q3(Query):
     def __init__(self):
         pass
 
-    def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+    def get_cte_setups(self) -> str:
+        """
+        Rewrite the query using the recommended `WITH extraced AS` JSON syntax
+        """
+
+        return {
+            "c": ["c_mktsegment", "c_custkey"],
+            "l": ["l_orderkey", "l_extendedprice", "l_discount", "l_shipdate"],
+            "o": ["o_orderdate", "o_custkey", "o_orderkey", "o_shippriority"]
+        }
+
+    def _get_query(self, dts) -> str:
         """
         Get the formatted TPC-H query 3, adjusted to current db materializaiton
 
@@ -18,31 +29,29 @@ class Q3(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} AS s_acctbal,
-    SUM( {self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS revenue,
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} AS o_orderdate,
-    {self._json(tbl='o', col='o_shippriority', dt=dts['o_shippriority'])} AS o_shippriority,
+    {self._json(tbl='l', col='l_orderkey', dts=dts)} AS l_orderkey,
+    SUM( {self._json(tbl='l', col='l_extendedprice', dts=dts)} * (1 - {self._json(tbl='l', col='l_discount', dts=dts)})) AS revenue,
+    {self._json(tbl='o', col='o_orderdate', dts=dts)} AS o_orderdate,
+    {self._json(tbl='o', col='o_shippriority', dts=dts)} AS o_shippriority
 FROM
-    test_table c,
-    test_table o,
-    test_table l
+    extracted c,
+    extracted o,
+    extracted l
 WHERE
-    {self._json(tbl='c', col='c_mktsegment', dt=dts['c_mktsegment'])} = 'BUILDING'
-    AND {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
-    AND {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}
-    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} < DATE '1995-03-15'
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} > DATE '1995-03-15'
+    {self._json(tbl='c', col='c_mktsegment', dts=dts)} = 'BUILDING'
+    AND {self._json(tbl='c', col='c_custkey', dts=dts)} = {self._json(tbl='o', col='o_custkey', dts=dts)}
+    AND {self._json(tbl='l', col='l_orderkey', dts=dts)} = {self._json(tbl='o', col='o_orderkey', dts=dts)}
+    AND {self._json(tbl='o', col='o_orderdate', dts=dts)} < DATE '1995-03-15'
+    AND {self._json(tbl='l', col='l_shipdate', dts=dts)} > DATE '1995-03-15'
 GROUP BY
-    {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])},
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])},
-    {self._json(tbl='o', col='o_shippriority', dt=dts['o_shippriority'])}
+    {self._json(tbl='l', col='l_orderkey', dts=dts)},
+    {self._json(tbl='o', col='o_orderdate', dts=dts)},
+    {self._json(tbl='o', col='o_shippriority', dts=dts)}
 ORDER BY
     revenue DESC,
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])}
+    {self._json(tbl='o', col='o_orderdate', dts=dts)}
 LIMIT
     10;
     """
@@ -96,7 +105,6 @@ LIMIT
                 "l_orderkey": ["o_orderkey"],
                 "o_orderkey": ["l_orderkey"]
             }
-
         }
 
     def get_join_field_has_filter(self, field: str) -> str | None:
