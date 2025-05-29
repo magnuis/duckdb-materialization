@@ -201,8 +201,8 @@ def _random_distribution(queries: dict[str, Query]):
 
 
 DISTRIBUTIONS: dict[str, Callable] = {
-    "numerical": _numerical_distribution
-    # "numerical": _random_distribution
+    # "numerical": _numerical_distribution
+    "numerical": _random_distribution
 }
 
 
@@ -248,7 +248,7 @@ def _calculate_field_priority(load: list[str], field_distribution: pd.DataFrame)
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_small"
+    backup_path = f"./data/backup/{dataset}_medium"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -335,24 +335,30 @@ def main():
     # prev_result_path = BASE_PATH + \
     #     f"/results/load-based-v2/{dataset}/2025-06-03-21H/results.csv"
     prev_result_path_freq = BASE_PATH + \
-        f"/results/load-based-v2/{dataset}/2025-05-29-20H/results.csv"
+        f"/results/load-based-v2/{dataset}/2025-05-29-20H/results_renamed.csv"
     prev_result_path_load = BASE_PATH + \
         f"/results/load-based-v2/{dataset}/2025-05-30-13H/results.csv"
+    prev_result_path_schema = BASE_PATH + \
+        f"/results/load-based-v2/{dataset}/2025-06-04-16H/results.csv"
+    prev_result_path_random = BASE_PATH + \
+        f"/results/load-based-v2/{dataset}/2025-06-04-18H/results.csv"
 
     try:
         prev_results_freq_df = pd.read_csv(prev_result_path_freq)
         prev_results_load_df = pd.read_csv(prev_result_path_load)
+        prev_results_schema_df = pd.read_csv(prev_result_path_schema)
+        prev_results_random_df = pd.read_csv(prev_result_path_random)
         prev_results_df = pd.concat(
-            [prev_results_load_df, prev_results_load_df])
+            [prev_results_freq_df, prev_results_load_df, prev_results_schema_df, prev_results_random_df])
         assert len(prev_results_df) == len(
-            prev_results_load_df) + len(prev_results_freq_df)
+            prev_results_load_df) + len(prev_results_freq_df) + len(prev_results_schema_df) + len(prev_results_random_df)
         assert len(prev_results_freq_df.columns) == len(
             prev_results_df.columns)
     except FileNotFoundError as e:
         assert False
 
-        # prev_results_df = pd.DataFrame(columns=["Query", "Last Materialization", "Load", "Test", "Materialization",
-        #                                         "Iteration 0", "Iteration 1", "Iteration 2", "Iteration 3", "Iteration 4", "Average (last 4 runs)"])
+    # prev_results_df = pd.DataFrame(columns=["Query", "Last Materialization", "Load", "Test", "Materialization",
+    #                                         "Iteration 0", "Iteration 1", "Iteration 2", "Iteration 3", "Iteration 4", "Average (last 4 runs)"])
     # Convert the Materilizations column to a list
     prev_results_df["Materialization"] = prev_results_df[["Materialization"]].apply(
         lambda row: set(ast.literal_eval(row["Materialization"])), axis=1)
@@ -455,8 +461,8 @@ def main():
                 #         "materialization": materialized_fields,
                 #         "last materialization": materialized_fields[-1]
                 #     }
-                for len_materialization in range(1, len(sorted_column_map.keys())):
-                    # for len_materialization in MATERIALIZATION_SET_SIZES:
+                # for len_materialization in range(1, len(sorted_column_map.keys())):
+                for len_materialization in MATERIALIZATION_SET_SIZES:
                     tests[f"load_based_m{len_materialization}"] = {
                         'len_materialization': len_materialization}
                     tests[f"schema_based_s{len_materialization}"] = {
@@ -538,11 +544,10 @@ def main():
                         elif len_materialization >= 20:
                             no_fields_to_materialize = 5
                             prev_df = results_df[(
-                                results_df["Load"] == load_no) & (results_df["Test"] == f'load_based_m{len_materialization-5}')]
-
+                                results_df["Load"] == load_no) & (results_df["Test"] == f'frequency_based_f{len_materialization-5}')]
                         else:
                             prev_df = results_df[(
-                                results_df["Load"] == load_no) & (results_df["Test"] == f'load_based_m{len_materialization-1}')]
+                                results_df["Load"] == load_no) & (results_df["Test"] == f'frequency_based_f{len_materialization-1}')]
 
                         prev_materialization = prev_df['Materialization'].iloc[0]
                         prev_time = prev_df['Materialization'].iloc[0]
@@ -578,10 +583,13 @@ def main():
                         len_materialization = test_setup.get(
                             'len_materialization', -1)
                         assert len_materialization >= 0
-
                         if len_materialization == 1:
                             prev_df = results_df[(
                                 results_df["Load"] == load_no) & (results_df["Test"] == 'no_materialization')]
+                        elif len_materialization >= 20:
+                            no_fields_to_materialize = 5
+                            prev_df = results_df[(
+                                results_df["Load"] == load_no) & (results_df["Test"] == f'schema_based_s{len_materialization-5}')]
                         else:
                             prev_df = results_df[(
                                 results_df["Load"] == load_no) & (results_df["Test"] == f'schema_based_s{len_materialization-1}')]
