@@ -107,9 +107,9 @@ STANDARD_SETUPS = {
     # "q3_l2_m10": {
     #     "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal']
     # },
-    "q3_l2_m11": {
-        "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal', 'l_extendedprice']
-    },
+    # "q3_l2_m11": {
+    #     "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal', 'l_extendedprice']
+    # },
     # "test": {
     #     "materialization": ["s_suppkey"],
     # },
@@ -182,26 +182,26 @@ STANDARD_SETUPS = {
     #         "l_shipdate"
     #     ]
     # },
-    # "schema_based_materialization": {
-    #     "materialization": [
-    #         "l_orderkey",
-    #         "l_suppkey",
-    #         "l_partkey",
-    #         "l_returnflag",
-    #         'l_linestatus',
-    #         "l_quantity",
-    #         "l_tax",
-    #         "l_extendedprice",
-    #         "l_discount",
-    #         "l_commitdate",
-    #         "l_receiptdate",
-    #         "l_shipdate",
-    #         "l_shipmode",
-    #         "l_shipinstruct",
-    #         "l_comment",
-    #         "l_linenumber"
-    #     ],
-    # },
+    "schema_based_materialization": {
+        "materialization": [
+            "l_orderkey",
+            "l_suppkey",
+            "l_partkey",
+            "l_returnflag",
+            'l_linestatus',
+            "l_quantity",
+            "l_tax",
+            "l_extendedprice",
+            "l_discount",
+            "l_commitdate",
+            "l_receiptdate",
+            "l_shipdate",
+            "l_shipmode",
+            "l_shipinstruct",
+            "l_comment",
+            "l_linenumber"
+        ],
+    },
 }
 
 

@@ -369,7 +369,7 @@ def main():
                                     materialization=fields_to_materialize
                                 )
                                 print(
-                                    f"Executed {query_name}, load {load_no}, materialization {fields_to_materialize} in time {result['Average (last 4 runs)']}")
+                                    f"Executed {query_name}, load {load_no}, test {test_name} in time {result['Average (last 4 runs)']}")
 
                         # Update results_df
                         if isinstance(result, dict):
@@ -399,7 +399,7 @@ def main():
                     _load_df = pd.DataFrame(data={
                         "Load": [load_no],
                         "Test": [test_name],
-                        "Total Query Time": [query_execution_time],
+                        "Total Query Time": [load_test_execution_time],
                         "Majority Queries": [majority_queries],
                         "Materialization": [fields_to_materialize],
                         "Strategy": ["Frequency"]
