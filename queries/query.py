@@ -190,7 +190,14 @@ class Query:
         # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
         # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
 
-    def get_column_weights(self):
+    def get_column_weights(self, only_freq=False):
+
+        if only_freq:
+            weights = {field: 1 for field in set(self.columns_used())}
+            if 's_nationkey' in weights:
+                weights['s_nationkey'] = 0
+            return weights
+
         weights = {
             field: POOR_FIELD_WEIGHT for field in self.columns_used()
         }

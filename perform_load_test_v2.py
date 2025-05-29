@@ -139,7 +139,7 @@ def _calculate_field_priority(load: list[str], field_distribution: pd.DataFrame)
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_tiny"
+    backup_path = f"./data/backup/{dataset}_medium"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -211,18 +211,9 @@ def main():
 
     # Test time for all materializations of fields in all possible 0-3 tuples are previously ran.
     # Resuing these results for faster execution
-    option = int(input(
-        "Do you want to use results for `json_extract_scalar` (1) or `->>` syntax (2)? "))
-    if option == 1:
-        # TODO Move results to a standard path
-        prev_result_path = ''
-        raise NotImplementedError()
-    elif option == 2:
-        # TODO Move results to a standard path
-        prev_result_path = BASE_PATH + \
-            "/results/single-queries/tpch/2025-05-10-15H/results.csv"
-    else:
-        raise ValueError("Option must be 1 or 2")
+
+    prev_result_path = BASE_PATH + \
+        "/results/single-queries/tpch/2025-05-10-15H/results.csv"
 
     prev_results_df = pd.read_csv(prev_result_path)
     # Convert the Materilizations column to a list
@@ -298,7 +289,9 @@ def main():
                 for query_name, query_obj in queries.items():
                     query_frequency = load.count(query_name)
                     # TODO dynamic
-                    _field_weights = query_obj.get_column_weights()
+                    _field_weights = query_obj.get_column_weights(
+                        only_freq=True
+                    )
                     for field, weight in _field_weights.items():
                         field_weights[field] += weight * query_frequency
 
