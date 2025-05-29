@@ -182,26 +182,26 @@ STANDARD_SETUPS = {
     #         "l_shipdate"
     #     ]
     # },
-    # "schema_based_materialization": {
-    #     "materialization": [
-    #         "l_orderkey",
-    #         "l_suppkey",
-    #         "l_partkey",
-    #         "l_returnflag",
-    #         'l_linestatus',
-    #         "l_quantity",
-    #         "l_tax",
-    #         "l_extendedprice",
-    #         "l_discount",
-    #         "l_commitdate",
-    #         "l_receiptdate",
-    #         "l_shipdate",
-    #         "l_shipmode",
-    #         "l_shipinstruct",
-    #         "l_comment",
-    #         "l_linenumber"
-    #     ],
-    # },
+    "schema_based_materialization": {
+        "materialization": [
+            "l_orderkey",
+            "l_suppkey",
+            "l_partkey",
+            "l_returnflag",
+            'l_linestatus',
+            "l_quantity",
+            "l_tax",
+            "l_extendedprice",
+            "l_discount",
+            "l_commitdate",
+            "l_receiptdate",
+            "l_shipdate",
+            "l_shipmode",
+            "l_shipinstruct",
+            "l_comment",
+            "l_linenumber"
+        ],
+    },
 }
 
 TABLE_SIZES = {
