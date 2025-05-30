@@ -34,6 +34,13 @@ BASE_PATH = os.curdir
 PATHS_TO_REMOVE = []
 
 
+USE_WEIGHTS_IN_DECISION = True
+USE_PREV_TIME_IN_DECISION = True
+
+TIME_WEIGHT = 36
+TIME_CAP = 0.35
+
+
 # Paths and queries for different datasets
 DATASETS = {
     "tpch": {
@@ -139,7 +146,7 @@ def _calculate_field_priority(load: list[str], field_distribution: pd.DataFrame)
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_medium"
+    backup_path = f"./data/backup/{dataset}_tiny"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -204,6 +211,13 @@ def _test_execute_query(
 
 
 def main():
+    if not USE_WEIGHTS_IN_DECISION:
+        input("You are now only considering frequency in the tests. " +
+              "If this is unintentional, please re-run with USE_WEIGHTS_IN_DECISION set to True")
+    # if not USE_PREV_TIME_IN_DECISION:
+    #     input("You are now only disregarding prev execution time in the tests. " +
+    #           "If this is unintentional, please re-run with USE_PREV_TIME_IN_DECISION set to True")
+
     dataset = "tpch"
     result_dir = BASE_PATH + \
         f"/results/load-based-v2/{dataset}/{TEST_TIME_STRING}"
@@ -285,38 +299,97 @@ def main():
                 # field_frequency.sort_values(ascending=False, inplace=True)
 
                 # Calculate weights
-                field_weights = defaultdict(int)
-                for query_name, query_obj in queries.items():
-                    query_frequency = load.count(query_name)
-                    # TODO dynamic
-                    _field_weights = query_obj.get_column_weights(
-                        only_freq=True
-                    )
-                    for field, weight in _field_weights.items():
-                        field_weights[field] += weight * query_frequency
+                # field_weights = defaultdict(int)
+                # for query_name, query_obj in queries.items():
+                #     query_frequency = load.count(query_name)
+                #     # TODO dynamic
+                #     _field_weights = query_obj.get_column_weights(
+                #         only_freq=not USE_WEIGHTS_IN_DECISION
+                #     )
+                #     for field, weight in _field_weights.items():
+                #         field_weights[field] += weight * query_frequency
 
-                # Sort fields by total weight
-                field_weights = dict(
-                    sorted(field_weights.items(), key=lambda item: item[1], reverse=True))
-                weighted_fields = list(field_weights.keys())
+                #     # Sort fields by total weight
+                # field_weights = dict(
+                #     sorted(field_weights.items(), key=lambda item: item[1], reverse=True))
+                # weighted_fields = list(field_weights.keys())
 
                 # Update tests with materialization tests
-                for no_fields_to_materialize in MATERIALIZATION_SET_SIZES:
-                    materialized_fields = weighted_fields[:no_fields_to_materialize]
+                # for len_materialization in MATERIALIZATION_SET_SIZES:
+                #     materialized_fields = weighted_fields[:len_materialization]
 
-                    tests[f"load_based_m{no_fields_to_materialize}"] = {
-                        "materialization": materialized_fields,
-                        "last materialization": materialized_fields[-1]
-                    }
+                #     tests[f"load_based_m{len_materialization}"] = {
+                #         "materialization": materialized_fields,
+                #         "last materialization": materialized_fields[-1]
+                #     }
+                for len_materialization in MATERIALIZATION_SET_SIZES:
+                    tests[f"load_based_m{len_materialization}"] = {
+                        'len_materialization': len_materialization}
 
                 # Loop through the tests
                 prev_materialization = set()
                 for test_name, test_setup in tests.items():
                     load_test_execution_time = 0
-                    fields_to_materialize = test_setup.get("materialization")
+                    if 'load_based_m' in test_name:
+                        len_materialization = test_setup.get(
+                            'len_materialization', -1)
+                        assert len_materialization >= 0
+
+                        # Take previous materialization time into consideration
+                        no_fields_to_materialize = 1
+
+                        # if len_materialization == 0:
+                        #     prev_df = results_df[(
+                        #         results_df["Load"] == load_no) & (results_df["Test"] == 'no_materialization')]
+                        if len_materialization == 1:
+                            prev_df = results_df[(
+                                results_df["Load"] == load_no) & (results_df["Test"] == 'no_materialization')]
+                        elif len_materialization >= 20:
+                            no_fields_to_materialize = 5
+                            prev_df = results_df[(
+                                results_df["Load"] == load_no) & (results_df["Test"] == f'load_based_m{len_materialization-5}')]
+
+                        else:
+                            prev_df = results_df[(
+                                results_df["Load"] == load_no) & (results_df["Test"] == f'load_based_m{len_materialization-1}')]
+
+                        prev_materialization = prev_df['Materialization'].iloc[0]
+                        prev_time = prev_df['Materialization'].iloc[0]
+
+                        field_weights = defaultdict(int)
+                        for query_name, query_obj in queries.items():
+                            query_frequency = load.count(query_name)
+                            # TODO dynamic
+                            _field_weights = query_obj.get_column_weights(
+                                only_freq=not USE_WEIGHTS_IN_DECISION,
+                                prev_materialization=prev_materialization
+                            )
+                            for field, weight in _field_weights.items():
+                                field_weights[field] += weight * \
+                                    query_frequency
+
+                        # Remove prev materializations from field weights
+                        load_test_field_weights = {key: val for key, val in field_weights.items(
+                        ) if key not in prev_materialization}
+
+                        # Sort fields by total weight
+                        load_test_field_weights = dict(
+                            sorted(load_test_field_weights.items(), key=lambda item: item[1], reverse=True))
+
+                        weighted_load_test_fields = list(
+                            load_test_field_weights.keys())
+
+                        fields_to_materialize = list(prev_materialization) + \
+                            weighted_load_test_fields[:no_fields_to_materialize]
+
+                        last_materialization = fields_to_materialize[-1]
+
+                    else:
+                        fields_to_materialize = test_setup.get(
+                            "materialization")
                     # fields_to_materialize_list = fields_to_materialize
-                    last_materialization = test_setup.get(
-                        "last materialization")
+                        last_materialization = test_setup.get(
+                            "last materialization")
 
                     if fields_to_materialize is None:
                         fields_to_materialize = column_map.keys()
@@ -336,7 +409,6 @@ def main():
                         result = None
                         query_affected = last_materialization in query_obj.columns_used(
                         ) or test_name in standard_tests or len(fields_to_materialize) >= 15
-                        query_affected = True
 
                         # Check if test results exists
                         # Check results_df

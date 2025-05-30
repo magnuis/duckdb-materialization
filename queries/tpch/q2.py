@@ -222,10 +222,16 @@ LIMIT
 
         return field_map[field]
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
+
+        if field == 'p_size' and 'p_type' in prev_materialization:
+            return 0
+        if field == 'p_type' and 'p_size' in prev_materialization:
+            return 0
+
         field_map = {
             "p_size": 1,
             "p_type": 1,

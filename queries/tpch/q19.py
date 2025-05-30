@@ -113,10 +113,15 @@ WHERE
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
+        if field == 'l_shipmode' and 'l_shipinstruct' in prev_materialization:
+            return 0
+        if field == 'l_shipinstruct' and 'l_shipil_shipmodenstruct' in prev_materialization:
+            return 0
+
         field_map = {
             "p_brand": 0,
             "p_container": 0,

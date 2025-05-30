@@ -116,10 +116,15 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
+
+        if field == 'c_phone' and 'c_acctbal' in prev_materialization:
+            return 0
+        if field == 'c_acctbal' and 'c_phone' in prev_materialization:
+            return 0
 
         field_map = {
             "c_phone": 2,
@@ -128,6 +133,7 @@ ORDER BY
 
         if field not in field_map:
             raise ValueError(f"{field} not a WHERE field")
+
         return field_map[field]
 
     def get_join_field_has_no_direct_filter(self, field: str) -> int:

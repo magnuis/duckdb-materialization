@@ -97,14 +97,14 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
             "o_orderdate": 1,
-            "l_commitdate": 0,
-            "l_receiptdate": 0
+            "l_commitdate": 0.1,
+            "l_receiptdate": 0.1
         }
 
         if field not in field_map:
