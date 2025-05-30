@@ -248,7 +248,7 @@ def _calculate_field_priority(load: list[str], field_distribution: pd.DataFrame)
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_medium"
+    backup_path = f"./data/backup/{dataset}_tiny"
 
     if os.path.exists(db_path):
         os.remove(db_path)

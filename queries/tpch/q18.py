@@ -129,13 +129,13 @@ LIMIT
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
             "o_orderkey": 0,
-            "l_quantity": 0
+            "l_quantity": 0.1
         }
 
         if field not in field_map:

@@ -51,14 +51,6 @@ QUERIES: dict[str, Query] = {
     # 'q25'
 }
 
-LOAD_BASED_MATERIALIZATION = [
-    {
-        "no_frequent_queries": 0,
-        "no_queries": 0,
-        "load": []
-    }
-]
-
 STANDARD_SETUPS = {
     # "q13_05_1_01-05": {
     #     "materialization": ["c_custkey", "o_comment"],

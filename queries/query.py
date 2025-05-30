@@ -5,8 +5,8 @@ class MaterializationStrategy(Enum):
     FIRST_ITERATION = 1
 
 
-POOR_FIELD_WEIGHT = 0.02
-GOOD_FIELD_WEIGHT = 0.72
+POOR_FIELD_WEIGHT = 1
+GOOD_FIELD_WEIGHT = 36
 
 
 class Query:
@@ -106,17 +106,11 @@ class Query:
         assert field in self.columns_used()
         assert field in self.columns_used_with_position()["where"]
 
-        return self.get_where_field_has_direct_filter(field)
+        return self.get_where_field_has_direct_filter(field, prev_materialization=[])
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has directly applicable filter
-        """
-        raise NotImplementedError("Subclass must implement this method")
-
-    def get_join_field_has_no_direct_filter(self, field: str) -> int:
-        """
-        Query specific implementation of the join field has no direct filter
         """
         raise NotImplementedError("Subclass must implement this method")
 
@@ -190,7 +184,7 @@ class Query:
         # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
         # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
 
-    def get_column_weights(self, only_freq=False):
+    def get_column_weights(self, prev_materialization: list[str], only_freq=False):
 
         if only_freq:
             weights = {field: 1 for field in set(self.columns_used())}
@@ -209,8 +203,10 @@ class Query:
                         self.get_join_field_has_no_direct_filter(field)
             elif clause == "where":
                 for field in col_list:
+
                     weights[field] += GOOD_FIELD_WEIGHT * \
-                        self.get_where_field_has_direct_filter(field)
+                        self.get_where_field_has_direct_filter(
+                            field, prev_materialization=prev_materialization)
 
         if 's_nationkey' in weights:
             weights['s_nationkey'] = 0

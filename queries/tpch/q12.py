@@ -103,10 +103,16 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
+
+        if field == 'l_shipmode' and 'l_receiptdate' in prev_materialization:
+            return 0
+        if field == 'l_receiptdate' and 'l_shipmode' in prev_materialization:
+            return 0
+
         field_map = {
             "l_shipmode": 1,
             "l_commitdate": 0,
