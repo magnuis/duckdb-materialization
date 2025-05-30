@@ -335,7 +335,8 @@ def main():
                     for query_name, query_obj in queries.items():
                         result = None
                         query_affected = last_materialization in query_obj.columns_used(
-                        ) or test_name in standard_tests
+                        ) or test_name in standard_tests or len(fields_to_materialize) >= 15
+                        query_affected = True
 
                         # Check if test results exists
                         # Check results_df
