@@ -18,7 +18,7 @@ class Q8(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
+        dts = self._get_field_types(fields=fields)
         acs = self._get_field_accesses(fields=fields)
 
         return f"""
@@ -46,7 +46,8 @@ class Q8(Query):
             AND reply.reply_to_user = {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])}
             AND retweet.retweeter =  {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])}
         GROUP BY 
-            {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])}
+            {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])},
+            screen_name
         ORDER BY 
             followers_count DESC, 
             (reply_count + retweet_count) DESC

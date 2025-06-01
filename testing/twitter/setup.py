@@ -1,11 +1,11 @@
-from queries.tpch.q1 import Q1
-from queries.tpch.q2 import Q2
-from queries.tpch.q3 import Q3
-from queries.tpch.q4 import Q4
-from queries.tpch.q5 import Q5
-from queries.tpch.q6 import Q6
-from queries.tpch.q7 import Q7
-from queries.tpch.q8 import Q8
+from queries.twitter.q1 import Q1
+from queries.twitter.q2 import Q2
+from queries.twitter.q3 import Q3
+from queries.twitter.q4 import Q4
+from queries.twitter.q5 import Q5
+from queries.twitter.q6 import Q6
+from queries.twitter.q7 import Q7
+from queries.twitter.q8 import Q8
 from queries.query import Query
 
 
@@ -40,11 +40,15 @@ COLUMN_MAP = {
         "type": 'VARCHAR',
         "frequency": 860217
     },
+    'text': {  # 860217
+        'access': "raw_json->>'text'",
+        "type": 'VARCHAR',
+        "frequency": 860217
+    },
     'source': {  # 860217
         'access': "raw_json->>'source'",
         "type": 'VARCHAR',
         "frequency": 860217
-
     },
     "retweetedStatus_user_screenName": {  # 466512
         'access': "raw_json->'retweeted_status'->'user'->>'screen_name'",
@@ -112,7 +116,7 @@ COLUMN_MAP = {
         "frequency": 252502
     },
     "delete_timestampMs": {  # 252502
-        "access": "raw_json->>'timestamp_ms'",
+        "access": "raw_json->'delete'->>'timestamp_ms'",
         "type": "BIGINT",
         "frequency": 252502
     },

@@ -28,9 +28,9 @@ class Q6(Query):
                 {self._json(col='retweetedStatus_user_screenName', tbl='retweet2', dt=dts['retweetedStatus_user_screenName'], acs=acs['retweetedStatus_user_screenName'])} AS second_retweeter,
             FROM test_table AS initial_tweet
             JOIN test_table AS retweet1 
-                ON {self._json(col='retweetedStatus_idStr', tbl='retweet1', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = i{self._json(col='idStr', tbl='initial_tweet', dt=dts['idStr'], acs=acs['idStr'])}
+                ON {self._json(col='retweetedStatus_idStr', tbl='retweet1', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='initial_tweet', dt=dts['idStr'], acs=acs['idStr'])}
             JOIN test_table AS retweet2 
-                ON {self._json(col='retweetedStatus_idStr', tbl='retweet2', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = i{self._json(col='idStr', tbl='retweet1', dt=dts['idStr'], acs=acs['idStr'])}
+                ON {self._json(col='retweetedStatus_idStr', tbl='retweet2', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='retweet1', dt=dts['idStr'], acs=acs['idStr'])}
             ORDER BY initial_tweet_id
             LIMIT 20;
         """

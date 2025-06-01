@@ -88,11 +88,12 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
             pass
             # query += "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;"
         # query += " COMMIT;"
+        alter_query += 'commit;'
         print(alter_query)
 
         start_time = time()
 
-        con.execute(alter_query + 'COMMIT;')
+        con.execute(alter_query)
         # con.execute(query)
         # print(query)
         con.execute("CHECKPOINT;")

@@ -1,9 +1,9 @@
 from queries.query import Query
 
 
-class Q5(Query):
+class Q7(Query):
     """
-    Twitter Query 5
+    Twitter Query 7
     """
 
     def __init__(self):
@@ -11,7 +11,7 @@ class Q5(Query):
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
-        Get the formatted Twitter query 5, adjusted to current db materializaiton
+        Get the formatted Twitter query 7, adjusted to current db materializaiton
 
         Returns
         -------
@@ -31,7 +31,7 @@ class Q5(Query):
             test_table AS original_tweet, 
             test_table AS retweet
         WHERE 
-            {self._json(col='retweetedStatus_idStr', tbl='retweet', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])}
+            {self._json(col='retweetedStatus_idStr', tbl='retweet', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='original_tweet', dt=dts['idStr'], acs=acs['idStr'])}
         GROUP BY 
             original_tweet_id,
             original_author,
@@ -52,7 +52,7 @@ class Q5(Query):
     # TODO
     def columns_used_with_position(self,) -> dict[str, list[str]]:
         """
-        Get the columns used in Twitter Query 5 along with their position in the query 
+        Get the columns used in Twitter Query 7 along with their position in the query 
         (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -67,15 +67,13 @@ class Q5(Query):
         """
         return {
             'select': [
+                'idStr',
                 'user_screenName',
-                'user_followersCount',
-                'idStr',
-                'retweetedStatus_user_idStr',
-                'idStr',
-                'inReplyToUserIdStr'
+                'user_screenName',
+                'retweetedStatus_retweetCount'
             ],
             'where': [
-                "user_followersCount"
+
             ],
             'group_by': [
                 'user_idStr'
@@ -83,7 +81,8 @@ class Q5(Query):
             'order_by': [
             ],
             'join': {
-                'user_idStr': [None, None]
+                'retweetedStatus_idStr': ['idStr'],
+                'idstr': ['retweetedStatus_idStr']
 
             }
         }
