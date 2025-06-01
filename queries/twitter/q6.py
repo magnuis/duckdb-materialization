@@ -21,36 +21,18 @@ class Q6(Query):
         dts = self._get_field_accesses(fields=fields)
 
         return f"""
-
-SELECT 
-    {self._json(col='user_screenName', tbl='user_info', dt=dts['user_screenName'])} AS screen_name,
-    SUM({self._json(col='user_followersCount', tbl='user_info', dt=dts['user_followersCount'])}) AS followers_count,
-    COUNT(DISTINCT reply.id_str) AS reply_count,
-    COUNT(DISTINCT retweet.id_str) AS retweet_count
-FROM 
-    test_table user_info,
-    (
-        SELECT 
-            {self._json(col='id_str', tbl='test_table', dt=dts['id_str'])} AS id_str,
-            {self._json(col='retweetedStatus_user_idStr', tbl='test_table', dt=dts['retweetedStatus_user_idStr'])} AS retweeter
-        FROM test_table 
-    ) AS retweet,
-    (
-        SELECT 
-            {self._json(col='id_str', tbl='test_table', dt=dts['id_str'])} AS id_str,
-            {self._json(col='inReplyToUserIdStr', tbl='test_table', dt=dts['inReplyToUserIdStr'])} AS reply_to_user
-        FROM test_table
-    ) AS reply
-WHERE 
-    {self._json(col='user_followersCount', tbl='user_info', dt=dts['user_followersCount'])} > 1000
-    AND reply.reply_to_user = {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'])}
-    AND retweet.retweeter =  {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'])}
-GROUP BY 
-     {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'])}
-ORDER BY 
-    followers_count DESC, 
-    (reply_count + retweet_count) DESC
-LIMIT 15;
+            SELECT 
+                {self._json(col='idStr', tbl='initial_tweet', dt=dts['idStr'])} AS initial_tweet_id,
+                {self._json(col='retweetedStatus_user_screenName', tbl='initial_tweet', dt=dts['retweetedStatus_user_screenName'])} AS initial_author,
+                {self._json(col='retweetedStatus_user_screenName', tbl='retweet1', dt=dts['retweetedStatus_user_screenName'])} AS first_retweeter,
+                {self._json(col='retweetedStatus_user_screenName', tbl='retweet2', dt=dts['retweetedStatus_user_screenName'])} AS second_retweeter,
+            FROM test_table AS initial_tweet
+            JOIN test_table AS retweet1 
+                ON {self._json(col='retweetedStatus_idStr', tbl='retweet1', dt=dts['retweetedStatus_idStr'])} = i{self._json(col='idStr', tbl='initial_tweet', dt=dts['idStr'])}
+            JOIN test_table AS retweet2 
+                ON {self._json(col='retweetedStatus_idStr', tbl='retweet2', dt=dts['retweetedStatus_idStr'])} = i{self._json(col='idStr', tbl='retweet1', dt=dts['idStr'])}
+            ORDER BY initial_tweet_id
+            LIMIT 20;
         """
 
     def no_join_clauses(self) -> int:
@@ -77,23 +59,22 @@ LIMIT 15;
         """
         return {
             'select': [
-                'user_screenName',
-                'user_followersCount',
-                'id_str',
-                'retweetedStatus_user_idStr',
-                'id_str',
-                'inReplyToUserIdStr'
+                'idStr',
+                'retweetedStatus_user_screenName',
+                'retweetedStatus_user_screenName',
+                'retweetedStatus_user_screenName'
             ],
             'where': [
-                "user_followersCount"
+                "inReplyToUserIdStr"
             ],
             'group_by': [
-                'user_idStr'
+                'inReplyToUserIdStr'
             ],
             'order_by': [
             ],
             'join': {
-                "user_idStr": [None, None]
+                "retweetedStatus_idStr": ['idStr', 'idStr'],
+                "idStr": ['retweetedStatus_idStr, retweetedStatus_idStr']
             }
         }
 
@@ -103,7 +84,7 @@ LIMIT 15;
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            'user_followersCount': 1
+            'retweetedStatus_idStr': 0
         }
 
         return field_map[field]
@@ -113,7 +94,8 @@ LIMIT 15;
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            'retweetedStatus_idStr': 0
+            'retweetedStatus_idStr': 2,
+            'idStr': 2
         }
 
         if field not in field_map:
