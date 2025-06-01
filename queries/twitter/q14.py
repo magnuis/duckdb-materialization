@@ -79,7 +79,7 @@ class Q14(Query):
             }
         }
 
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query-specific implementation: number of times the WHERE field
         can be applied directly if materialized into a regular column.

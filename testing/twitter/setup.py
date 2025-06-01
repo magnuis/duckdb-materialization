@@ -12,8 +12,6 @@ from queries.twitter.q11 import Q11
 from queries.twitter.q12 import Q12
 from queries.twitter.q13 import Q13
 from queries.twitter.q14 import Q14
-
-
 from queries.query import Query
 
 
@@ -31,11 +29,7 @@ QUERIES: dict[str, Query] = {
     'q11': Q11(),
     'q12': Q12(),
     'q13': Q13(),
-    'q14': Q14()
-    # 'q9': Q9(),
-    # 'q10': Q10(),
-    # 'q11': Q11(),
-
+    'q14': Q14(),
 }
 
 STANDARD_SETUPS = {
