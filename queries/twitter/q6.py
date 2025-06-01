@@ -31,6 +31,8 @@ class Q6(Query):
                 ON {self._json(col='retweetedStatus_idStr', tbl='retweet1', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='initial_tweet', dt=dts['idStr'], acs=acs['idStr'])}
             JOIN test_table AS retweet2 
                 ON {self._json(col='retweetedStatus_idStr', tbl='retweet2', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='retweet1', dt=dts['idStr'], acs=acs['idStr'])}
+            WHERE 
+                NOT {self._json(col='user_isTranslator', tbl='initial_tweet', dt=dts['user_isTranslator'], acs=acs['user_isTranslator'])}
             ORDER BY initial_tweet_id
             LIMIT 20;
         """
@@ -65,10 +67,9 @@ class Q6(Query):
                 'retweetedStatus_user_screenName'
             ],
             'where': [
-                "inReplyToUserIdStr"
+                "user_isTranslator"
             ],
             'group_by': [
-                'inReplyToUserIdStr'
             ],
             'order_by': [
             ],
@@ -79,12 +80,12 @@ class Q6(Query):
         }
 
     # TODO
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            'retweetedStatus_idStr': 0
+            'user_isTranslator': 1
         }
 
         return field_map[field]
@@ -95,7 +96,7 @@ class Q6(Query):
         """
         field_map = {
             'retweetedStatus_idStr': 2,
-            'idStr': 2
+            'idStr': 1
         }
 
         if field not in field_map:

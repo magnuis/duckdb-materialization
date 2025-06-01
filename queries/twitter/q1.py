@@ -33,7 +33,6 @@ class Q1(Query):
         """
         return 0
 
-    # TODO
     def columns_used_with_position(self,) -> dict[str, list[str]]:
         """
         Get the columns used in Twitter Query 1 along with their position in the query 
@@ -64,14 +63,16 @@ class Q1(Query):
             }
         }
 
-    # TODO
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            "lang": True
+            "lang": 1
         }
+
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
 
         return field_map[field]
 

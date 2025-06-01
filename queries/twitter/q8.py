@@ -11,45 +11,33 @@ class Q8(Query):
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
-        Get the formatted Twitter query 8, adjusted to current db materializaiton
+        Get the formatted Twitter query 8, adjusted to current db materialization
 
         Returns
         -------
         str
         """
-
         dts = self._get_field_types(fields=fields)
         acs = self._get_field_accesses(fields=fields)
 
         return f"""
-        SELECT 
-            {self._json(col='user_screenName', tbl='user_info', dt=dts['user_screenName'], acs=acs['user_screenName'])} AS screen_name,
-            SUM({self._json(col='user_followersCount', tbl='user_info', dt=dts['user_followersCount'], acs=acs['user_followersCount'])}) AS followers_count,
-            COUNT(DISTINCT reply.idStr) AS reply_count,
-            COUNT(DISTINCT retweet.idStr) AS retweet_count
-        FROM 
-            test_table user_info,
-            (
-                SELECT 
-                    {self._json(col='idStr', tbl='test_table', dt=dts['idStr'], acs=acs['idStr'])} AS idStr,
-                    {self._json(col='retweetedStatus_user_idStr', tbl='test_table', dt=dts['retweetedStatus_user_idStr'], acs=acs['retweetedStatus_user_idStr'])} AS retweeter
-                FROM test_table 
-            ) AS retweet,
-            (
-                SELECT 
-                    {self._json(col='idStr', tbl='test_table', dt=dts['idStr'], acs=acs['idStr'])} AS idStr,
-                    {self._json(col='inReplyToUserIdStr', tbl='test_table', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} AS reply_to_user
-                FROM test_table
-            ) AS reply
-        WHERE 
-            {self._json(col='user_followersCount', tbl='user_info', dt=dts['user_followersCount'], acs=acs['user_followersCount'])} > 1000
-            AND reply.reply_to_user = {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])}
-            AND retweet.retweeter =  {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])}
-        GROUP BY 
-            {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])},
-            screen_name
-        ORDER BY 
-            followers_count DESC, 
+        SELECT
+            ANY_VALUE({self._json(col='user_screenName', tbl='user_info', dt=dts['user_screenName'], acs=acs['user_screenName'])}) AS screen_name,
+            SUM(TRY_CAST({self._json(col='user_followersCount', tbl='user_info', dt=dts['user_followersCount'], acs=acs['user_followersCount'])} AS INT)) AS followers_count,
+            COUNT(DISTINCT {self._json(col='idStr', tbl='reply', dt=dts['idStr'], acs=acs['idStr'])}) AS reply_count,
+            COUNT(DISTINCT {self._json(col='idStr', tbl='retweet', dt=dts['idStr'], acs=acs['idStr'])}) AS retweet_count
+        FROM
+            test_table AS user_info,
+            test_table AS retweet,
+            test_table AS reply
+        WHERE
+            TRY_CAST({self._json(col='user_followersCount', tbl='user_info', dt=dts['user_followersCount'], acs=acs['user_followersCount'])} AS INT) > 1000
+            AND {self._json(col='inReplyToUserIdStr', tbl='reply', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} = {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])}
+            AND {self._json(col='retweetedStatus_user_idStr', tbl='retweet', dt=dts['retweetedStatus_user_idStr'], acs=acs['retweetedStatus_user_idStr'])} = {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])}
+        GROUP BY
+            {self._json(col='user_idStr', tbl='user_info', dt=dts['user_idStr'], acs=acs['user_idStr'])}
+        ORDER BY
+            followers_count DESC,
             (reply_count + retweet_count) DESC
         LIMIT 15;
         """
@@ -58,10 +46,9 @@ class Q8(Query):
         """
         Returns the number of join clauses in the query
         """
-        return 2
+        return 0
 
-    # TODO
-    def columns_used_with_position(self,) -> dict[str, list[str]]:
+    def columns_used_with_position(self) -> dict[str, list[str]]:
         """
         Get the columns used in Twitter Query 8 along with their position in the query 
         (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
@@ -70,54 +57,62 @@ class Q8(Query):
         -------
         dict
             A dictionary with the following keys:
-            - 'select': list of column names used in the SELECT clause.
-            - 'where': list of column names used in the WHERE clause that are not joins.
+            - 'select': list of column names used in the SELECT clause (one entry per appearance).
+            - 'where': list of column names used in the WHERE clause (one entry per appearance).
             - 'group_by': list of column names used in the GROUP BY clause.
-            - 'order_by': list of column names used in the ORDER BY clause.
-            - 'join': list of column names used in a join operation (including WHERE).
+            - 'order_by': list of column or alias names used in the ORDER BY clause (one entry per appearance).
+            - 'join': mapping of join fields to the fields they're equated against.
         """
         return {
             'select': [
                 'user_screenName',
                 'user_followersCount',
                 'idStr',
-                'retweetedStatus_user_idStr',
-                'idStr',
-                'inReplyToUserIdStr'
+                'idStr'
             ],
             'where': [
-                "user_followersCount"
+                'user_followersCount',
+                'inReplyToUserIdStr',
+                'user_idStr',
+                'retweetedStatus_user_idStr',
+                'user_idStr'
             ],
             'group_by': [
                 'user_idStr'
             ],
             'order_by': [
+                'followers_count',
+                'reply_count',
+                'retweet_count'
             ],
             'join': {
-                "user_idStr": [None, None]
+                'inReplyToUserIdStr': ['user_idStr'],
+                'retweetedStatus_user_idStr': ['user_idStr'],
+                'user_idStr': ['inReplyToUserIdStr', 'retweetedStatus_user_idStr']
             }
         }
 
-    # TODO
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
-        Query specific implementation of the where field has direct filter
+        Query-specific implementation: number of times the WHERE field
+        can be applied directly if materialized into a regular column.
         """
         field_map = {
             'user_followersCount': 1
         }
-
-        return field_map[field]
+        return field_map.get(field, None)
 
     def get_join_field_has_no_direct_filter(self, field: str) -> int:
         """
-        Query specific implementation of the where field has direct filter
+        Query-specific implementation: number of times the field appears in
+        a join (including WHERE t1.f1 = t2.f2) AND there are no other
+        predicates on that table.
         """
         field_map = {
-            'retweetedStatus_idStr': 0
+            'inReplyToUserIdStr': 1,
+            'retweetedStatus_user_idStr': 1,
+            'user_idStr': 0
         }
-
         if field not in field_map:
             raise ValueError(f"{field} not a JOIN field")
-
         return field_map[field]

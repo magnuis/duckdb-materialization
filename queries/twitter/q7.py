@@ -88,12 +88,11 @@ class Q7(Query):
         }
 
     # TODO
-    def get_where_field_has_direct_filter(self, field: str) -> str | None:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            'text': 1
         }
 
         return field_map[field]
@@ -102,7 +101,10 @@ class Q7(Query):
         """
         Query specific implementation of the where field has direct filter
         """
-        field_map = {}
+        field_map = {
+            'retweetedStatus_idStr': 1,
+            'idstr': 1
+        }
 
         if field not in field_map:
             raise ValueError(f"{field} not a JOIN field")
