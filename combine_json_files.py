@@ -10,8 +10,8 @@ from pathlib import Path
 import argparse
 
 
-def combine_json_files(input_dir: str = "twitter/json_without_null",
-                       output_file: str = "twitter/combined_data.jsonl",
+def combine_json_files(input_dir: str = "data/twitter/json_without_null",
+                       output_file: str = "data/twitter/combined_data.jsonl",
                        include_metadata: bool = True) -> bool:
     """
     Combine all JSON files from subdirectories into one large JSONL file.
@@ -116,9 +116,9 @@ def main():
     """Main function with command line argument support."""
     parser = argparse.ArgumentParser(
         description="Combine JSON files into one JSONL file")
-    parser.add_argument("--input-dir", default="twitter/json_without_null",
+    parser.add_argument("--input-dir", default="data/twitter/json_without_null",
                         help="Input directory containing JSON files")
-    parser.add_argument("--output-file", default="twitter/combined_data.jsonl",
+    parser.add_argument("--output-file", default="data/twitter/combined_data.jsonl",
                         help="Output JSONL file path")
     parser.add_argument("--no-metadata", action="store_true",
                         help="Don't include source file metadata")
