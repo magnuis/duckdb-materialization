@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Script to combine all cleaned JSON files from twitter/json_without_null 
-into one large JSONL file. Each line contains one JSON object.
+into one large JSON file. Each line contains one JSON object.
 """
 
 import os
@@ -11,14 +11,14 @@ import argparse
 
 
 def combine_json_files(input_dir: str = "data/twitter/json_without_null",
-                       output_file: str = "data/twitter/combined_data.jsonl",
+                       output_file: str = "data/twitter/combined_data.json",
                        include_metadata: bool = True) -> bool:
     """
-    Combine all JSON files from subdirectories into one large JSONL file.
+    Combine all JSON files from subdirectories into one large JSON file.
 
     Args:
         input_dir: Directory containing the cleaned JSON files
-        output_file: Output JSONL file path
+        output_file: Output JSON file path
         include_metadata: Whether to include source file metadata
 
     Returns:
@@ -115,17 +115,17 @@ def combine_json_files(input_dir: str = "data/twitter/json_without_null",
 def main():
     """Main function with command line argument support."""
     parser = argparse.ArgumentParser(
-        description="Combine JSON files into one JSONL file")
+        description="Combine JSON files into one JSON file")
     parser.add_argument("--input-dir", default="data/twitter/json_without_null",
                         help="Input directory containing JSON files")
-    parser.add_argument("--output-file", default="data/twitter/combined_data.jsonl",
-                        help="Output JSONL file path")
+    parser.add_argument("--output-file", default="data/twitter/combined_data.json",
+                        help="Output JSON file path")
     parser.add_argument("--no-metadata", action="store_true",
                         help="Don't include source file metadata")
 
     args = parser.parse_args()
 
-    print("JSON to JSONL Combiner")
+    print("JSON to JSON Combiner")
     print("=" * 30)
 
     success = combine_json_files(
