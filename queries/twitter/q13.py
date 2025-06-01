@@ -72,7 +72,8 @@ class Q13(Query):
             ],
             'where': [
                 'lang',
-                'user_followersCount'
+                'user_followersCount',
+                'text'
             ],
             'group_by': [
                 'idStr'
