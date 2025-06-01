@@ -11,6 +11,9 @@ import argparse
 CONFIG = {
     "tpch": {
         "json_path": './data/tpch/bigbigger_tpch_json.json',
+    },
+    "twitter": {
+        "json_path": './data/twitter/combined_data.json'
     }
 }
 
