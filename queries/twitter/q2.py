@@ -18,13 +18,14 @@ class Q2(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
+        dts = self._get_field_types(fields=fields)
+        acs = self._get_field_accesses(fields=fields)
 
         return f"""
-            SELECT {self._json(col='source', tbl='t', dt=dts['source'])}, COUNT(*) AS tweet_count
+            SELECT {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])}, COUNT(*) AS tweet_count
             FROM test_table t
-            GROUP BY {self._json(col='source', tbl='t', dt=dts['source'])}
-            ORDER BY tweet_count DESC;
+            GROUP BY {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])}
+            ORDER BY tweet_count, {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])} DESC;
         """
 
     def no_join_clauses(self) -> int:

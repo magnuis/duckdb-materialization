@@ -18,7 +18,8 @@ class Q5(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
+        dts = self._get_field_types(fields=fields)
+        acs = self._get_field_accesses(fields=fields)
 
         return f"""
             SELECT ROUND(

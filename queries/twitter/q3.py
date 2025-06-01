@@ -18,16 +18,17 @@ class Q3(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
+        dts = self._get_field_types(fields=fields)
+        acs = self._get_field_accesses(fields=fields)
 
         return f"""
             SELECT 
-                {self._json(col='retweetedStatus_user_screenName', tbl='t', dt=dts['retweetedStatus_user_screenName'])} AS user,
-                SUM({self._json(col='retweetedStatus_retweetCount', tbl='t', dt=dts['retweetedStatus_retweetCount'])}) AS total_retweets
+                {self._json(col='retweetedStatus_user_screenName', tbl='t', dt=dts['retweetedStatus_user_screenName'], acs=acs['retweetedStatus_user_screenName'])} AS user,
+                SUM({self._json(col='retweetedStatus_retweetCount', tbl='t', dt=dts['retweetedStatus_retweetCount'], acs=acs["retweetedStatus_retweetCount"])}) AS total_retweets
             FROM test_table t
             WHERE
-                WHERE  {self._json(col='retweetedStatus_idStr', tbl='t', dt=dts['retweetedStatus_idStr'])} IS NOT NULL
-            GROUP BY {self._json(col='retweetedStatus_user_screenName', tbl='t', dt=dts['retweetedStatus_user_screenName'])}
+                {self._json(col='retweetedStatus_idStr', tbl='t', dt=dts['retweetedStatus_idStr'], acs=acs["retweetedStatus_idStr"])} IS NOT NULL
+            GROUP BY {self._json(col='retweetedStatus_user_screenName', tbl='t', dt=dts['retweetedStatus_user_screenName'], acs=acs["retweetedStatus_user_screenName"])}
             ORDER BY total_retweets DESC
             LIMIT 10;
         """

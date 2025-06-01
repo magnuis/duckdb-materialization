@@ -152,11 +152,29 @@ class Query:
                 if materialized:
                     data_types[col] = None
                 else:
+                    data_types[col] = access_query["access"]
+
+        return data_types
+
+    def _get_field_types(self, fields: list[tuple[str, dict, bool]]) -> dict:
+
+        used_columns = self.columns_used()
+
+        if fields is None:
+            return {col: None for col in used_columns}
+
+        data_types = dict()
+
+        for col, access_query, materialized in fields:
+            if col in used_columns:
+                if materialized:
+                    data_types[col] = None
+                else:
                     data_types[col] = access_query["type"]
 
         return data_types
 
-    def _json(self, tbl: str, col: str, dt: str | None):
+    def _json(self, tbl: str, col: str, acs: str | None, dt: str = None):
         """
         Extract the column
 
@@ -179,6 +197,8 @@ class Query:
         # dt = dts.get(col)
         if dt is None:
             return f"{tbl}.{col}"
+
+        return f"TRY_CAST({tbl}.{acs} AS {dt})"
 
         # elif dt == "VARCHAR":
         #     return f"{tbl}.raw_json->>'{col}'"

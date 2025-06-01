@@ -18,16 +18,17 @@ class Q4(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
+        dts = self._get_field_types(fields=fields)
+        acs = self._get_field_accesses(fields=fields)
 
         return f"""
             SELECT 
-                {self._json(col='inReplyToUserIdStr', tbl='t', dt=dts['inReplyToUserIdStr'])} AS user_id,
+                {self._json(col='inReplyToUserIdStr', tbl='t', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} AS user_id,
                 COUNT(*) AS reply_count
             FROM test_table t
             WHERE 
-                {self._json(col='inReplyToUserIdStr', tbl='t', dt=dts['inReplyToUserIdStr'])} IS NOT NULL
-            GROUP BY {self._json(col='inReplyToUserIdStr', tbl='t', dt=dts['inReplyToUserIdStr'])}
+                {self._json(col='inReplyToUserIdStr', tbl='t', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} IS NOT NULL
+            GROUP BY {self._json(col='inReplyToUserIdStr', tbl='t', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])}
             ORDER BY reply_count DESC
             LIMIT 15;
         """

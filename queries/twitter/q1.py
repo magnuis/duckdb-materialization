@@ -18,12 +18,13 @@ class Q1(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
+        dts = self._get_field_types(fields=fields)
+        acs = self._get_field_accesses(fields=fields)
 
         return f"""
             SELECT COUNT(*) AS english_tweet_count
             FROM test_table t
-            WHERE {self._json(col='lang', tbl='t', dt=dts['lang'])} = 'en';
+            WHERE {self._json(col='lang', tbl='t', dt=dts['lang'], acs=acs['lang'])} = 'en';
         """
 
     def no_join_clauses(self) -> int:

@@ -9,6 +9,8 @@ import duckdb
 import pandas as pd
 
 import testing.tpch.setup as tpch_setup
+import testing.twitter.setup as twitter_setup
+
 from queries.query import Query
 # from queries.twitter_queries import
 from prepare_database import prepare_database, get_db_size
@@ -28,6 +30,11 @@ DATASETS = {
         "queries": tpch_setup.QUERIES,
         "tests_map": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
+    },
+    "twitter": {
+        "queries": twitter_setup.QUERIES,
+        "tests_map": twitter_setup.STANDARD_SETUPS,
+        "column_map": twitter_setup.COLUMN_MAP,
     }
 }
 
@@ -77,6 +84,7 @@ def _perform_test(
     for query_name, query_obj in queries.items():
 
         query = query_obj.get_query(fields=fields)
+        print(query)
 
         df_row = {
             "Query": query_name,
@@ -87,7 +95,7 @@ def _perform_test(
         execution_times = []
         first_run_result = None
 
-        iterations = 5
+        iterations = 1
 
         for j in range(iterations):  # Execute the query 5 times
             tracemalloc.start()
@@ -100,16 +108,14 @@ def _perform_test(
             df_row[f"Iteration {j}"] = execution_time
 
             if j == 0:
-                print(query)
-
                 first_run_result = result.copy()
 
         # Collect the result from the first run
         query_results.append(first_run_result)
 
         # Calculate the average time of the last 4 runs and store it
-        # avg_time = -1
-        avg_time = sum(execution_times[1:]) / (iterations - 1)
+        avg_time = -execution_time
+        # avg_time = sum(execution_times[1:]) / (iterations - 1)
         df_row['Avg (last 4 runs)'] = avg_time
 
         temp_df = pd.DataFrame([df_row])
@@ -150,7 +156,7 @@ def compare_query_results(dfs: list[pd.DataFrame]):
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_tiny"
+    backup_path = f"./data/backup/{dataset}_medium"
 
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -161,9 +167,9 @@ def _create_fresh_db(dataset: str):
         con.execute(f"IMPORT DATABASE '{backup_path}';")
 
 
-def _create_connection(dataset: str, test: str) -> tuple[duckdb.DuckDBPyConnection, str]:
+def _create_connection(dataset: str) -> tuple[duckdb.DuckDBPyConnection, str]:
     original_db_path = f"./data/db/{dataset}.duckdb"
-    copy_db_path = f"./data/db/{dataset}_{test}.db"
+    copy_db_path = f"./data/db/{dataset}_testing.db"
 
     # Remove any old db
     if os.path.exists(copy_db_path):
@@ -194,7 +200,7 @@ def perform_tests():
 
     # datasets_to_test = DATASETS.keys() if args.dataset == "all" else [
     #     args.dataset]
-    datasets_to_test = ['tpch']
+    datasets_to_test = ['twitter']
 
     for dataset in datasets_to_test:
         if not os.path.exists(f"./results/single-queries/{dataset}"):
@@ -224,12 +230,13 @@ def perform_tests():
         new_results_dfs = dict()  # Test results
         query_results_dfs = dict()  # Query results
 
+        db_connection, db_path = _create_connection(
+            dataset=dataset)
+
         # Extract all fields to be used in these tests
         # all_fields = list(set([field for query in queries_map.values() for field in query]))
         meta_results = []
         for test, test_config in tests_map.items():
-            db_connection, db_path = _create_connection(
-                dataset=dataset, test=test)
             materialize_columns = test_config["materialization"]
             if materialize_columns is None:
                 materialize_columns = column_map.keys()
@@ -283,7 +290,7 @@ GROUP BY all
             #       db_connection.execute(
             #           "CALL pragma_database_size();").fetch_df())
             db_size = get_db_size(con=duckdb.connect(db_path))
-            db_connection.close()
+            # db_connection.close()
 
             meta_results.append({
                 "Test": test,
@@ -292,8 +299,6 @@ GROUP BY all
                 "Block size": db_size[1],
                 "Database size": db_size[2],
             })
-
-            os.remove(db_path)
 
         meta_results_df = pd.DataFrame(meta_results)
         meta_results_df.to_csv(
@@ -304,6 +309,7 @@ GROUP BY all
         success = compare_query_results(
             dfs=query_results_dfs.values()
         )
+        os.remove(db_path)
 
 
 if __name__ == "__main__":
