@@ -24,7 +24,6 @@ class Q11(Query):
         SELECT
             {self._json(col='user_idStr', tbl='u', dt=dts['user_idStr'], acs=acs['user_idStr'])}       AS user_ider_id,
             {self._json(col='user_screenName', tbl='u', dt=dts['user_screenName'], acs=acs['user_screenName'])}  AS screen_name,
-            {self._json(col='delete_status_idStr', tbl='d', dt=dts['delete_status_idStr'], acs=acs['delete_status_idStr'])}       AS deleted_status_id,
             {self._json(col='delete_timestampMs', tbl='d', dt=dts['delete_timestampMs'], acs=acs['delete_timestampMs'])}                     AS delete_timestamp
         FROM
             test_table AS u,
@@ -59,7 +58,6 @@ class Q11(Query):
             'select': [
                 'user_idStr',
                 'user_screenName',
-                'delete_status_idStr',
                 'delete_timestampMs'
             ],
             'where': [
