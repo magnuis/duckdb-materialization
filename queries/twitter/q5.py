@@ -23,10 +23,10 @@ class Q5(Query):
 
         return f"""
             SELECT ROUND(
-                100.0 * COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', dt=dts['user_idStr'])}) / 
-                (SELECT COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', dt=dts['user_idStr'])}) FROM test_table), 2) AS percentage
+                100.0 * COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', dt=dts['user_idStr'], acs=acs['user_idStr'])}) /
+                (SELECT COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', dt=dts['user_idStr'], acs=acs['user_idStr'])}) FROM test_table), 2) AS percentage
             FROM test_table
-            WHERE lower({self._json(col='text', tbl='test_table', dt=dts['text'])}) LIKE '%covid-19%';
+            WHERE lower({self._json(col='text', tbl='test_table', dt=dts['text'], acs=acs['text'])}) LIKE '%covid-19%';
         """
 
     def no_join_clauses(self) -> int:

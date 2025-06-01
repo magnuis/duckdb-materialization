@@ -18,14 +18,29 @@ class Q5(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
+        dts = self._get_field_types(fields=fields)
+        acs = self._get_field_accesses(fields=fields)
 
         return f"""
-            SELECT ROUND(
-                100.0 * COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', dt=dts['user_idStr'])}) / 
-                (SELECT COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', dt=dts['user_idStr'])}) FROM test_table), 2) AS percentage
-            FROM test_table
-            WHERE lower({self._json(col='text', tbl='test_table', dt=dts['text'])}) LIKE '%covid-19%';
+        SELECT 
+            {self._json(col='idStr', tbl='original_tweet', dt=dts['idStr'], acs=acs['idStr'])} AS original_tweet_id,
+            {self._json(col='user_screenName', tbl='original_tweet', dt=dts['user_screenName'], acs=acs['user_screenName'])} AS original_author,
+            {self._json(col='user_screenName', tbl='retweet', dt=dts['user_screenName'], acs=acs['user_screenName'])} AS retweeter,
+            {self._json(col='retweetedStatus_retweetCount', tbl='retweet', dt=dts['retweetedStatus_retweetCount'], acs=acs['retweetedStatus_retweetCount'])} AS retweet_retweet_count
+        FROM 
+            test_table AS original_tweet, 
+            test_table AS retweet
+        WHERE 
+            {self._json(col='retweetedStatus_idStr', tbl='retweet', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])}
+        GROUP BY 
+            original_tweet_id,
+            original_author,
+            retweeter,
+            retweet_retweet_count
+        ORDER BY 
+            retweet_retweet_count 
+            DESC
+        LIMIT 10;
         """
 
     def no_join_clauses(self) -> int:
@@ -52,17 +67,23 @@ class Q5(Query):
         """
         return {
             'select': [
-                'user_idStr',
-                'user_idStr'
+                'user_screenName',
+                'user_followersCount',
+                'idStr',
+                'retweetedStatus_user_idStr',
+                'idStr',
+                'inReplyToUserIdStr'
             ],
             'where': [
-                "text"
+                "user_followersCount"
             ],
             'group_by': [
+                'user_idStr'
             ],
             'order_by': [
             ],
             'join': {
+                'user_idStr': [None, None]
 
             }
         }
