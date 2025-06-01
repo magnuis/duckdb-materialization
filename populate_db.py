@@ -6,6 +6,7 @@ import shutil
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import argparse
 
 CONFIG = {
     "tpch": {
@@ -117,11 +118,14 @@ def _prepare_dirs(dataset: str):
         os.mkdir(backup_path)
 
 
-def populate_db():
+def populate_db(dataset: str = 'tpch'):
     """
     Populate database
     """
-    dataset = 'tpch'  # TODO dynamic/take from args
+    if dataset not in CONFIG:
+        raise ValueError(
+            f"Dataset '{dataset}' not found in CONFIG. Available datasets: {list(CONFIG.keys())}")
+
     config = CONFIG[dataset]
     backup_path = f"{BACKUP_PATH}/{dataset}_bigbigger"
     db_path = f"{DB_PATH}/{dataset}.db"
@@ -146,4 +150,12 @@ def populate_db():
 
 
 if __name__ == "__main__":
-    populate_db()
+    parser = argparse.ArgumentParser(
+        description='Populate DuckDB database with JSON data')
+    parser.add_argument('--dataset', '-d',
+                        default='tpch',
+                        choices=list(CONFIG.keys()),
+                        help=f'Dataset to use for populating the database. Available options: {list(CONFIG.keys())} (default: tpch)')
+
+    args = parser.parse_args()
+    populate_db(args.dataset)
