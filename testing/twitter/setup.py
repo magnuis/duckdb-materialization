@@ -6,6 +6,14 @@ from queries.twitter.q5 import Q5
 from queries.twitter.q6 import Q6
 from queries.twitter.q7 import Q7
 from queries.twitter.q8 import Q8
+from queries.twitter.q9 import Q9
+from queries.twitter.q10 import Q10
+from queries.twitter.q11 import Q11
+from queries.twitter.q12 import Q12
+from queries.twitter.q13 import Q13
+from queries.twitter.q14 import Q14
+
+
 from queries.query import Query
 
 
@@ -18,6 +26,12 @@ QUERIES: dict[str, Query] = {
     'q6': Q6(),
     'q7': Q7(),
     'q8': Q8(),
+    'q9': Q9(),
+    'q10': Q10(),
+    'q11': Q11(),
+    'q12': Q12(),
+    'q13': Q13(),
+    'q14': Q14()
     # 'q9': Q9(),
     # 'q10': Q10(),
     # 'q11': Q11(),
@@ -105,11 +119,6 @@ COLUMN_MAP = {
         "frequency": 860217
 
     },
-    "delete_status_idStr": {  # 252502
-        "access": "raw_json->'delete'->'status'->>'id_str'",
-        "type": "VARCHAR",
-        "frequency": 252502
-    },
     "delete_status_userIdStr": {  # 252502
         "access": "raw_json->'delete'->'status'->>'user_id_str'",
         "type": "VARCHAR",
@@ -119,11 +128,5 @@ COLUMN_MAP = {
         "access": "raw_json->'delete'->>'timestamp_ms'",
         "type": "BIGINT",
         "frequency": 252502
-    },
-    "timestampMs": {  # 860217
-        "access": "raw_json->>'timestamp_ms'",
-        "type": "BIGINT",
-        "frequency": 860217
-
     }
 }
