@@ -309,7 +309,7 @@ def main():
     # Resuing these results for faster execution
 
     prev_result_path = BASE_PATH + \
-        f"/results/load-based-v2/{dataset}/2025-06-01-22H/results.csv"
+        f"/results/load-based-v2/{dataset}/2025-06-02-10H/results.csv"
 
     try:
         prev_results_df = pd.read_csv(prev_result_path)
@@ -424,9 +424,10 @@ def main():
                     # for len_materialization in MATERIALIZATION_SET_SIZES:
                     tests[f"load_based_m{len_materialization}"] = {
                         'len_materialization': len_materialization}
-                    tests[f"schema_based_m{len_materialization}"] = {
+                    tests[f"schema_based_s{len_materialization}"] = {
                         'len_materialization': len_materialization}
-
+                    tests[f"frequency_based_f{len_materialization}"] = {
+                        'len_materialization': len_materialization}
                 # Loop through the tests
                 prev_materialization = set()
                 for test_name, test_setup in tests.items():
@@ -484,7 +485,61 @@ def main():
                             weighted_load_test_fields[:no_fields_to_materialize]
 
                         last_materialization = fields_to_materialize[-1]
-                    elif 'schema_based_m' in test_name:
+
+                    elif 'frequency_based_f' in test_name:
+                        len_materialization = test_setup.get(
+                            'len_materialization', -1)
+                        assert len_materialization >= 0
+
+                        # Take previous materialization time into consideration
+                        no_fields_to_materialize = 1
+
+                        # if len_materialization == 0:
+                        #     prev_df = results_df[(
+                        #         results_df["Load"] == load_no) & (results_df["Test"] == 'no_materialization')]
+                        if len_materialization == 1:
+                            prev_df = results_df[(
+                                results_df["Load"] == load_no) & (results_df["Test"] == 'no_materialization')]
+                        elif len_materialization >= 20:
+                            no_fields_to_materialize = 5
+                            prev_df = results_df[(
+                                results_df["Load"] == load_no) & (results_df["Test"] == f'load_based_m{len_materialization-5}')]
+
+                        else:
+                            prev_df = results_df[(
+                                results_df["Load"] == load_no) & (results_df["Test"] == f'load_based_m{len_materialization-1}')]
+
+                        prev_materialization = prev_df['Materialization'].iloc[0]
+                        prev_time = prev_df['Materialization'].iloc[0]
+
+                        field_weights = defaultdict(int)
+                        for query_name, query_obj in queries.items():
+                            query_frequency = load.count(query_name)
+                            # TODO dynamic
+                            _field_weights = query_obj.get_column_weights(
+                                only_freq=True,
+                                prev_materialization=prev_materialization
+                            )
+                            for field, weight in _field_weights.items():
+                                field_weights[field] += weight * \
+                                    query_frequency
+
+                        # Remove prev materializations from field weights
+                        load_test_field_weights = {key: val for key, val in field_weights.items(
+                        ) if key not in prev_materialization}
+
+                        # Sort fields by total weight
+                        load_test_field_weights = dict(
+                            sorted(load_test_field_weights.items(), key=lambda item: item[1], reverse=True))
+
+                        weighted_load_test_fields = list(
+                            load_test_field_weights.keys())
+
+                        fields_to_materialize = list(prev_materialization) + \
+                            weighted_load_test_fields[:no_fields_to_materialize]
+
+                        last_materialization = fields_to_materialize[-1]
+                    elif 'schema_based_s' in test_name:
                         len_materialization = test_setup.get(
                             'len_materialization', -1)
                         assert len_materialization >= 0
@@ -494,7 +549,7 @@ def main():
                                 results_df["Load"] == load_no) & (results_df["Test"] == 'no_materialization')]
                         else:
                             prev_df = results_df[(
-                                results_df["Load"] == load_no) & (results_df["Test"] == f'schema_based_m{len_materialization-1}')]
+                                results_df["Load"] == load_no) & (results_df["Test"] == f'schema_based_s{len_materialization-1}')]
 
                         prev_materialization = prev_df['Materialization'].iloc[0]
                         weighted_load_test_fields = list(
