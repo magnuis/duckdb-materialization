@@ -71,11 +71,7 @@ class Q8(Query):
                 'idStr'
             ],
             'where': [
-                'user_followersCount',
-                'inReplyToUserIdStr',
-                'user_idStr',
-                'retweetedStatus_user_idStr',
-                'user_idStr'
+                'user_followersCount'
             ],
             'group_by': [
                 'user_idStr'
@@ -100,7 +96,9 @@ class Q8(Query):
         field_map = {
             'user_followersCount': 1
         }
-        return field_map.get(field, None)
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
 
     def get_join_field_has_no_direct_filter(self, field: str) -> int:
         """

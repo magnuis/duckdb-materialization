@@ -121,7 +121,9 @@ class Q9(Query):
             'inReplyToUserIdStr': 1
 
         }
-        return field_map.get(field, None)
+        if field not in field_map:
+            raise ValueError(f"{field} not a WHERE field")
+        return field_map[field]
 
     def get_join_field_has_no_direct_filter(self, field: str) -> int:
         """

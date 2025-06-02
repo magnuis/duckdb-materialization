@@ -6,7 +6,7 @@ class MaterializationStrategy(Enum):
 
 
 POOR_FIELD_WEIGHT = 1
-GOOD_FIELD_WEIGHT = 36
+GOOD_FIELD_WEIGHT = 9.2
 
 
 class Query:

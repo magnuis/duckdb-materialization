@@ -60,6 +60,7 @@ class Q2(Query):
                 'source'
             ],
             'order_by': [
+                'source'
             ],
             'join': {
 

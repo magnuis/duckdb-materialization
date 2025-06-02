@@ -53,7 +53,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
     materialized = False
     all_materialized = True
-    materialize_fields = []
+    materialized_fields = 0
     # cte_list_index = 1
     for field, query, materialize in fields:
         # Drop column if it exists
@@ -70,6 +70,7 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
             #     update_query += f"{field} = e.extracted_list[{cte_list_index}]::{data_type}, "
             # materialize_fields.append(field)
             # cte_list_index += 1
+            materialized_fields += 1
 
         materialized |= materialize
         all_materialized &= materialize
@@ -89,7 +90,6 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
             # query += "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;"
         # query += " COMMIT;"
         alter_query += 'commit;'
-        print(alter_query)
 
         start_time = time()
 
@@ -110,9 +110,9 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
     # if include_print:
     #     print('------------------------------')
         print(
-            f"Materialized {len(materialize_fields)} fields in time {time_taken:.3f}")
+            f"Materialized {materialized_fields} fields in time {time_taken:.3f}")
     #     print(materialize_fields)
-        print(query)
+
     return time_taken
 
 

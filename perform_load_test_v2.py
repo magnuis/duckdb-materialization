@@ -4,6 +4,7 @@ from datetime import datetime
 import shutil
 import time
 import os
+import random
 from collections import defaultdict, OrderedDict
 from collections.abc import Callable
 
@@ -13,7 +14,7 @@ import pandas as pd
 from queries.query import Query
 import testing.twitter.setup as twitter_setup
 import testing.tpch.setup as tpch_setup
-from analyze_queries import analyze_queries
+# from analyze_queries import analyze_queries
 from prepare_database import prepare_database
 
 if not os.path.isdir("./results"):
@@ -78,30 +79,100 @@ def _get_majority_queries(load: list[str], majority_size: int) -> list[str]:
     return list(sorted_queries_count.keys())[:majority_size]
 
 
-def _numerical_distribution():
+# def _numerical_distribution():
+
+#     load_dicts = []
+
+#     loads = []
+#     majority_queries = []
+
+#     for load_no in range(NO_LOADS):
+#         load_path = BASE_PATH + f'/loads/without_q5/load{load_no}.txt'
+#         with open(load_path, 'r') as file:
+#             load_str = file.read()
+#             load = ast.literal_eval(load_str)
+
+#             loads.append(load)
+
+#             majority_queries = _get_majority_queries(
+#                 load=load, majority_size=4)
+
+#     load_dicts.append({
+#         "loads": loads,
+#         "query_proportion": 4,
+#         "majority_proportion": 400,
+#         "majority_queries": majority_queries
+#     })
+
+#     return load_dicts
+
+
+def _numerical_distribution(queries: dict[str, Query]):
 
     load_dicts = []
 
-    loads = []
-    majority_queries = []
+    # try:
+    #     query_proportion = int(input(
+    #         f"How many of the {no_queries} should the majority of the load come from? "))
+    #     if not 0 <= query_proportion <= no_queries:
+    #         raise TypeError
+    # except TypeError:
+    #     raise ValueError(
+    #         f"Query percentage must be an int between 0 and {no_queries}")
 
-    for load_no in range(NO_LOADS):
-        load_path = BASE_PATH + f'/loads/without_q5/load{load_no}.txt'
-        with open(load_path, 'r') as file:
-            load_str = file.read()
-            load = ast.literal_eval(load_str)
+    # try:
+    #     majority_proportion = int(
+    #         input("What should the load proportion of the majority be? "))
+    #     if not 50 <= majority_proportion <= 100:
+    #         raise TypeError
+
+    #     majority_proportion = int((majority_proportion/100) * QUERIES_IN_LOAD)
+    # except TypeError:
+    #     raise ValueError("Query percentage must be an int between 50 and 100")
+
+    all_queries = list(queries.keys())
+
+    qm = [(q, int(m*QUERIES_IN_LOAD))
+          for q in QUERY_PROPORTIONS for m in MAJORITY_PROPORTIONS]
+
+    last_load_length = QUERIES_IN_LOAD
+
+    for query_proportion, majority_proportion in qm:
+
+        loads = []
+        majority_queries = []
+
+        for i in range(NO_LOADS):
+            r = random.Random()
+            r.seed(i)
+
+            load_majority_queries = r.sample(
+                population=all_queries, k=query_proportion, )
+            minority_queries = [
+                q for q in all_queries if q not in load_majority_queries]
+
+            maj_load = [r.choice(load_majority_queries)
+                        for _ in range(majority_proportion)]
+            min_load = [r.choice(minority_queries)
+                        for _ in range(QUERIES_IN_LOAD - majority_proportion)]
+
+            load = maj_load + min_load
+
+            r.shuffle(load)
 
             loads.append(load)
+            majority_queries.append(
+                sorted(load_majority_queries, key=lambda x: int(x[1:])))
 
-            majority_queries = _get_majority_queries(
-                load=load, majority_size=4)
+            assert last_load_length == len(load)
+            last_load_length = len(load)
 
-    load_dicts.append({
-        "loads": loads,
-        "query_proportion": 4,
-        "majority_proportion": 400,
-        "majority_queries": majority_queries
-    })
+        load_dicts.append({
+            "loads": loads,
+            "query_proportion": query_proportion,
+            "majority_proportion": majority_proportion,
+            "majority_queries": majority_queries
+        })
 
     return load_dicts
 
@@ -115,7 +186,7 @@ def _generate_loads(distributions: list[int], queries: dict[str, Query]) -> dict
     load_confs = defaultdict(list)
     for distribution in distributions:
         _load_method = DISTRIBUTIONS[distribution]
-        load_dicts = _load_method()
+        load_dicts = _load_method(queries=queries)
 
         for load_dict in load_dicts:
             load_conf = {}
@@ -160,8 +231,6 @@ def _create_fresh_db(dataset: str):
 
     with duckdb.connect(db_path) as con:
         con.execute(f"IMPORT DATABASE '{backup_path}';")
-        # FIXME REMOVE
-        con.execute(f"DELETE FROM test_table WHERE rowid < 10000;")
 
 
 def _create_connection(dataset: str, test: str = "temp") -> tuple[duckdb.DuckDBPyConnection, str]:
@@ -179,7 +248,10 @@ def _create_connection(dataset: str, test: str = "temp") -> tuple[duckdb.DuckDBP
 
     # Reconnect to db
     con = duckdb.connect(copy_db_path)
-    con.execute("SET default_block_size = '16384'")
+    # FIXME REMOVE
+    # con.execute(f"DELETE FROM test_table WHERE raw_json->>'id_str' != '';")
+    # con.execute(
+    #     f"DELETE FROM test_table WHERE raw_json->'delete'->>'timestamp_ms' != '';")
 
     con.execute("CHECKPOINT;")
 
@@ -236,12 +308,17 @@ def main():
     # Test time for all materializations of fields in all possible 0-3 tuples are previously ran.
     # Resuing these results for faster execution
 
-    # prev_result_path = BASE_PATH + \
-    #     f"/results/single-queries/{dataset}/2025-05-10-15H/results.csv"
+    prev_result_path = BASE_PATH + \
+        f"/results/load-based-v2/{dataset}/2025-06-01-22H/results.csv"
 
-    # prev_results_df = pd.read_csv(prev_result_path)
-    prev_results_df = pd.DataFrame(columns=["Query", "Last Materialization", "Load", "Test", "Materialization",
-                                   "Iteration 0", "Iteration 1", "Iteration 2", "Iteration 3", "Iteration 4", "Average (last 4 runs)"])
+    try:
+        prev_results_df = pd.read_csv(prev_result_path)
+        pass
+    except FileNotFoundError as e:
+        # assert False
+
+        prev_results_df = pd.DataFrame(columns=["Query", "Last Materialization", "Load", "Test", "Materialization",
+                                                "Iteration 0", "Iteration 1", "Iteration 2", "Iteration 3", "Iteration 4", "Average (last 4 runs)"])
     # Convert the Materilizations column to a list
     prev_results_df["Materialization"] = prev_results_df[["Materialization"]].apply(
         lambda row: set(ast.literal_eval(row["Materialization"])), axis=1)
@@ -266,16 +343,16 @@ def main():
         distributions=distributions, queries=queries)
 
     # Make sure query frequency exists
-    analyze_queries(data_set=dataset)
+    # analyze_queries(data_set=dataset)
 
     # Get field distribution for each query
-    field_distribution = pd.read_csv(
-        f'./results/{dataset}/field_distribution_{dataset}.csv')
+    # field_distribution = pd.read_csv(
+    #     f'./results/{dataset}/field_distribution_{dataset}.csv')
 
     # Create fresh db
     _create_fresh_db(dataset=dataset)
 
-    field_distribution.set_index(keys=['query'])
+    # field_distribution.set_index(keys=['query'])
 
     # results_df: pd.DataFrame = prev_results_df[prev_results_df["Materialization"] == set(
     # )]
@@ -343,7 +420,7 @@ def main():
                 #         "materialization": materialized_fields,
                 #         "last materialization": materialized_fields[-1]
                 #     }
-                for len_materialization in len(sorted_column_map.keys()):
+                for len_materialization in range(1, len(sorted_column_map.keys())):
                     # for len_materialization in MATERIALIZATION_SET_SIZES:
                     tests[f"load_based_m{len_materialization}"] = {
                         'len_materialization': len_materialization}
@@ -423,8 +500,8 @@ def main():
                         weighted_load_test_fields = list(
                             sorted_column_map.keys())
 
-                        fields_to_materialize = list(prev_materialization) + \
-                            weighted_load_test_fields[:no_fields_to_materialize]
+                        fields_to_materialize = weighted_load_test_fields[:len_materialization]
+                        last_materialization = fields_to_materialize[-1]
 
                     else:
                         fields_to_materialize = test_setup.get(
@@ -460,8 +537,10 @@ def main():
 
                         # Check prev_results_df
                         if len(filtered_result) <= 0:
-                            filtered_result = prev_results_df[(
-                                prev_results_df["Query"] == query_name) & (prev_results_df["Materialization"] == fields_to_materialize)]
+                            # TODO REMOVE last if
+                            if 'load_based' in test_name or test_name in standard_tests:
+                                filtered_result = prev_results_df[(
+                                    prev_results_df["Query"] == query_name) & (prev_results_df["Materialization"] == fields_to_materialize)]
                             # prev_results_df["Query"] == query_name) & (prev_results_df["Materialization"] == fields_to_materialize_set)]
 
                         # If we have a result, use it
@@ -515,7 +594,7 @@ def main():
                         "Load": [load_no],
                         "Test": [test_name],
                         "Total Query Time": [load_test_execution_time],
-                        "Majority Queries": [majority_queries],
+                        "Majority Queries": [majority_queries[load_no]],
                         "Materialization": [fields_to_materialize],
                         "Strategy": ["Frequency"]
                     }, columns=loads_df_columns)

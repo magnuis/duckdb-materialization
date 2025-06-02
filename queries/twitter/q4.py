@@ -78,7 +78,7 @@ class Q4(Query):
         Query specific implementation of the where field has direct filter
         """
         field_map = {
-            'retweetedStatus_idStr': 1
+            'inReplyToUserIdStr': 1
         }
 
         return field_map[field]
