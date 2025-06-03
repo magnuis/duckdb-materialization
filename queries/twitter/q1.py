@@ -7,7 +7,7 @@ class Q1(Query):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -62,6 +62,14 @@ class Q1(Query):
 
             }
         }
+
+    def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
+        field_map = {
+            'lang': self.GOOD_FIELD_WEIGHT
+        }
+        if field not in field_map:
+            raise ValueError(f"{field} not a query field")
+        return field_map.get(field, 0)
 
     def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """

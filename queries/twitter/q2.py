@@ -7,7 +7,7 @@ class Q2(Query):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -22,7 +22,9 @@ class Q2(Query):
         acs = self._get_field_accesses(fields=fields)
 
         return f"""
-            SELECT {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])}, COUNT(*) AS tweet_count
+            SELECT 
+                {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])}, 
+                COUNT(*) AS tweet_count
             FROM test_table t
             GROUP BY {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])}
             ORDER BY tweet_count, {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])} DESC;
@@ -67,7 +69,14 @@ class Q2(Query):
             }
         }
 
-    # TODO
+    def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
+        field_map = {
+            'source': 1*self.GOOD_FIELD_WEIGHT + 1*self.POOR_FIELD_WEIGHT
+        }
+        if field not in field_map:
+            raise ValueError(f"{field} not a query field")
+        return field_map.get(field, 0)
+
     def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter

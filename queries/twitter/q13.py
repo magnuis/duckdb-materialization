@@ -7,7 +7,7 @@ class Q13(Query):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -79,8 +79,6 @@ class Q13(Query):
                 'idStr'
             ],
             'order_by': [
-                'num_retweets',
-                'num_replies'
             ],
             'join': {
                 'retweetedStatus_idStr': ['idStr'],
@@ -88,6 +86,29 @@ class Q13(Query):
                 'idStr': ['retweetedStatus_idStr', 'inReplyToUserIdStr']
             }
         }
+
+    def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
+        lang_weight = 1 * self.GOOD_FIELD_WEIGHT
+        if field == 'lang' and 'user_followersCount' in prev_materialization:
+            lang_weight = 1 * self.POOR_FIELD_WEIGHT
+
+        user_followersCount_weight = 1 * self.GOOD_FIELD_WEIGHT
+        if field == 'user_followersCount' and 'lang' in prev_materialization:
+            user_followersCount_weight = 1 * self.POOR_FIELD_WEIGHT
+
+        field_map = {
+            "idStr": 6*self.POOR_FIELD_WEIGHT,
+            "lang": lang_weight,
+            "user_followersCount": user_followersCount_weight,
+            "text": 1*self.GOOD_FIELD_WEIGHT,
+            "retweetedStatus_idStr": 1*self.POOR_FIELD_WEIGHT,
+            "inReplyToUserIdStr": 1*self.GOOD_FIELD_WEIGHT
+
+        }
+        if field not in field_map:
+            raise ValueError(f"{field} not a query field")
+
+        return field_map.get(field, 0)
 
     def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """

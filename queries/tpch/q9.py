@@ -7,7 +7,7 @@ class Q9(Query):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
 #     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
 #         """

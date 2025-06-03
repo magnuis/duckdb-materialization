@@ -1,12 +1,9 @@
 from enum import Enum
+from collections import defaultdict
 
 
 class MaterializationStrategy(Enum):
     FIRST_ITERATION = 1
-
-
-POOR_FIELD_WEIGHT = 1
-GOOD_FIELD_WEIGHT = 9.2
 
 
 class Query:
@@ -15,6 +12,8 @@ class Query:
     """
 
     def __init__(self):
+        self.POOR_FIELD_WEIGHT = 1
+        self.GOOD_FIELD_WEIGHT = 9.2
         pass
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
@@ -132,6 +131,9 @@ class Query:
         """
         return self.columns_used_with_position()["where"]
 
+    def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
+        raise NotImplementedError("Subclass must implement this method")
+
     def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
 
         used_columns = self.columns_used()
@@ -208,21 +210,24 @@ class Query:
                 weights['s_nationkey'] = 0
             return weights
 
-        weights = {
-            field: POOR_FIELD_WEIGHT for field in self.columns_used()
-        }
+        # Assign weights
+        weights = dict()
+        columns_used = self.columns_used()
+        for field in set(columns_used):
+            weights[field] = self.get_field_weight(
+                field=field, prev_materialization=prev_materialization)
 
-        for clause, col_list in self.columns_used_with_position().items():
-            if clause == "join":
-                for field in col_list.keys():
-                    weights[field] += GOOD_FIELD_WEIGHT * \
-                        self.get_join_field_has_no_direct_filter(field)
-            elif clause == "where":
-                for field in col_list:
+        # for clause, col_list in self.columns_used_with_position().items():
+        #     if clause == "join":
+        #         for field in col_list.keys():
+        #             weights[field] += GOOD_FIELD_WEIGHT * \
+        #                 self.get_join_field_has_no_direct_filter(field)
+        #     elif clause == "where":
+        #         for field in col_list:
 
-                    weights[field] += GOOD_FIELD_WEIGHT * \
-                        self.get_where_field_has_direct_filter(
-                            field, prev_materialization=prev_materialization)
+        #             weights[field] += GOOD_FIELD_WEIGHT * \
+        #                 self.get_where_field_has_direct_filter(
+        #                     field, prev_materialization=prev_materialization)
 
         if 's_nationkey' in weights:
             weights['s_nationkey'] = 0

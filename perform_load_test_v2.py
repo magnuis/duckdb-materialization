@@ -111,25 +111,6 @@ def _numerical_distribution(queries: dict[str, Query]):
 
     load_dicts = []
 
-    # try:
-    #     query_proportion = int(input(
-    #         f"How many of the {no_queries} should the majority of the load come from? "))
-    #     if not 0 <= query_proportion <= no_queries:
-    #         raise TypeError
-    # except TypeError:
-    #     raise ValueError(
-    #         f"Query percentage must be an int between 0 and {no_queries}")
-
-    # try:
-    #     majority_proportion = int(
-    #         input("What should the load proportion of the majority be? "))
-    #     if not 50 <= majority_proportion <= 100:
-    #         raise TypeError
-
-    #     majority_proportion = int((majority_proportion/100) * QUERIES_IN_LOAD)
-    # except TypeError:
-    #     raise ValueError("Query percentage must be an int between 50 and 100")
-
     all_queries = list(queries.keys())
 
     qm = [(q, int(m*QUERIES_IN_LOAD))
@@ -163,6 +144,46 @@ def _numerical_distribution(queries: dict[str, Query]):
             loads.append(load)
             majority_queries.append(
                 sorted(load_majority_queries, key=lambda x: int(x[1:])))
+
+            assert last_load_length == len(load)
+            last_load_length = len(load)
+
+        load_dicts.append({
+            "loads": loads,
+            "query_proportion": query_proportion,
+            "majority_proportion": majority_proportion,
+            "majority_queries": majority_queries
+        })
+
+    return load_dicts
+
+
+def _random_distribution(queries: dict[str, Query]):
+
+    load_dicts = []
+
+    all_queries = list(queries.keys())
+
+    qm = [(q, int(m*QUERIES_IN_LOAD))
+          for q in QUERY_PROPORTIONS for m in MAJORITY_PROPORTIONS]
+
+    last_load_length = QUERIES_IN_LOAD
+
+    for query_proportion, majority_proportion in qm:
+
+        loads = []
+        majority_queries = []
+
+        for i in range(NO_LOADS):
+            r = random.Random()
+            r.seed(i)
+
+            load = [r.choice(all_queries) for _ in range(500)]
+
+            r.shuffle(load)
+
+            loads.append(load)
+            majority_queries.append(None)
 
             assert last_load_length == len(load)
             last_load_length = len(load)
@@ -309,7 +330,7 @@ def main():
     # Resuing these results for faster execution
 
     prev_result_path = BASE_PATH + \
-        f"/results/load-based-v2/{dataset}/2025-06-02-10H/results.csv"
+        f"/results/load-based-v2/{dataset}/2025-06-02-14H/results.csv"
 
     try:
         prev_results_df = pd.read_csv(prev_result_path)

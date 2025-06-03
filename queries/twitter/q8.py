@@ -7,7 +7,7 @@ class Q8(Query):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -77,9 +77,6 @@ class Q8(Query):
                 'user_idStr'
             ],
             'order_by': [
-                'followers_count',
-                'reply_count',
-                'retweet_count'
             ],
             'join': {
                 'inReplyToUserIdStr': ['user_idStr'],
@@ -87,6 +84,20 @@ class Q8(Query):
                 'user_idStr': ['inReplyToUserIdStr', 'retweetedStatus_user_idStr']
             }
         }
+
+    def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
+        field_map = {
+            'user_screenName': 1*self.POOR_FIELD_WEIGHT,
+            "user_followersCount": 1 * self.GOOD_FIELD_WEIGHT + 1*self.POOR_FIELD_WEIGHT,
+            "idStr": 2*self.POOR_FIELD_WEIGHT,
+            'user_idStr':  3*self.POOR_FIELD_WEIGHT,
+            "inReplyToUserIdStr": 1*self.GOOD_FIELD_WEIGHT,
+            "retweetedStatus_user_idStr": 1*self.GOOD_FIELD_WEIGHT,
+        }
+        if field not in field_map:
+            raise ValueError(f"{field} not a query field")
+
+        return field_map.get(field, 0)
 
     def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """

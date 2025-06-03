@@ -7,7 +7,7 @@ class Q14(Query):
     """
 
     def __init__(self):
-        pass
+        super().__init__()
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -72,12 +72,23 @@ class Q14(Query):
                 'delete_status_userIdStr'
             ],
             'order_by': [
-                'delete_time_diff_ms'
             ],
             'join': {
                 'delete_status_userIdStr': ['delete_status_userIdStr']
             }
         }
+
+    def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
+
+        field_map = {
+            "delete_status_userIdStr": 2*self.GOOD_FIELD_WEIGHT + 2*self.POOR_FIELD_WEIGHT,
+            "delete_timestampMs": 2*self.POOR_FIELD_WEIGHT
+
+        }
+        if field not in field_map:
+            raise ValueError(f"{field} not a query field")
+
+        return field_map.get(field, 0)
 
     def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
