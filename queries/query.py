@@ -211,21 +211,25 @@ class Query:
             return weights
 
         # Assign weights
+
         weights = dict()
         columns_used = self.columns_used()
         for field in set(columns_used):
             weights[field] = self.get_field_weight(
                 field=field, prev_materialization=prev_materialization)
 
+        # weights = {field: self.POOR_FIELD_WEIGHT for field in set(
+        #     self.columns_used())}
+
         # for clause, col_list in self.columns_used_with_position().items():
         #     if clause == "join":
         #         for field in col_list.keys():
-        #             weights[field] += GOOD_FIELD_WEIGHT * \
+        #             weights[field] += self.GOOD_FIELD_WEIGHT * \
         #                 self.get_join_field_has_no_direct_filter(field)
         #     elif clause == "where":
         #         for field in col_list:
 
-        #             weights[field] += GOOD_FIELD_WEIGHT * \
+        #             weights[field] += self.GOOD_FIELD_WEIGHT * \
         #                 self.get_where_field_has_direct_filter(
         #                     field, prev_materialization=prev_materialization)
 

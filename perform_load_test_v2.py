@@ -200,6 +200,7 @@ def _random_distribution(queries: dict[str, Query]):
 
 DISTRIBUTIONS: dict[str, Callable] = {
     "numerical": _numerical_distribution
+    # "numerical": _random_distribution
 }
 
 
@@ -329,14 +330,16 @@ def main():
     # Test time for all materializations of fields in all possible 0-3 tuples are previously ran.
     # Resuing these results for faster execution
 
+    # prev_result_path = BASE_PATH + \
+    #     f"/results/load-based-v2/{dataset}/2025-06-03-21H/results.csv"
     prev_result_path = BASE_PATH + \
-        f"/results/load-based-v2/{dataset}/2025-06-02-14H/results.csv"
+        f"/results/load-based-v2/{dataset}/2025-06-04-1H/results.csv"
 
     try:
         prev_results_df = pd.read_csv(prev_result_path)
         pass
     except FileNotFoundError as e:
-        # assert False
+        assert False
 
         prev_results_df = pd.DataFrame(columns=["Query", "Last Materialization", "Load", "Test", "Materialization",
                                                 "Iteration 0", "Iteration 1", "Iteration 2", "Iteration 3", "Iteration 4", "Average (last 4 runs)"])
@@ -596,8 +599,7 @@ def main():
                         fields.append(
                             (field, access_query, field in fields_to_materialize))
 
-                    # Prepare database
-                    prepare_database(con=db_connection, fields=fields)
+                    prepared_db = False
 
                     # Loop through each query
                     for query_name, query_obj in queries.items():
@@ -614,14 +616,14 @@ def main():
                         # Check prev_results_df
                         if len(filtered_result) <= 0:
                             # TODO REMOVE last if
-                            if 'load_based' in test_name or test_name in standard_tests:
-                                filtered_result = prev_results_df[(
-                                    prev_results_df["Query"] == query_name) & (prev_results_df["Materialization"] == fields_to_materialize)]
+                            # if 'load_based' in test_name or test_name in standard_tests:
+                            filtered_result = prev_results_df[(
+                                prev_results_df["Query"] == query_name) & (prev_results_df["Materialization"] == fields_to_materialize)]
                             # prev_results_df["Query"] == query_name) & (prev_results_df["Materialization"] == fields_to_materialize_set)]
 
                         # If we have a result, use it
                         if len(filtered_result) > 0:
-                            result = filtered_result.iloc[0]
+                            result = filtered_result.iloc[0].copy()
                         else:
                             # If query was not affected by materialization, use result from prev materialization
                             if not query_affected:
@@ -630,6 +632,12 @@ def main():
                             # result = results_df[(
                             #     results_df["Query"] == query_name) & (results_df["Materialization"].apply(lambda s: s == prev_materialization))].iloc[0]
                             else:
+
+                                # Prepare database, if not already done
+                                if not prepared_db:
+                                    prepare_database(
+                                        con=db_connection, fields=fields)
+                                    prepared_db = True
                                 # Perform test
                                 query = query_obj.get_query(fields=fields)
                                 result = _test_execute_query(

@@ -113,7 +113,7 @@ class Q7(Query):
         """
         field_map = {
             'retweetedStatus_idStr': 1,
-            'idstr': 1
+            'idStr': 1
         }
 
         if field not in field_map:
