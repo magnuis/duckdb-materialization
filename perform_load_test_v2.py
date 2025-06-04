@@ -199,8 +199,8 @@ def _random_distribution(queries: dict[str, Query]):
 
 
 DISTRIBUTIONS: dict[str, Callable] = {
-    "numerical": _numerical_distribution
-    # "numerical": _random_distribution
+    # "numerical": _numerical_distribution
+    "numerical": _random_distribution
 }
 
 
@@ -330,8 +330,11 @@ def main():
     # Test time for all materializations of fields in all possible 0-3 tuples are previously ran.
     # Resuing these results for faster execution
 
+    # 13 queries
     # prev_result_path = BASE_PATH + \
     #     f"/results/load-based-v2/{dataset}/2025-06-03-21H/results.csv"
+
+    # Random
     prev_result_path = BASE_PATH + \
         f"/results/load-based-v2/{dataset}/2025-06-04-1H/results.csv"
 

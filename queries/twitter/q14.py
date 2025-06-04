@@ -82,7 +82,7 @@ class Q14(Query):
 
         field_map = {
             "delete_status_userIdStr": 2*self.GOOD_FIELD_WEIGHT + 2*self.POOR_FIELD_WEIGHT,
-            "delete_timestampMs": 1*self.GOOD_FIELD_WEIGHT
+            "delete_timestampMs": 1*self.POOR_FIELD_WEIGHT
 
         }
         if field not in field_map:
