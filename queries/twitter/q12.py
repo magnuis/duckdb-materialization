@@ -22,7 +22,6 @@ class Q12(Query):
 
         return f"""
         SELECT
-            {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])}                                               AS original_tweet_id,
             {self._json(col='user_screenName', tbl='orig', dt=dts['user_screenName'], acs=acs['user_screenName'])}                                   AS original_user,
             COUNT(DISTINCT {self._json(col='idStr', tbl='rt', dt=dts['idStr'], acs=acs['idStr'])})                                   AS total_retweet_rows,
             COUNT(DISTINCT {self._json(col='idStr', tbl='rep', dt=dts['idStr'], acs=acs['idStr'])})                                  AS total_reply_rows
@@ -36,7 +35,6 @@ class Q12(Query):
             TRY_CAST({self._json(col='user_isTranslator', tbl='orig', dt=dts['user_isTranslator'], acs=acs['user_isTranslator'])} AS BOOLEAN)
             AND {self._json(col='inReplyToUserIdStr', tbl='orig', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} IS NULL
         GROUP BY
-            {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])},
             {self._json(col='user_screenName', tbl='orig', dt=dts['user_screenName'], acs=acs['user_screenName'])}
         ORDER BY
             total_retweet_rows DESC
@@ -66,7 +64,6 @@ class Q12(Query):
         """
         return {
             'select': [
-                'idStr',
                 'user_screenName',
                 'idStr',
                 'idStr'
@@ -76,7 +73,6 @@ class Q12(Query):
                 'inReplyToUserIdStr'
             ],
             'group_by': [
-                'idStr',
                 'user_screenName'
             ],
             'order_by': [
@@ -98,7 +94,7 @@ class Q12(Query):
             inReplyToUserIdStr_weight = 1 * self.POOR_FIELD_WEIGHT + 1 * self.GOOD_FIELD_WEIGHT
 
         field_map = {
-            "idStr": 6*self.POOR_FIELD_WEIGHT,
+            "idStr": 4*self.POOR_FIELD_WEIGHT,
             'user_screenName': 2*self.POOR_FIELD_WEIGHT,
             "user_isTranslator": user_isTranslator_weight,
             "inReplyToUserIdStr": inReplyToUserIdStr_weight,
