@@ -107,9 +107,9 @@ STANDARD_SETUPS = {
     # "q3_l2_m10": {
     #     "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal']
     # },
-    "q3_l2_m11": {
-        "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal', 'l_extendedprice']
-    },
+    # "q3_l2_m11": {
+    #     "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal', 'l_extendedprice']
+    # },
     # "test": {
     #     "materialization": ["s_suppkey"],
     # },
@@ -202,6 +202,17 @@ STANDARD_SETUPS = {
     #         "l_linenumber"
     #     ],
     # },
+}
+
+TABLE_SIZES = {
+    "l": 4000000,
+    'o': 1500000,
+    "ps": 800000,
+    "p": 200000,
+    "c": 150000,
+    "s": 10000,
+    "n": 25,
+    "r": 5
 }
 
 
