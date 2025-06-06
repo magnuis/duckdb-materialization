@@ -1,5 +1,6 @@
 import shutil
 import os
+import ast
 import pandas as pd
 import string
 import time
@@ -24,7 +25,7 @@ DATASETS = {
         "standard_tests": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
         "no_queries": len(tpch_setup.QUERIES),
-        "results_path": BASE_PATH + "/results/load-based-N-fields/tpch/2025-03-26-15H"
+        "results_path": BASE_PATH + "/results/load-based-v2/tpch/2025-06-04-16H"
     }
 }
 
@@ -250,7 +251,7 @@ def main():
 
     results_path = config["results_path"]
 
-    loads_df = pd.read_csv(results_path + "/meta_results.csv")
+    loads_df = pd.read_csv(results_path + "/load9_results.csv")
     loads_df = loads_df[["Load", "Test", "Materialization"]]
 
     timed_loads = dict()
@@ -260,11 +261,10 @@ def main():
 
     # Create fresh db
     _create_fresh_db(dataset=dataset)
-    # Create new db connection
-    db_connection, db_path = _create_connection(dataset=dataset)
 
     prev_load = 0
     for loads_df_row in loads_df.itertuples():
+
         # for field in list(column_map.keys()) + [None, None, None]:
         # if field is not None:
         # continue
@@ -278,8 +278,9 @@ def main():
         test_name: str = loads_df_row[2]
         materialized_fields: str = loads_df_row[3]
 
-        materialized_fields_list = materialized_fields.replace(
-            "[", "").replace("]", "").replace(" ", "").replace("'", "").split(",")
+        materialized_fields_list = list(ast.literal_eval(materialized_fields))
+        print(materialized_fields_list)
+        # assert False
 
         if '' in materialized_fields_list:
             materialized_fields_list.remove('')
@@ -302,6 +303,8 @@ def main():
             prepare_time = timed_loads[materialized_fields]["prepare_time"]
 
         else:
+            # Create new db connection
+            db_connection, db_path = _create_connection(dataset=dataset)
 
             # Create the field-materialization setup for this test
             fields = []
@@ -331,6 +334,9 @@ def main():
                 # timed_loads[str(materialized_fields_list)] = {
                 "write_time": write_time, "db_size_before": db_size_before, "db_size_after": db_size_after, "prepare_time": prepare_time}
 
+            # Close connection
+            db_connection.close()
+
         results_df = pd.concat([
             results_df,
             pd.DataFrame([{
@@ -350,8 +356,6 @@ def main():
             load_time = time.time()
             prev_load = load_no
 
-    # Close connection
-    db_connection.close()
     # Write results back to `results_path`
     results_df.to_csv(results_path + "/write_times.csv")
 
