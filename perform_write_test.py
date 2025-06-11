@@ -285,17 +285,8 @@ def main():
         if '' in materialized_fields_list:
             materialized_fields_list.remove('')
 
-        # No materialization
-        # if False:
-            # pass
-        if len(materialized_fields_list) <= 0:
-            write_time = 0
-            db_size_before = 0
-            db_size_after = 0
-            prepare_time = 0
-
         # Don't repeat tests
-        elif materialized_fields in timed_loads:
+        if materialized_fields in timed_loads:
             print(f"{materialized_fields} already encountered")
             write_time = timed_loads[materialized_fields]["write_time"]
             db_size_before = timed_loads[materialized_fields]["db_size_before"]
