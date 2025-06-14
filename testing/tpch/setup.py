@@ -46,134 +46,15 @@ QUERIES: dict[str, Query] = {
     'q20': Q20(),
     'q21': Q21(),
     'q22': Q22(),
-    # 'q23',
-    # 'q24',
-    # 'q25'
 }
 
 STANDARD_SETUPS = {
-    # "q13_05_1_01-05": {
-    #     "materialization": ["c_custkey", "o_comment"],
-    # },
-    # "q13_075_0_01-05": {
-    #     "materialization": ["c_custkey", "o_custkey", "o_orderkey"],
-    # }
-    # "q9_05_0_05-2-4": {
-    #     "materialization": ['ps_supplycost', 'l_partkey', 's_nationkey', 'l_orderkey', 'o_orderdate', 'p_name', 'o_orderkey', 'ps_suppkey'],
-    # },
-    # "q9_05_1_05-2-4": {
-    #     "materialization": ['o_orderdate', 'p_name', 'n_nationkey', 's_suppkey', 'l_extendedprice', 'p_partkey', 'ps_supplycost', 'l_partkey'],
-    # },
-    # "q18_25_1_05-4": {
-    #     "materialization": ['c_name', 'l_orderkey'],
-    # },
-    # "q18_25_0_05-4": {
-    #     "materialization": ['o_orderkey', 'o_totalprice'],
-    # }
-    # "q5_l1_m10": {
-    #     "materialization": ['l_extendedprice', 'l_discount', 'o_orderkey', 'l_orderkey', 'o_orderdate', 'c_custkey', 'o_custkey', 's_suppkey', 'n_name', 'n_nationkey']
-    # },
-    # "q5_l1_m11": {
-    #     "materialization": ['l_extendedprice', 'l_discount', 'o_orderkey', 'l_orderkey', 'o_orderdate', 'c_custkey', 'o_custkey', 's_suppkey', 'n_name', 'n_nationkey', 'l_suppkey']
-    # },
-    # "q5_l3_m11": {
-    #     "materialization": ['o_orderkey', 'l_orderkey', 'l_extendedprice', 'o_custkey', 'c_custkey',
-    #                         'l_discount', 'o_orderdate', 's_suppkey', 'n_name', 'n_nationkey', 's_nationkey']
-    # },
-    # "q5_l3_m12": {
-    #     "materialization": ['o_orderkey', 'l_orderkey', 'l_extendedprice', 'o_custkey', 'c_custkey',
-    #                         'l_discount', 'o_orderdate', 's_suppkey', 'n_name', 'n_nationkey', 's_nationkey', 'l_suppkey']
-    # },
-    # "q5_l7_m8": {
-    #     "materialization": ['s_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'o_orderkey', 'l_orderkey', 'l_suppkey', 'c_custkey']
-    # },
-    # "q5_l7_m9": {
-    #     "materialization": ['s_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'o_orderkey', 'l_orderkey', 'l_suppkey', 'c_custkey', 'o_custkey']
-    # },
-    # "q5_l8_m10": {
-    #     "materialization": ['o_orderkey', 'l_orderkey', 'c_custkey', 'o_custkey', 'l_extendedprice', 'l_discount', 's_suppkey', 'n_nationkey', 'n_name', 'o_orderdate']
-    # },
-    # "q5_l8_m11": {
-    #     "materialization": ['o_orderkey', 'l_orderkey', 'c_custkey', 'o_custkey', 'l_extendedprice', 'l_discount', 's_suppkey', 'n_nationkey', 'n_name', 'o_orderdate', 'l_suppkey']
-    # }
-    # "q3_l2_m10": {
-    #     "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal']
-    # },
-    # "q3_l2_m11": {
-    #     "materialization": ['o_orderkey', 's_suppkey', 'n_nationkey', 'n_name', 's_nationkey', 'l_orderkey', 'c_custkey', 'o_custkey', 's_name', 's_acctbal', 'l_extendedprice']
-    # },
-    # "test": {
-    #     "materialization": ["s_suppkey"],
-    # },
-    # "q4m400l9_1field": {
-    #     "materialization": ["s_suppkey"],
-    # },
-    # "q4m400l9_2field": {
-    #     "materialization": ['l_shipdate', 's_suppkey'],
-    # },
-    # "q4m400l9_3field": {
-    #     "materialization": ['l_suppkey', 'l_shipdate', 's_suppkey'],
-    # },
-    # "q4m400l9_4field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_shipdate', 's_suppkey'],
-    # },
-    # "q4m400l9_5field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 's_suppkey'],
-    # },
-    # "q4m400l9_6field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 's_suppkey', 's_name'],
-    # },
-    # "q4m400l9_7field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 's_suppkey', 's_name'],
-    # },
-    # "q4m400l9_8field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 's_suppkey', 's_name'],
-    # },
-    # "q4m400l9_9field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 's_suppkey', 's_name', 's_address'],
-    # },
-    # "q4m400l9_10field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 's_suppkey', 's_name', 's_address', 's_nationkey'],
-    # },
-    # "q4m400l9_11field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 'p_partkey', 's_suppkey', 's_name', 's_address', 's_nationkey'],
-    # },
-    # "q4m400l9_12field": {
-    #     "materialization": ['l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 'o_orderkey', 'p_partkey', 's_suppkey', 's_name', 's_address', 's_nationkey'],
-    # },
-    # "q4m400l9_13field": {
-    #     "materialization": ['l_orderkey', 'l_suppkey', 'l_extendedprice', 'l_discount', 'l_shipdate', 'n_nationkey', 'n_name', 'o_orderkey', 'p_partkey', 's_suppkey', 's_name', 's_address', 's_nationkey'],
-    # },
-
-
-
-
-
-    # "q2_l0": {
-    #     "materialization": ["p_mfgr", "n_name", "p_partkey", "ps_partkey"]
-    # },
     "no_materialization": {
         "materialization": [],
     },
     "full_materialization": {
         "materialization": None,
     },
-    # "load_based_materialization": {
-    #     "materialization": [
-    #         "l_extendedprice",
-    #         "o_orderkey",
-    #         "l_discount",
-    #         "s_suppkey",
-    #         "l_orderkey",
-    #         "n_name",
-    #         "n_nationkey",
-    #         "c_custkey",
-    #         "p_partkey",
-    #         "o_custkey",
-    #         "s_nationkey",
-    #         "l_shipdate"
-    #     ]
-    # },
     "schema_based_materialization": {
         "materialization": [
             "l_orderkey",

@@ -1,5 +1,5 @@
 import os
-from time import time
+import time
 import duckdb
 
 
@@ -20,7 +20,7 @@ def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dic
 
     # _create_view(con=con, fields=fields)
 
-    con.execute("ANALYZE")
+    con.execute("ANALYZE;")
     return time_taken
 
 
@@ -48,49 +48,53 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
     time_taken = 0
 
     alter_query = "BEGIN TRANSACTION; "
-    update_query = "UPDATE test_table SET "
-    cte_query = "WITH extracted AS (SELECT rowid, json_extract_string(raw_json, ["
+    # update_query = "UPDATE test_table SET "
+    # cte_query = "WITH extracted AS (SELECT rowid, json_extract_string(raw_json, ["
 
     materialized = False
     all_materialized = True
-    materialize_fields = []
-    cte_list_index = 1
+    materialized_fields = 0
+    # cte_list_index = 1
     for field, query, materialize in fields:
         # Drop column if it exists
         con.execute(f"ALTER TABLE test_table DROP COLUMN IF EXISTS {field};")
 
         if materialize:
             data_type = query['type']
-            alter_query += f"ALTER TABLE test_table ADD COLUMN {field} {data_type};"
-            cte_query += f"'{field}', "
-            if data_type == 'VARCHAR':
-                update_query += f"{field} = e.extracted_list[{cte_list_index}], "
-            else:
-                update_query += f"{field} = e.extracted_list[{cte_list_index}]::{data_type}, "
-            materialize_fields.append(field)
-            cte_list_index += 1
+            alter_query += f"ALTER TABLE test_table ADD COLUMN {field} {data_type}; "
+            alter_query += f"UPDATE test_table SET {field} = {query['access']}; "
+            # cte_query += f"'{field}', "
+            # if data_type == 'VARCHAR':
+            #     update_query += f"{field} = e.extracted_list[{cte_list_index}], "
+            # else:
+            #     update_query += f"{field} = e.extracted_list[{cte_list_index}]::{data_type}, "
+            # materialize_fields.append(field)
+            # cte_list_index += 1
+            materialized_fields += 1
 
         materialized |= materialize
         all_materialized &= materialize
 
     # Remove the last whitespace and comme
-    cte_query = cte_query[:-2]
+    # cte_query = cte_query[:-2]
     # End CTE satement
-    cte_query += "]) AS extracted_list FROM test_table)"
+    # cte_query += "]) AS extracted_list FROM test_table)"
     if materialized:
 
-        update_query = update_query[:-2] + \
-            ' FROM extracted AS e WHERE e.rowid = test_table.rowid;'
-        query = alter_query + " " + cte_query + " " + update_query
+        # update_query = update_query[:-2] + \
+        #     ' FROM extracted AS e WHERE e.rowid = test_table.rowid;'
+        # query = alter_query + " " + cte_query + " " + update_query
 
         if all_materialized:
             pass
             # query += "ALTER TABLE test_table DROP COLUMN IF EXISTS raw_json;"
-        query += " COMMIT;"
+        # query += " COMMIT;"
+        alter_query += 'commit;'
 
         start_time = time()
 
-        con.execute(query)
+        con.execute(alter_query)
+        # con.execute(query)
         # print(query)
         con.execute("CHECKPOINT;")
 
@@ -105,9 +109,10 @@ def _alter_table(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
     # if include_print:
     #     print('------------------------------')
-    #     print(
-    #         f"Materialized {len(materialize_fields)} fields in time {time_taken:.3f}")
+        print(
+            f"Materialized {materialized_fields} fields in time {time_taken:.3f}")
     #     print(materialize_fields)
+
     return time_taken
 
 
@@ -145,7 +150,7 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
 def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 
-    temp_db = f"./data/db/temp_{dataset}.db"
+    temp_db = os.curdir + f"/data/db/temp_{dataset}.db"
 
     if os.path.exists(temp_db):
         # print("Removed temp_db")
@@ -164,7 +169,7 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 
     con.execute('DETACH temp_db;')
 
-    db_size = os.path.getsize(f"./data/db/temp_{dataset}.db")
+    db_size = os.path.getsize(os.curdir + f"/data/db/temp_{dataset}.db")
 
     os.remove(temp_db)
 
