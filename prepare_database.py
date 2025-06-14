@@ -1,5 +1,5 @@
 import os
-from time import time
+import time
 import duckdb
 
 
@@ -20,7 +20,7 @@ def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dic
 
     # _create_view(con=con, fields=fields)
 
-    con.execute("ANALYZE")
+    con.execute("ANALYZE;")
     return time_taken
 
 
@@ -145,7 +145,7 @@ def _create_view(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, b
 
 def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 
-    temp_db = f"./data/db/temp_{dataset}.db"
+    temp_db = os.curdir + f"/data/db/temp_{dataset}.db"
 
     if os.path.exists(temp_db):
         # print("Removed temp_db")
@@ -164,7 +164,7 @@ def _check_db_size(con: duckdb.DuckDBPyConnection, dataset: str):
 
     con.execute('DETACH temp_db;')
 
-    db_size = os.path.getsize(f"./data/db/temp_{dataset}.db")
+    db_size = os.path.getsize(os.curdir + f"/data/db/temp_{dataset}.db")
 
     os.remove(temp_db)
 
