@@ -6,8 +6,8 @@ class Q10(Query):
     Twitter Query 10
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -17,25 +17,23 @@ class Q10(Query):
         -------
         str
         """
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
 
         return f"""
         SELECT
-            {self._json(col='source', tbl='orig', dt=dts['source'], acs=acs['source'])}                                AS source,
-            COUNT(DISTINCT {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])})                 AS num_original_tweets,
-            COUNT(DISTINCT {self._json(col='idStr', tbl='rt', dt=dts['idStr'], acs=acs['idStr'])})                   AS num_retweet_rows,
-            COUNT(DISTINCT {self._json(col='idStr', tbl='rep', dt=dts['idStr'], acs=acs['idStr'])})                  AS num_reply_rows,
-            COALESCE(SUM(TRY_CAST({self._json(col='retweetedStatus_retweetCount', tbl='rt', dt=dts['retweetedStatus_retweetCount'], acs=acs['retweetedStatus_retweetCount'])} AS INT)), 0)           AS total_retweetCount
+            {self._json(col='source', tbl='orig', fields=fields)}                                AS source,
+            COUNT(DISTINCT {self._json(col='idStr', tbl='orig', fields=fields)})                 AS num_original_tweets,
+            COUNT(DISTINCT {self._json(col='idStr', tbl='rt', fields=fields)})                   AS num_retweet_rows,
+            COUNT(DISTINCT {self._json(col='idStr', tbl='rep', fields=fields)})                  AS num_reply_rows,
+            COALESCE(SUM(TRY_CAST({self._json(col='retweetedStatus_retweetCount', tbl='rt', fields=fields)} AS INT)), 0)           AS total_retweetCount
         FROM
             test_table AS orig
-            LEFT JOIN test_table AS rt ON {self._json(col='retweetedStatus_idStr', tbl='rt', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])}
-            LEFT JOIN test_table AS rep ON {self._json(col='inReplyToUserIdStr', tbl='rep', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} = {self._json(col='inReplyToUserIdStr', tbl='orig', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])}
+            LEFT JOIN test_table AS rt ON {self._json(col='retweetedStatus_idStr', tbl='rt', fields=fields)} = {self._json(col='idStr', tbl='orig', fields=fields)}
+            LEFT JOIN test_table AS rep ON {self._json(col='inReplyToUserIdStr', tbl='rep', fields=fields)} = {self._json(col='inReplyToUserIdStr', tbl='orig', fields=fields)}
         WHERE
-            {self._json(col='retweetedStatus_idStr', tbl='orig', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} IS NULL
-            AND {self._json(col='inReplyToUserIdStr', tbl='orig', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} IS NULL
+            {self._json(col='retweetedStatus_idStr', tbl='orig', fields=fields)} IS NULL
+            AND {self._json(col='inReplyToUserIdStr', tbl='orig', fields=fields)} IS NULL
         GROUP BY
-            {self._json(col='source', tbl='orig', dt=dts['source'], acs=acs['source'])}
+            {self._json(col='source', tbl='orig', fields=fields)}
         ORDER BY
             num_original_tweets DESC;
         """
@@ -86,19 +84,19 @@ class Q10(Query):
         }
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
-        retweetedStatus_idStr_weight = 2 * self.GOOD_FIELD_WEIGHT
+        retweetedStatus_idStr_weight = 2 * self.good_field_weight
         if field == 'retweetedStatus_idStr' and 'inReplyToUserIdStr' in prev_materialization:
             retweetedStatus_idStr_weight = 1 * \
-                self.POOR_FIELD_WEIGHT + 1 * self.GOOD_FIELD_WEIGHT
+                self.poor_field_weight + 1 * self.good_field_weight
 
-        inReplyToUserIdStr_weight = 2 * self.GOOD_FIELD_WEIGHT
+        inReplyToUserIdStr_weight = 2 * self.good_field_weight
         if field == 'inReplyToUserIdStr' and 'retweetedStatus_idStr' in prev_materialization:
-            inReplyToUserIdStr_weight = 1 * self.POOR_FIELD_WEIGHT + 1 * self.GOOD_FIELD_WEIGHT
+            inReplyToUserIdStr_weight = 1 * self.poor_field_weight + 1 * self.good_field_weight
 
         field_map = {
-            'source': 2*self.POOR_FIELD_WEIGHT,
-            "idStr": 5*self.POOR_FIELD_WEIGHT,
-            "retweetedStatus_retweetCount": 1*self.POOR_FIELD_WEIGHT,
+            'source': 2*self.poor_field_weight,
+            "idStr": 5*self.poor_field_weight,
+            "retweetedStatus_retweetCount": 1*self.poor_field_weight,
             "retweetedStatus_idStr": retweetedStatus_idStr_weight,
             "inReplyToUserIdStr": inReplyToUserIdStr_weight,
         }

@@ -6,8 +6,8 @@ class Q4(Query):
     TPC-H Query 4
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,25 +18,23 @@ class Q4(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='o', col='o_orderpriority', dt=dts['o_orderpriority'])} AS o_orderpriority,
+    {self._json(tbl='o', col='o_orderpriority', fields=fields)} AS o_orderpriority,
     COUNT(*) AS order_count
 FROM
     test_table o
 WHERE
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} >= DATE '1993-07-01'
-    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} < DATE '1993-07-01' + INTERVAL '3' MONTH
+    {self._json(tbl='o', col='o_orderdate', fields=fields)} >= DATE '1993-07-01'
+    AND {self._json(tbl='o', col='o_orderdate', fields=fields)} < DATE '1993-07-01' + INTERVAL '3' MONTH
     AND EXISTS (
         SELECT
             *
         FROM
             test_table l
         WHERE
-            {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}
-            AND {self._json(tbl='l', col='l_commitdate', dt=dts['l_commitdate'])} < {self._json(tbl='l', col='l_receiptdate', dt=dts['l_receiptdate'])}
+            {self._json(tbl='l', col='l_orderkey', fields=fields)} = {self._json(tbl='o', col='o_orderkey', fields=fields)}
+            AND {self._json(tbl='l', col='l_commitdate', fields=fields)} < {self._json(tbl='l', col='l_receiptdate', fields=fields)}
     )
 GROUP BY
     o_orderpriority

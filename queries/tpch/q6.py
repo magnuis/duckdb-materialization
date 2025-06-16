@@ -6,8 +6,8 @@ class Q6(Query):
     TPC-H Query 6
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,18 +18,16 @@ class Q6(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS revenue
+    SUM({self._json(tbl='l', col='l_extendedprice', fields=fields)} * (1 - {self._json(tbl='l', col='l_discount', fields=fields)})) AS revenue
 FROM
     test_table l
 WHERE
-    {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} >= DATE '1994-01-01'
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} < DATE '1995-01-01'
-    AND {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])} BETWEEN 0.05 AND 0.07
-    AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} < 24;
+    {self._json(tbl='l', col='l_shipdate', fields=fields)} >= DATE '1994-01-01'
+    AND {self._json(tbl='l', col='l_shipdate', fields=fields)} < DATE '1995-01-01'
+    AND {self._json(tbl='l', col='l_discount', fields=fields)} BETWEEN 0.05 AND 0.07
+    AND {self._json(tbl='l', col='l_quantity', fields=fields)} < 24;
 
     """
 

@@ -6,8 +6,8 @@ class Q5(Query):
     Twitter Query 5
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,15 +18,12 @@ class Q5(Query):
         str
         """
 
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
-
         return f"""
             SELECT ROUND(
-                100.0 * COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', dt=dts['user_idStr'], acs=acs['user_idStr'])}) /
-                (SELECT COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', dt=dts['user_idStr'], acs=acs['user_idStr'])}) FROM test_table), 2) AS percentage
+                100.0 * COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', fields=fields)}) /
+                (SELECT COUNT(DISTINCT {self._json(col='user_idStr', tbl='test_table', fields=fields)}) FROM test_table), 2) AS percentage
             FROM test_table
-            WHERE lower({self._json(col='text', tbl='test_table', dt=dts['text'], acs=acs['text'])}) LIKE '%covid-19%';
+            WHERE lower({self._json(col='text', tbl='test_table', fields=fields)}) LIKE '%covid-19%';
         """
 
     def no_join_clauses(self) -> int:
@@ -70,8 +67,8 @@ class Q5(Query):
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
         field_map = {
-            'text': 1*self.GOOD_FIELD_WEIGHT,
-            'user_idStr':  2*self.POOR_FIELD_WEIGHT
+            'text': 1*self.good_field_weight,
+            'user_idStr':  2*self.poor_field_weight
         }
         if field not in field_map:
             raise ValueError(f"{field} not a query field")

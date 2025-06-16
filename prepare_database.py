@@ -1,6 +1,7 @@
+# pylint: disable=E0401
 import os
-import time
-import duckdb
+from time import time
+import duckdb  # type: ignore
 
 
 def prepare_database(con: duckdb.DuckDBPyConnection, fields: list[tuple[str, dict, bool]], include_print: bool = True) -> float:

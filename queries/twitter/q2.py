@@ -6,8 +6,8 @@ class Q2(Query):
     Twitter Query 2
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,16 +18,13 @@ class Q2(Query):
         str
         """
 
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
-
         return f"""
             SELECT 
-                {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])}, 
+                {self._json(col='source', tbl='t', fields=fields)},
                 COUNT(*) AS tweet_count
             FROM test_table t
-            GROUP BY {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])}
-            ORDER BY tweet_count, {self._json(col='source', tbl='t', acs=acs['source'], dt=dts['source'])} DESC;
+            GROUP BY {self._json(col='source', tbl='t', fields=fields)}
+            ORDER BY tweet_count, {self._json(col='source', tbl='t', fields=fields)} DESC;
         """
 
     def no_join_clauses(self) -> int:
@@ -71,7 +68,7 @@ class Q2(Query):
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
         field_map = {
-            'source': 1*self.GOOD_FIELD_WEIGHT + 1*self.POOR_FIELD_WEIGHT
+            'source': 1*self.good_field_weight + 1*self.poor_field_weight
         }
         if field not in field_map:
             raise ValueError(f"{field} not a query field")

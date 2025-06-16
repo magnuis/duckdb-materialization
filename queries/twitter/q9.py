@@ -6,8 +6,8 @@ class Q9(Query):
     Twitter Query 9
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -17,24 +17,22 @@ class Q9(Query):
         -------
         str
         """
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
 
         return f"""
         SELECT
-            {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])}                                    AS original_tweet_id,
-            {self._json(col='user_screenName', tbl='orig', dt=dts['user_screenName'], acs=acs['user_screenName'])}                           AS original_user,
-            {self._json(col='user_followersCount', tbl='orig', dt=dts['user_followersCount'], acs=acs['user_followersCount'])}                            AS original_user_followers,
-            COUNT(DISTINCT {self._json(col='user_screenName', tbl='rt', dt=dts['user_screenName'], acs=acs['user_screenName'])})           AS num_distinct_retweeters,
-            COALESCE(SUM(TRY_CAST({self._json(col='user_followersCount', tbl='rt', dt=dts['user_followersCount'], acs=acs['user_followersCount'])} AS INT)), 0)          AS total_followers_of_retweeters,
-            COALESCE(MAX(TRY_CAST({self._json(col='retweetedStatus_retweetCount', tbl='rt', dt=dts['retweetedStatus_retweetCount'], acs=acs['retweetedStatus_retweetCount'])} AS INT)), 0)            AS max_retweetCount_among_retweets,
-            COUNT(DISTINCT {self._json(col='idStr', tbl='rep', dt=dts['idStr'], acs=acs['idStr'])})                   AS num_distinct_replies,
+            {self._json(col='idStr', tbl='orig', fields=fields)}                                    AS original_tweet_id,
+            {self._json(col='user_screenName', tbl='orig', fields=fields)}                           AS original_user,
+            {self._json(col='user_followersCount', tbl='orig', fields=fields)}                            AS original_user_followers,
+            COUNT(DISTINCT {self._json(col='user_screenName', tbl='rt', fields=fields)})           AS num_distinct_retweeters,
+            COALESCE(SUM(TRY_CAST({self._json(col='user_followersCount', tbl='rt', fields=fields)} AS INT)), 0)          AS total_followers_of_retweeters,
+            COALESCE(MAX(TRY_CAST({self._json(col='retweetedStatus_retweetCount', tbl='rt', fields=fields)} AS INT)), 0)            AS max_retweetCount_among_retweets,
+            COUNT(DISTINCT {self._json(col='idStr', tbl='rep', fields=fields)})                   AS num_distinct_replies,
             ROUND(
                 100.0
-                * COUNT(DISTINCT {self._json(col='user_screenName', tbl='rt', dt=dts['user_screenName'], acs=acs['user_screenName'])})
+                * COUNT(DISTINCT {self._json(col='user_screenName', tbl='rt', fields=fields)})
                 / NULLIF(
                     (
-                        SELECT COUNT(DISTINCT {self._json(col='user_screenName', tbl='sub', dt=dts['user_screenName'], acs=acs['user_screenName'])})
+                        SELECT COUNT(DISTINCT {self._json(col='user_screenName', tbl='sub', fields=fields)})
                         FROM test_table AS sub
                     ),
                     0
@@ -44,16 +42,16 @@ class Q9(Query):
         FROM
             test_table AS orig
             LEFT JOIN test_table AS rt
-                ON {self._json(col='retweetedStatus_idStr', tbl='rt', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])}
+                ON {self._json(col='retweetedStatus_idStr', tbl='rt', fields=fields)} = {self._json(col='idStr', tbl='orig', fields=fields)}
             LEFT JOIN test_table AS rep
-                ON {self._json(col='inReplyToUserIdStr', tbl='rep', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} = {self._json(col='user_screenName', tbl='orig', dt=dts['user_screenName'], acs=acs['user_screenName'])}
+                ON {self._json(col='inReplyToUserIdStr', tbl='rep', fields=fields)} = {self._json(col='user_screenName', tbl='orig', fields=fields)}
         WHERE
-            {self._json(col='retweetedStatus_idStr', tbl='orig', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} IS NULL
-            AND {self._json(col='inReplyToUserIdStr', tbl='orig', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} IS NULL
+            {self._json(col='retweetedStatus_idStr', tbl='orig', fields=fields)} IS NULL
+            AND {self._json(col='inReplyToUserIdStr', tbl='orig', fields=fields)} IS NULL
         GROUP BY
-            {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])},
-            {self._json(col='user_screenName', tbl='orig', dt=dts['user_screenName'], acs=acs['user_screenName'])},
-            {self._json(col='user_followersCount', tbl='orig', dt=dts['user_followersCount'], acs=acs['user_followersCount'])}
+            {self._json(col='idStr', tbl='orig', fields=fields)},
+            {self._json(col='user_screenName', tbl='orig', fields=fields)},
+            {self._json(col='user_followersCount', tbl='orig', fields=fields)}
         ORDER BY
             num_distinct_retweeters DESC
         LIMIT 50;
@@ -112,12 +110,12 @@ class Q9(Query):
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
         field_map = {
-            'idStr': 4*self.POOR_FIELD_WEIGHT,
-            "user_screenName": 6*self.POOR_FIELD_WEIGHT,
-            'user_followersCount':  3*self.POOR_FIELD_WEIGHT,
-            "retweetedStatus_retweetCount": 1*self.POOR_FIELD_WEIGHT,
-            "retweetedStatus_idStr": 1*self.GOOD_FIELD_WEIGHT,
-            "inReplyToUserIdStr": 1*self.GOOD_FIELD_WEIGHT,
+            'idStr': 4*self.poor_field_weight,
+            "user_screenName": 6*self.poor_field_weight,
+            'user_followersCount':  3*self.poor_field_weight,
+            "retweetedStatus_retweetCount": 1*self.poor_field_weight,
+            "retweetedStatus_idStr": 1*self.good_field_weight,
+            "inReplyToUserIdStr": 1*self.good_field_weight,
         }
         if field not in field_map:
             raise ValueError(f"{field} not a query field")

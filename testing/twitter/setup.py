@@ -11,25 +11,23 @@ from queries.twitter.q10 import Q10
 from queries.twitter.q11 import Q11
 from queries.twitter.q12 import Q12
 from queries.twitter.q13 import Q13
-from queries.twitter.q14 import Q14
 from queries.query import Query
 
 
 QUERIES: dict[str, Query] = {
-    'q1': Q1(),
-    'q2': Q2(),
-    'q3': Q3(),
-    'q4': Q4(),
-    'q5': Q5(),
-    'q6': Q6(),
-    'q7': Q7(),
-    'q8': Q8(),
-    'q9': Q9(),
-    'q10': Q10(),
-    'q11': Q11(),
-    'q12': Q12(),
-    # 'q13': Q13(),
-    'q14': Q14(),
+    'q1': Q1(dataset='twitter'),
+    'q2': Q2(dataset='twitter'),
+    'q3': Q3(dataset='twitter'),
+    'q4': Q4(dataset='twitter'),
+    'q5': Q5(dataset='twitter'),
+    'q6': Q6(dataset='twitter'),
+    'q7': Q7(dataset='twitter'),
+    'q8': Q8(dataset='twitter'),
+    'q9': Q9(dataset='twitter'),
+    'q10': Q10(dataset='twitter'),
+    'q11': Q11(dataset='twitter'),
+    'q12': Q12(dataset='twitter'),
+    'q13': Q13(dataset='twitter'),
 }
 
 STANDARD_SETUPS = {

@@ -1,3 +1,4 @@
+# pylint: disable=E0401
 import argparse
 import shutil
 import time
@@ -5,7 +6,7 @@ import tracemalloc
 import os
 from datetime import datetime
 
-import duckdb
+import duckdb  # type: ignore
 import pandas as pd
 
 import testing.tpch.setup as tpch_setup
@@ -84,18 +85,17 @@ def _perform_test(
     for query_name, query_obj in queries.items():
 
         query = query_obj.get_query(fields=fields)
-        print(query)
 
         df_row = {
             "Query": query_name,
-            'Created At': test_time,
-            'Test run no.': run_no,
+            "Created At": test_time,
+            "Test run no.": run_no,
         }
 
         execution_times = []
         first_run_result = None
 
-        iterations = 1
+        iterations = 5
 
         for j in range(iterations):  # Execute the query 5 times
             tracemalloc.start()
@@ -114,8 +114,7 @@ def _perform_test(
         query_results.append(first_run_result)
 
         # Calculate the average time of the last 4 runs and store it
-        avg_time = -execution_time
-        # avg_time = sum(execution_times[1:]) / (iterations - 1)
+        avg_time = sum(execution_times[1:]) / (iterations - 1)
         df_row['Avg (last 4 runs)'] = avg_time
 
         temp_df = pd.DataFrame([df_row])
@@ -200,7 +199,7 @@ def perform_tests():
 
     # datasets_to_test = DATASETS.keys() if args.dataset == "all" else [
     #     args.dataset]
-    datasets_to_test = ['twitter']
+    datasets_to_test = ['tpch']
 
     for dataset in datasets_to_test:
         if not os.path.exists(f"./results/single-queries/{dataset}"):

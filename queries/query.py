@@ -1,5 +1,4 @@
 from enum import Enum
-from collections import defaultdict
 
 
 class MaterializationStrategy(Enum):
@@ -11,12 +10,18 @@ class Query:
     Base class for queries used in this project
     """
 
-    def __init__(self):
-        self.POOR_FIELD_WEIGHT = 1
-        self.GOOD_FIELD_WEIGHT = 9.2
-        pass
+    def __init__(self, dataset: str):
+        self.poor_field_weight = 1
+        if dataset == 'tpch':
+
+            self.good_field_weight = 36
+        elif dataset == 'twitter':
+            self.good_field_weight = 9.2
+        else:
+            raise ValueError("No such dataset")
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
+        # TODO dosctr
         """
         Get the formatted query, adjusted to current db materializaiton
 
@@ -134,43 +139,69 @@ class Query:
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
         raise NotImplementedError("Subclass must implement this method")
 
-    def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
+    # def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
 
-        used_columns = self.columns_used()
+    #     used_columns = self.columns_used()
 
+    #     if fields is None:
+    #         return {col: None for col in used_columns}
+
+    #     data_types = dict()
+
+    #     for col, access_query, materialized in fields:
+    #         if col in used_columns:
+    #             if materialized:
+    #                 data_types[col] = None
+    #             else:
+    #                 data_types[col] = access_query["access"]
+
+    #     return data_types
+
+    # def _get_field_types(self, fields: list[tuple[str, dict, bool]]) -> dict:
+
+    #     used_columns = self.columns_used()
+
+    #     if fields is None:
+    #         return {col: None for col in used_columns}
+
+    #     data_types = dict()
+
+    #     for col, access_query, materialized in fields:
+    #         if col in used_columns:
+    #             if materialized:
+    #                 data_types[col] = None
+    #             else:
+    #                 data_types[col] = access_query["type"]
+
+    #     return data_types
+
+    def _get_field_type(self, field: str, fields: list[tuple[str, dict, bool]]) -> dict:
         if fields is None:
-            return {col: None for col in used_columns}
-
-        data_types = dict()
+            return None
 
         for col, access_query, materialized in fields:
-            if col in used_columns:
+            if col == field:
                 if materialized:
-                    data_types[col] = None
+                    return None
                 else:
-                    data_types[col] = access_query["access"]
+                    return access_query["type"]
 
-        return data_types
+        raise ValueError(f"No data type for field with name {field}")
 
-    def _get_field_types(self, fields: list[tuple[str, dict, bool]]) -> dict:
-
-        used_columns = self.columns_used()
-
+    def _get_field_access(self, field: str, fields: list[tuple[str, dict, bool]]) -> dict:
         if fields is None:
-            return {col: None for col in used_columns}
-
-        data_types = dict()
+            return None
 
         for col, access_query, materialized in fields:
-            if col in used_columns:
+            if col == field:
                 if materialized:
-                    data_types[col] = None
+                    return None
                 else:
-                    data_types[col] = access_query["type"]
+                    return access_query["access"]
 
-        return data_types
+        raise ValueError(f"No data type for field with name {field}")
 
-    def _json(self, tbl: str, col: str, acs: str | None, dt: str = None):
+    def _json(self, tbl: str, col: str, fields: list[tuple[str, dict, bool]]):
         """
         Extract the column
 
@@ -188,19 +219,16 @@ class Query:
         -------
         str
             The column extracted from json. If `dt` is None, there is no json extraction
-
         """
-        # dt = dts.get(col)
-        if dt is None:
+        data_type = self._get_field_type(field=col, fields=fields)
+        access = self._get_field_access(field=col, fields=fields)
+
+        if data_type is None:
             return f"{tbl}.{col}"
+        elif data_type == 'VARCHAR':
+            return f"({tbl}.{access})"
 
-        return f"TRY_CAST({tbl}.{acs} AS {dt})"
-
-        # elif dt == "VARCHAR":
-        #     return f"{tbl}.raw_json->>'{col}'"
-
-        # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
-        # return f"CAST({tbl}.raw_json->>'{col}' AS {dt})"
+        return f"TRY_CAST({tbl}.{access} AS {data_type})"
 
     def get_column_weights(self, prev_materialization: list[str], only_freq=False):
 
@@ -218,18 +246,18 @@ class Query:
             weights[field] = self.get_field_weight(
                 field=field, prev_materialization=prev_materialization)
 
-        # weights = {field: self.POOR_FIELD_WEIGHT for field in set(
+        # weights = {field: self.poor_field_weight for field in set(
         #     self.columns_used())}
 
         # for clause, col_list in self.columns_used_with_position().items():
         #     if clause == "join":
         #         for field in col_list.keys():
-        #             weights[field] += self.GOOD_FIELD_WEIGHT * \
+        #             weights[field] += self.good_field_weight * \
         #                 self.get_join_field_has_no_direct_filter(field)
         #     elif clause == "where":
         #         for field in col_list:
 
-        #             weights[field] += self.GOOD_FIELD_WEIGHT * \
+        #             weights[field] += self.good_field_weight * \
         #                 self.get_where_field_has_direct_filter(
         #                     field, prev_materialization=prev_materialization)
 

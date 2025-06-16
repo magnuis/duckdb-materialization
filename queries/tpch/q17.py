@@ -6,8 +6,8 @@ class Q17(Query):
     TPC-H Query 17
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,25 +18,23 @@ class Q17(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])}) / 7.0 AS avg_yearly
+    SUM({self._json(tbl='l', col='l_extendedprice', fields=fields)}) / 7.0 AS avg_yearly
 FROM
     test_table l,
     test_table p
 WHERE
-    {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
-    AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} = 'Brand#23'
-    AND {self._json(tbl='p', col='p_container', dt=dts['p_container'])} = 'MED BOX'
-    AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} < (
+    {self._json(tbl='p', col='p_partkey', fields=fields)} = {self._json(tbl='l', col='l_partkey', fields=fields)}
+    AND {self._json(tbl='p', col='p_brand', fields=fields)} = 'Brand#23'
+    AND {self._json(tbl='p', col='p_container', fields=fields)} = 'MED BOX'
+    AND {self._json(tbl='l', col='l_quantity', fields=fields)} < (
         SELECT
-            0.2 * AVG({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])})
+            0.2 * AVG({self._json(tbl='l', col='l_quantity', fields=fields)})
         FROM
             test_table l
         WHERE
-            {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
+            {self._json(tbl='p', col='p_partkey', fields=fields)} = {self._json(tbl='l', col='l_partkey', fields=fields)}
     );
     """
 

@@ -6,8 +6,8 @@ class Q5(Query):
     TPC-H Query 5
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,12 +18,10 @@ class Q5(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='n', col='n_name', dt=dts['n_name'])} AS n_name,
-    SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS revenue
+    {self._json(tbl='n', col='n_name', fields=fields)} AS n_name,
+    SUM({self._json(tbl='l', col='l_extendedprice', fields=fields)} * (1 - {self._json(tbl='l', col='l_discount', fields=fields)})) AS revenue
 FROM
     test_table c,
     test_table o,
@@ -32,17 +30,17 @@ FROM
     test_table n,
     test_table r
 WHERE
-    {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
-    AND {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}
-    AND {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} = {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])}
-    AND {self._json(tbl='c', col='c_nationkey', dt=dts['c_nationkey'])} = {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])}
-    AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-    AND {self._json(tbl='n', col='n_regionkey', dt=dts['n_regionkey'])} = {self._json(tbl='r', col='r_regionkey', dt=dts['r_regionkey'])}
-    AND {self._json(tbl='r', col='r_name', dt=dts['r_name'])}= 'ASIA'
-    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} >= DATE '1994-01-01'
-    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} < DATE '1995-01-01'
+    {self._json(tbl='c', col='c_custkey', fields=fields)} = {self._json(tbl='o', col='o_custkey', fields=fields)}
+    AND {self._json(tbl='l', col='l_orderkey', fields=fields)} = {self._json(tbl='o', col='o_orderkey', fields=fields)}
+    AND {self._json(tbl='l', col='l_suppkey', fields=fields)} = {self._json(tbl='s', col='s_suppkey', fields=fields)}
+    AND {self._json(tbl='c', col='c_nationkey', fields=fields)} = {self._json(tbl='s', col='s_nationkey', fields=fields)}
+    AND {self._json(tbl='s', col='s_nationkey', fields=fields)} = {self._json(tbl='n', col='n_nationkey', fields=fields)}
+    AND {self._json(tbl='n', col='n_regionkey', fields=fields)} = {self._json(tbl='r', col='r_regionkey', fields=fields)}
+    AND {self._json(tbl='r', col='r_name', fields=fields)}= 'ASIA'
+    AND {self._json(tbl='o', col='o_orderdate', fields=fields)} >= DATE '1994-01-01'
+    AND {self._json(tbl='o', col='o_orderdate', fields=fields)} < DATE '1995-01-01'
 GROUP BY
-    {self._json(tbl='n', col='n_name', dt=dts['n_name'])}
+    {self._json(tbl='n', col='n_name', fields=fields)}
 ORDER BY
     revenue DESC;
 

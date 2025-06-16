@@ -6,8 +6,8 @@ class Q14(Query):
     TPC-H Query 14
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,23 +18,21 @@ class Q14(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
     100.00 * SUM(
         CASE
-            WHEN {self._json(tbl='p', col='p_type', dt=dts['p_type'])} LIKE 'PROMO%' THEN {self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})
+            WHEN {self._json(tbl='p', col='p_type', fields=fields)} LIKE 'PROMO%' THEN {self._json(tbl='l', col='l_extendedprice', fields=fields)} * (1 - {self._json(tbl='l', col='l_discount', fields=fields)})
             ELSE 0
         END
-    ) / SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS promo_revenue
+    ) / SUM({self._json(tbl='l', col='l_extendedprice', fields=fields)} * (1 - {self._json(tbl='l', col='l_discount', fields=fields)})) AS promo_revenue
 FROM
     test_table l,
     test_table p
 WHERE
-    {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} = {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} 
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} >= DATE '1995-09-01'
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} < DATE '1995-10-01';
+    {self._json(tbl='l', col='l_partkey', fields=fields)} = {self._json(tbl='p', col='p_partkey', fields=fields)} 
+    AND {self._json(tbl='l', col='l_shipdate', fields=fields)} >= DATE '1995-09-01'
+    AND {self._json(tbl='l', col='l_shipdate', fields=fields)} < DATE '1995-10-01';
 
     """
 

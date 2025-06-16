@@ -6,8 +6,8 @@ class Q21(Query):
     TPC-H Query 21
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,11 +18,9 @@ class Q21(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])} AS s_name,
+    {self._json(tbl='s', col='s_name', fields=fields)} AS s_name,
     COUNT(*) AS numwait
 FROM
     test_table s,
@@ -30,18 +28,18 @@ FROM
     test_table o,
     test_table n
 WHERE
-    {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} = {self._json(tbl='l1', col='l_suppkey', dt=dts['l_suppkey'])}
-    AND {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = {self._json(tbl='l1', col='l_orderkey', dt=dts['l_orderkey'])}
-    AND {self._json(tbl='o', col='o_orderstatus', dt=dts['o_orderstatus'])} = 'F'
-    AND {self._json(tbl='l1', col='l_receiptdate', dt=dts['l_receiptdate'])} > {self._json(tbl='l1', col='l_commitdate', dt=dts['l_commitdate'])}
+    {self._json(tbl='s', col='s_suppkey', fields=fields)} = {self._json(tbl='l1', col='l_suppkey', fields=fields)}
+    AND {self._json(tbl='o', col='o_orderkey', fields=fields)} = {self._json(tbl='l1', col='l_orderkey', fields=fields)}
+    AND {self._json(tbl='o', col='o_orderstatus', fields=fields)} = 'F'
+    AND {self._json(tbl='l1', col='l_receiptdate', fields=fields)} > {self._json(tbl='l1', col='l_commitdate', fields=fields)}
     AND EXISTS (
         SELECT
             *
         FROM
             test_table l2
         WHERE
-            {self._json(tbl='l2', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='l1', col='l_orderkey', dt=dts['l_orderkey'])}
-            AND {self._json(tbl='l2', col='l_suppkey', dt=dts['l_suppkey'])} <> {self._json(tbl='l1', col='l_suppkey', dt=dts['l_suppkey'])}
+            {self._json(tbl='l2', col='l_orderkey', fields=fields)} = {self._json(tbl='l1', col='l_orderkey', fields=fields)}
+            AND {self._json(tbl='l2', col='l_suppkey', fields=fields)} <> {self._json(tbl='l1', col='l_suppkey', fields=fields)}
     )
     AND NOT EXISTS (
         SELECT
@@ -49,17 +47,17 @@ WHERE
         FROM
             test_table l3
         WHERE
-            {self._json(tbl='l3', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='l1', col='l_orderkey', dt=dts['l_orderkey'])}
-            AND {self._json(tbl='l3', col='l_suppkey', dt=dts['l_suppkey'])} <> {self._json(tbl='l1', col='l_suppkey', dt=dts['l_suppkey'])}
-            AND {self._json(tbl='l3', col='l_receiptdate', dt=dts['l_receiptdate'])} > {self._json(tbl='l3', col='l_commitdate', dt=dts['l_commitdate'])}
+            {self._json(tbl='l3', col='l_orderkey', fields=fields)} = {self._json(tbl='l1', col='l_orderkey', fields=fields)}
+            AND {self._json(tbl='l3', col='l_suppkey', fields=fields)} <> {self._json(tbl='l1', col='l_suppkey', fields=fields)}
+            AND {self._json(tbl='l3', col='l_receiptdate', fields=fields)} > {self._json(tbl='l3', col='l_commitdate', fields=fields)}
     )
-    AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-    AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'SAUDI ARABIA'
+    AND {self._json(tbl='s', col='s_nationkey', fields=fields)} = {self._json(tbl='n', col='n_nationkey', fields=fields)}
+    AND {self._json(tbl='n', col='n_name', fields=fields)} = 'SAUDI ARABIA'
 GROUP BY
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])}
+    {self._json(tbl='s', col='s_name', fields=fields)}
 ORDER BY
     numwait DESC,
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])}
+    {self._json(tbl='s', col='s_name', fields=fields)}
 LIMIT
     100;
 

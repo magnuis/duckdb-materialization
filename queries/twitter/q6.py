@@ -6,8 +6,8 @@ class Q6(Query):
     Twitter Query 6
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -17,22 +17,20 @@ class Q6(Query):
         -------
         str
         """
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
 
         return f"""
             SELECT 
-                {self._json(col='idStr', tbl='initial_tweet', dt=dts['idStr'], acs=acs['idStr'])} AS initial_tweet_id,
-                {self._json(col='retweetedStatus_user_screenName', tbl='initial_tweet', dt=dts['retweetedStatus_user_screenName'], acs=acs['retweetedStatus_user_screenName'])} AS initial_author,
-                {self._json(col='retweetedStatus_user_screenName', tbl='retweet1', dt=dts['retweetedStatus_user_screenName'], acs=acs['retweetedStatus_user_screenName'])} AS first_retweeter,
-                {self._json(col='retweetedStatus_user_screenName', tbl='retweet2', dt=dts['retweetedStatus_user_screenName'], acs=acs['retweetedStatus_user_screenName'])} AS second_retweeter,
+                {self._json(col='idStr', tbl='initial_tweet', fields=fields)} AS initial_tweet_id,
+                {self._json(col='retweetedStatus_user_screenName', tbl='initial_tweet', fields=fields)} AS initial_author,
+                {self._json(col='retweetedStatus_user_screenName', tbl='retweet1', fields=fields)} AS first_retweeter,
+                {self._json(col='retweetedStatus_user_screenName', tbl='retweet2', fields=fields)} AS second_retweeter,
             FROM test_table AS initial_tweet
             JOIN test_table AS retweet1 
-                ON {self._json(col='retweetedStatus_idStr', tbl='retweet1', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='initial_tweet', dt=dts['idStr'], acs=acs['idStr'])}
+                ON {self._json(col='retweetedStatus_idStr', tbl='retweet1', fields=fields)} = {self._json(col='idStr', tbl='initial_tweet', fields=fields)}
             JOIN test_table AS retweet2 
-                ON {self._json(col='retweetedStatus_idStr', tbl='retweet2', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='retweet1', dt=dts['idStr'], acs=acs['idStr'])}
+                ON {self._json(col='retweetedStatus_idStr', tbl='retweet2', fields=fields)} = {self._json(col='idStr', tbl='retweet1', fields=fields)}
             WHERE 
-                NOT {self._json(col='user_isTranslator', tbl='initial_tweet', dt=dts['user_isTranslator'], acs=acs['user_isTranslator'])}
+                NOT {self._json(col='user_isTranslator', tbl='initial_tweet', fields=fields)}
             ORDER BY initial_tweet_id
             LIMIT 20;
         """
@@ -81,10 +79,10 @@ class Q6(Query):
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
         field_map = {
-            'retweetedStatus_idStr': 2*self.GOOD_FIELD_WEIGHT,
-            "user_isTranslator": 1 * self.GOOD_FIELD_WEIGHT,
-            'idStr':  3*self.POOR_FIELD_WEIGHT,
-            "retweetedStatus_user_screenName": 3*self.POOR_FIELD_WEIGHT
+            'retweetedStatus_idStr': 2*self.good_field_weight,
+            "user_isTranslator": 1 * self.good_field_weight,
+            'idStr':  3*self.poor_field_weight,
+            "retweetedStatus_user_screenName": 3*self.poor_field_weight
         }
         if field not in field_map:
             raise ValueError(f"{field} not a query field")

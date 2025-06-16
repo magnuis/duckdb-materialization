@@ -6,8 +6,8 @@ class Q20(Query):
     TPC-H Query 20
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,46 +18,44 @@ class Q20(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])} AS s_name,
-    {self._json(tbl='s', col='s_address', dt=dts['s_address'])} AS s_address
+    {self._json(tbl='s', col='s_name', fields=fields)} AS s_name,
+    {self._json(tbl='s', col='s_address', fields=fields)} AS s_address
 FROM
     test_table s,
     test_table n
 WHERE
-    {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])} IN (
+    {self._json(tbl='s', col='s_suppkey', fields=fields)} IN (
         SELECT
-            {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
+            {self._json(tbl='ps', col='ps_suppkey', fields=fields)}
         FROM
             test_table ps
         WHERE
-            {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} IN (
+            {self._json(tbl='ps', col='ps_partkey', fields=fields)} IN (
                 SELECT
-                    {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])}
+                    {self._json(tbl='p', col='p_partkey', fields=fields)}
                 FROM
                     test_table p
                 WHERE
-                    {self._json(tbl='p', col='p_name', dt=dts['p_name'])} LIKE 'forest%'
+                    {self._json(tbl='p', col='p_name', fields=fields)} LIKE 'forest%'
             )
-            AND {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])} > (
+            AND {self._json(tbl='ps', col='ps_availqty', fields=fields)} > (
                 SELECT
-                    0.5 * SUM({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])})
+                    0.5 * SUM({self._json(tbl='l', col='l_quantity', fields=fields)})
                 FROM
                     test_table l
                 WHERE
-                    {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])} = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
-                    AND {self._json(tbl='l', col='l_suppkey', dt=dts['l_suppkey'])} = {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}
-                    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} >= DATE '1994-01-01'
-                    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} < DATE '1995-01-01'
+                    {self._json(tbl='l', col='l_partkey', fields=fields)} = {self._json(tbl='ps', col='ps_partkey', fields=fields)}
+                    AND {self._json(tbl='l', col='l_suppkey', fields=fields)} = {self._json(tbl='ps', col='ps_suppkey', fields=fields)}
+                    AND {self._json(tbl='l', col='l_shipdate', fields=fields)} >= DATE '1994-01-01'
+                    AND {self._json(tbl='l', col='l_shipdate', fields=fields)} < DATE '1995-01-01'
             )
     )
-    AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-    AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'CANADA'
+    AND {self._json(tbl='s', col='s_nationkey', fields=fields)} = {self._json(tbl='n', col='n_nationkey', fields=fields)}
+    AND {self._json(tbl='n', col='n_name', fields=fields)} = 'CANADA'
 ORDER BY
-    {self._json(tbl='s', col='s_name', dt=dts['s_name'])};
+    {self._json(tbl='s', col='s_name', fields=fields)};
     """
 
     def no_join_clauses(self) -> int:

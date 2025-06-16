@@ -6,8 +6,8 @@ class Q3(Query):
     TPC-H Query 3
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,31 +18,29 @@ class Q3(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} AS s_acctbal,
-    SUM( {self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS revenue,
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} AS o_orderdate,
-    {self._json(tbl='o', col='o_shippriority', dt=dts['o_shippriority'])} AS o_shippriority,
+    {self._json(tbl='l', col='l_orderkey', fields=fields)} AS s_acctbal,
+    SUM( {self._json(tbl='l', col='l_extendedprice', fields=fields)} * (1 - {self._json(tbl='l', col='l_discount', fields=fields)})) AS revenue,
+    {self._json(tbl='o', col='o_orderdate', fields=fields)} AS o_orderdate,
+    {self._json(tbl='o', col='o_shippriority', fields=fields)} AS o_shippriority,
 FROM
     test_table c,
     test_table o,
     test_table l
 WHERE
-    {self._json(tbl='c', col='c_mktsegment', dt=dts['c_mktsegment'])} = 'BUILDING'
-    AND {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
-    AND {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])} = {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}
-    AND {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} < DATE '1995-03-15'
-    AND {self._json(tbl='l', col='l_shipdate', dt=dts['l_shipdate'])} > DATE '1995-03-15'
+    {self._json(tbl='c', col='c_mktsegment', fields=fields)} = 'BUILDING'
+    AND {self._json(tbl='c', col='c_custkey', fields=fields)} = {self._json(tbl='o', col='o_custkey', fields=fields)}
+    AND {self._json(tbl='l', col='l_orderkey', fields=fields)} = {self._json(tbl='o', col='o_orderkey', fields=fields)}
+    AND {self._json(tbl='o', col='o_orderdate', fields=fields)} < DATE '1995-03-15'
+    AND {self._json(tbl='l', col='l_shipdate', fields=fields)} > DATE '1995-03-15'
 GROUP BY
-    {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])},
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])},
-    {self._json(tbl='o', col='o_shippriority', dt=dts['o_shippriority'])}
+    {self._json(tbl='l', col='l_orderkey', fields=fields)},
+    {self._json(tbl='o', col='o_orderdate', fields=fields)},
+    {self._json(tbl='o', col='o_shippriority', fields=fields)}
 ORDER BY
     revenue DESC,
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])}
+    {self._json(tbl='o', col='o_orderdate', fields=fields)}
 LIMIT
     10;
     """

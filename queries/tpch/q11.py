@@ -6,8 +6,8 @@ class Q11(Query):
     TPC-H Query 11
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,34 +18,32 @@ class Q11(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])} AS ps_partkey,
-    SUM({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])}) AS value
+    {self._json(tbl='ps', col='ps_partkey', fields=fields)} AS ps_partkey,
+    SUM({self._json(tbl='ps', col='ps_supplycost', fields=fields)} * {self._json(tbl='ps', col='ps_availqty', fields=fields)}) AS value
 FROM
     test_table ps,
     test_table s,
     test_table n
 WHERE
-    {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} = {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])}
-    AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-    AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'GERMANY'
+    {self._json(tbl='ps', col='ps_suppkey', fields=fields)} = {self._json(tbl='s', col='s_suppkey', fields=fields)}
+    AND {self._json(tbl='s', col='s_nationkey', fields=fields)} = {self._json(tbl='n', col='n_nationkey', fields=fields)}
+    AND {self._json(tbl='n', col='n_name', fields=fields)} = 'GERMANY'
 GROUP BY
-    {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
+    {self._json(tbl='ps', col='ps_partkey', fields=fields)}
 HAVING
-    SUM({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])}) > (
+    SUM({self._json(tbl='ps', col='ps_supplycost', fields=fields)} * {self._json(tbl='ps', col='ps_availqty', fields=fields)}) > (
         SELECT
-            SUM({self._json(tbl='ps', col='ps_supplycost', dt=dts['ps_supplycost'])} * {self._json(tbl='ps', col='ps_availqty', dt=dts['ps_availqty'])}) * 0.0001
+            SUM({self._json(tbl='ps', col='ps_supplycost', fields=fields)} * {self._json(tbl='ps', col='ps_availqty', fields=fields)}) * 0.0001
         FROM
             test_table ps,
             test_table s,
             test_table n
         WHERE
-            {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} = {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])}
-            AND {self._json(tbl='s', col='s_nationkey', dt=dts['s_nationkey'])} = {self._json(tbl='n', col='n_nationkey', dt=dts['n_nationkey'])}
-            AND {self._json(tbl='n', col='n_name', dt=dts['n_name'])} = 'GERMANY'
+            {self._json(tbl='ps', col='ps_suppkey', fields=fields)} = {self._json(tbl='s', col='s_suppkey', fields=fields)}
+            AND {self._json(tbl='s', col='s_nationkey', fields=fields)} = {self._json(tbl='n', col='n_nationkey', fields=fields)}
+            AND {self._json(tbl='n', col='n_name', fields=fields)} = 'GERMANY'
     )
 ORDER BY
     value DESC,

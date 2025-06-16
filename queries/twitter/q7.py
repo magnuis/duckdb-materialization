@@ -6,8 +6,8 @@ class Q7(Query):
     Twitter Query 7
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,20 +18,17 @@ class Q7(Query):
         str
         """
 
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
-
         return f"""
         SELECT 
-            {self._json(col='idStr', tbl='original_tweet', dt=dts['idStr'], acs=acs['idStr'])} AS original_tweet_id,
-            {self._json(col='user_screenName', tbl='original_tweet', dt=dts['user_screenName'], acs=acs['user_screenName'])} AS original_author,
-            {self._json(col='user_screenName', tbl='retweet', dt=dts['user_screenName'], acs=acs['user_screenName'])} AS retweeter,
-            {self._json(col='retweetedStatus_retweetCount', tbl='retweet', dt=dts['retweetedStatus_retweetCount'], acs=acs['retweetedStatus_retweetCount'])} AS retweet_retweet_count
+            {self._json(col='idStr', tbl='original_tweet', fields=fields)} AS original_tweet_id,
+            {self._json(col='user_screenName', tbl='original_tweet', fields=fields)} AS original_author,
+            {self._json(col='user_screenName', tbl='retweet', fields=fields)} AS retweeter,
+            {self._json(col='retweetedStatus_retweetCount', tbl='retweet', fields=fields)} AS retweet_retweet_count
         FROM 
             test_table AS original_tweet, 
             test_table AS retweet
         WHERE 
-            {self._json(col='retweetedStatus_idStr', tbl='retweet', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='original_tweet', dt=dts['idStr'], acs=acs['idStr'])}
+            {self._json(col='retweetedStatus_idStr', tbl='retweet', fields=fields)} = {self._json(col='idStr', tbl='original_tweet', fields=fields)}
         GROUP BY 
             original_tweet_id,
             original_author,
@@ -88,10 +85,10 @@ class Q7(Query):
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
         field_map = {
-            'retweetedStatus_idStr': 1*self.GOOD_FIELD_WEIGHT,
-            "idStr": 1 * self.GOOD_FIELD_WEIGHT,
-            'user_screenName':  2*self.POOR_FIELD_WEIGHT,
-            "retweetedStatus_retweetCount": 1*self.POOR_FIELD_WEIGHT
+            'retweetedStatus_idStr': 1*self.good_field_weight,
+            "idStr": 1 * self.good_field_weight,
+            'user_screenName':  2*self.poor_field_weight,
+            "retweetedStatus_retweetCount": 1*self.poor_field_weight
         }
         if field not in field_map:
             raise ValueError(f"{field} not a query field")

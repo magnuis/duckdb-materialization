@@ -6,8 +6,8 @@ class Q3(Query):
     Twitter Query 3
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,17 +18,14 @@ class Q3(Query):
         str
         """
 
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
-
         return f"""
             SELECT 
-                {self._json(col='retweetedStatus_user_screenName', tbl='t', dt=dts['retweetedStatus_user_screenName'], acs=acs['retweetedStatus_user_screenName'])} AS user,
-                SUM({self._json(col='retweetedStatus_retweetCount', tbl='t', dt=dts['retweetedStatus_retweetCount'], acs=acs["retweetedStatus_retweetCount"])}) AS total_retweets
+                {self._json(col='retweetedStatus_user_screenName', tbl='t', fields=fields)} AS user,
+                SUM({self._json(col='retweetedStatus_retweetCount', tbl='t', fields=fields)}) AS total_retweets
             FROM test_table t
             WHERE
-                {self._json(col='retweetedStatus_idStr', tbl='t', dt=dts['retweetedStatus_idStr'], acs=acs["retweetedStatus_idStr"])} IS NOT NULL
-            GROUP BY {self._json(col='retweetedStatus_user_screenName', tbl='t', dt=dts['retweetedStatus_user_screenName'], acs=acs["retweetedStatus_user_screenName"])}
+                {self._json(col='retweetedStatus_idStr', tbl='t', fields=fields)} IS NOT NULL
+            GROUP BY {self._json(col='retweetedStatus_user_screenName', tbl='t', fields=fields)}
             ORDER BY total_retweets DESC
             LIMIT 10;
         """
@@ -75,9 +72,9 @@ class Q3(Query):
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
         field_map = {
-            'retweetedStatus_idStr': 1*self.GOOD_FIELD_WEIGHT,
-            "retweetedStatus_user_screenName": 2*self.POOR_FIELD_WEIGHT,
-            "retweetedStatus_retweetCount": 1*self.POOR_FIELD_WEIGHT
+            'retweetedStatus_idStr': 1*self.good_field_weight,
+            "retweetedStatus_user_screenName": 2*self.poor_field_weight,
+            "retweetedStatus_retweetCount": 1*self.poor_field_weight
         }
         if field not in field_map:
             raise ValueError(f"{field} not a query field")

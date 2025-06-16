@@ -6,8 +6,8 @@ class Q13(Query):
     TPC-H Query 13
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,8 +18,6 @@ class Q13(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
     c_count,
@@ -27,14 +25,14 @@ SELECT
 FROM
     (
         SELECT
-            {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} AS c_custkey,
-            COUNT({self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])}) AS c_count
+            {self._json(tbl='c', col='c_custkey', fields=fields)} AS c_custkey,
+            COUNT({self._json(tbl='o', col='o_orderkey', fields=fields)}) AS c_count
         FROM
             test_table c LEFT OUTER JOIN test_table o ON
-                {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
-                AND {self._json(tbl='o', col='o_comment', dt=dts['o_comment'])} NOT LIKE '%special%requests%'
+                {self._json(tbl='c', col='c_custkey', fields=fields)} = {self._json(tbl='o', col='o_custkey', fields=fields)}
+                AND {self._json(tbl='o', col='o_comment', fields=fields)} NOT LIKE '%special%requests%'
         GROUP BY
-            {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])}
+            {self._json(tbl='c', col='c_custkey', fields=fields)}
     ) AS c_orders
 GROUP BY
     c_count

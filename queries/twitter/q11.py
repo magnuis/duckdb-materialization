@@ -6,8 +6,8 @@ class Q11(Query):
     Twitter Query 11
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -17,20 +17,18 @@ class Q11(Query):
         -------
         str
         """
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
 
         return f"""
         SELECT
-            {self._json(col='user_idStr', tbl='u', dt=dts['user_idStr'], acs=acs['user_idStr'])}       AS user_ider_id,
-            {self._json(col='user_screenName', tbl='u', dt=dts['user_screenName'], acs=acs['user_screenName'])}  AS screen_name,
-            {self._json(col='delete_timestampMs', tbl='d', dt=dts['delete_timestampMs'], acs=acs['delete_timestampMs'])}                     AS delete_timestamp
+            {self._json(col='user_idStr', tbl='u', fields=fields)}       AS user_ider_id,
+            {self._json(col='user_screenName', tbl='u', fields=fields)}  AS screen_name,
+            {self._json(col='delete_timestampMs', tbl='d', fields=fields)}                     AS delete_timestamp
         FROM
             test_table AS u,
             test_table AS d
         WHERE
-            {self._json(col='source', tbl='u', dt=dts['source'], acs=acs['source'])} LIKE '%Twitter for iPhone%'
-            AND {self._json(col='delete_status_userIdStr', tbl='d', dt=dts['delete_status_userIdStr'], acs=acs['delete_status_userIdStr'])} = {self._json(col='user_idStr', tbl='u', dt=dts['user_idStr'], acs=acs['user_idStr'])};
+            {self._json(col='source', tbl='u', fields=fields)} LIKE '%Twitter for iPhone%'
+            AND {self._json(col='delete_status_userIdStr', tbl='d', fields=fields)} = {self._json(col='user_idStr', tbl='u', fields=fields)};
         """
 
     def no_join_clauses(self) -> int:
@@ -74,11 +72,11 @@ class Q11(Query):
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
 
         field_map = {
-            'user_idStr': 2*self.POOR_FIELD_WEIGHT,
-            "user_screenName": 1*self.POOR_FIELD_WEIGHT,
-            "delete_timestampMs": 1*self.POOR_FIELD_WEIGHT,
-            "source": 1*self.GOOD_FIELD_WEIGHT,
-            "delete_status_userIdStr": 1*self.GOOD_FIELD_WEIGHT
+            'user_idStr': 2*self.poor_field_weight,
+            "user_screenName": 1*self.poor_field_weight,
+            "delete_timestampMs": 1*self.poor_field_weight,
+            "source": 1*self.good_field_weight,
+            "delete_status_userIdStr": 1*self.good_field_weight
         }
         if field not in field_map:
             raise ValueError(f"{field} not a query field")

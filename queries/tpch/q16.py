@@ -6,8 +6,8 @@ class Q16(Query):
     TPC-H Query 16
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,39 +18,37 @@ class Q16(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} AS p_brand,
-    {self._json(tbl='p', col='p_type', dt=dts['p_type'])} AS p_type,
-    {self._json(tbl='p', col='p_size', dt=dts['p_size'])} AS p_size,
-    COUNT(DISTINCT {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])}) AS supplier_cnt
+    {self._json(tbl='p', col='p_brand', fields=fields)} AS p_brand,
+    {self._json(tbl='p', col='p_type', fields=fields)} AS p_type,
+    {self._json(tbl='p', col='p_size', fields=fields)} AS p_size,
+    COUNT(DISTINCT {self._json(tbl='ps', col='ps_suppkey', fields=fields)}) AS supplier_cnt
 FROM
     test_table ps,
     test_table p
 WHERE
-    {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='ps', col='ps_partkey', dt=dts['ps_partkey'])}
-    AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} <> 'Brand#45'
-    AND {self._json(tbl='p', col='p_type', dt=dts['p_type'])} NOT LIKE 'MEDIUM POLISHED%'
-    AND {self._json(tbl='p', col='p_size', dt=dts['p_size'])} IN (49, 14, 23, 45, 19, 3, 36, 9)
-    AND {self._json(tbl='ps', col='ps_suppkey', dt=dts['ps_suppkey'])} NOT IN (
+    {self._json(tbl='p', col='p_partkey', fields=fields)} = {self._json(tbl='ps', col='ps_partkey', fields=fields)}
+    AND {self._json(tbl='p', col='p_brand', fields=fields)} <> 'Brand#45'
+    AND {self._json(tbl='p', col='p_type', fields=fields)} NOT LIKE 'MEDIUM POLISHED%'
+    AND {self._json(tbl='p', col='p_size', fields=fields)} IN (49, 14, 23, 45, 19, 3, 36, 9)
+    AND {self._json(tbl='ps', col='ps_suppkey', fields=fields)} NOT IN (
         SELECT
-            {self._json(tbl='s', col='s_suppkey', dt=dts['s_suppkey'])}
+            {self._json(tbl='s', col='s_suppkey', fields=fields)}
         FROM
             test_table s
         WHERE
-            {self._json(tbl='s', col='s_comment', dt=dts['s_comment'])} LIKE '%Customer%Complaints%'
+            {self._json(tbl='s', col='s_comment', fields=fields)} LIKE '%Customer%Complaints%'
     )
 GROUP BY
-    {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])},
-    {self._json(tbl='p', col='p_type', dt=dts['p_type'])},
-    {self._json(tbl='p', col='p_size', dt=dts['p_size'])}
+    {self._json(tbl='p', col='p_brand', fields=fields)},
+    {self._json(tbl='p', col='p_type', fields=fields)},
+    {self._json(tbl='p', col='p_size', fields=fields)}
 ORDER BY
     supplier_cnt DESC,
-    {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])},
-    {self._json(tbl='p', col='p_type', dt=dts['p_type'])},
-    {self._json(tbl='p', col='p_size', dt=dts['p_size'])};
+    {self._json(tbl='p', col='p_brand', fields=fields)},
+    {self._json(tbl='p', col='p_type', fields=fields)},
+    {self._json(tbl='p', col='p_size', fields=fields)};
 
     """
 

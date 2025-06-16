@@ -6,8 +6,8 @@ class Q18(Query):
     TPC-H Query 18
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,42 +18,40 @@ class Q18(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    {self._json(tbl='c', col='c_name', dt=dts['c_name'])} AS c_name,
-    {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} AS c_custkey,
-    {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} AS o_orderkey,
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])} AS o_orderdate,
-    {self._json(tbl='o', col='o_totalprice', dt=dts['o_totalprice'])} AS o_totalprice,
-    SUM({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])}) AS total_quantity
+    {self._json(tbl='c', col='c_name', fields=fields)} AS c_name,
+    {self._json(tbl='c', col='c_custkey', fields=fields)} AS c_custkey,
+    {self._json(tbl='o', col='o_orderkey', fields=fields)} AS o_orderkey,
+    {self._json(tbl='o', col='o_orderdate', fields=fields)} AS o_orderdate,
+    {self._json(tbl='o', col='o_totalprice', fields=fields)} AS o_totalprice,
+    SUM({self._json(tbl='l', col='l_quantity', fields=fields)}) AS total_quantity
 FROM
     test_table c,
     test_table o,
     test_table l
 WHERE
-    {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} IN (
+    {self._json(tbl='o', col='o_orderkey', fields=fields)} IN (
         SELECT
-            {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])}
+            {self._json(tbl='l', col='l_orderkey', fields=fields)}
         FROM
             test_table l
         GROUP BY
-            {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])}
+            {self._json(tbl='l', col='l_orderkey', fields=fields)}
         HAVING
-            SUM({self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])}) > 300
+            SUM({self._json(tbl='l', col='l_quantity', fields=fields)}) > 300
     )
-    AND {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])} = {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])}
-    AND {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])} = {self._json(tbl='l', col='l_orderkey', dt=dts['l_orderkey'])}
+    AND {self._json(tbl='c', col='c_custkey', fields=fields)} = {self._json(tbl='o', col='o_custkey', fields=fields)}
+    AND {self._json(tbl='o', col='o_orderkey', fields=fields)} = {self._json(tbl='l', col='l_orderkey', fields=fields)}
 GROUP BY
-    {self._json(tbl='c', col='c_name', dt=dts['c_name'])},
-    {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])},
-    {self._json(tbl='o', col='o_orderkey', dt=dts['o_orderkey'])},
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])},
-    {self._json(tbl='o', col='o_totalprice', dt=dts['o_totalprice'])}
+    {self._json(tbl='c', col='c_name', fields=fields)},
+    {self._json(tbl='c', col='c_custkey', fields=fields)},
+    {self._json(tbl='o', col='o_orderkey', fields=fields)},
+    {self._json(tbl='o', col='o_orderdate', fields=fields)},
+    {self._json(tbl='o', col='o_totalprice', fields=fields)}
 ORDER BY
-    {self._json(tbl='o', col='o_totalprice', dt=dts['o_totalprice'])} DESC,
-    {self._json(tbl='o', col='o_orderdate', dt=dts['o_orderdate'])}
+    {self._json(tbl='o', col='o_totalprice', fields=fields)} DESC,
+    {self._json(tbl='o', col='o_orderdate', fields=fields)}
 LIMIT
     100;
     """

@@ -6,8 +6,8 @@ class Q1(Query):
     Twitter Query 1
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,13 +18,10 @@ class Q1(Query):
         str
         """
 
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
-
         return f"""
             SELECT COUNT(*) AS english_tweet_count
             FROM test_table t
-            WHERE {self._json(col='lang', tbl='t', dt=dts['lang'], acs=acs['lang'])} = 'en';
+            WHERE {self._json(col='lang', tbl='t', fields=fields)} = 'en';
         """
 
     def no_join_clauses(self) -> int:
@@ -65,7 +62,7 @@ class Q1(Query):
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
         field_map = {
-            'lang': self.GOOD_FIELD_WEIGHT
+            'lang': self.good_field_weight
         }
         if field not in field_map:
             raise ValueError(f"{field} not a query field")

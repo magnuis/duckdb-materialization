@@ -6,8 +6,8 @@ class Q19(Query):
     TPC-H Query 19
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,43 +18,41 @@ class Q19(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
-    SUM({self._json(tbl='l', col='l_extendedprice', dt=dts['l_extendedprice'])} * (1 - {self._json(tbl='l', col='l_discount', dt=dts['l_discount'])})) AS revenue
+    SUM({self._json(tbl='l', col='l_extendedprice', fields=fields)} * (1 - {self._json(tbl='l', col='l_discount', fields=fields)})) AS revenue
 FROM
     test_table l,
     test_table p
 WHERE
     (
-        {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
-        AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} = 'Brand#12'
-        AND {self._json(tbl='p', col='p_container', dt=dts['p_container'])} IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
-        AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} BETWEEN 1 AND 11
-        AND {self._json(tbl='p', col='p_size', dt=dts['p_size'])} BETWEEN 1 AND 5
-        AND {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])} IN ('AIR', 'AIR REG')
-        AND {self._json(tbl='l', col='l_shipinstruct', dt=dts['l_shipinstruct'])} = 'DELIVER IN PERSON'
+        {self._json(tbl='p', col='p_partkey', fields=fields)} = {self._json(tbl='l', col='l_partkey', fields=fields)}
+        AND {self._json(tbl='p', col='p_brand', fields=fields)} = 'Brand#12'
+        AND {self._json(tbl='p', col='p_container', fields=fields)} IN ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
+        AND {self._json(tbl='l', col='l_quantity', fields=fields)} BETWEEN 1 AND 11
+        AND {self._json(tbl='p', col='p_size', fields=fields)} BETWEEN 1 AND 5
+        AND {self._json(tbl='l', col='l_shipmode', fields=fields)} IN ('AIR', 'AIR REG')
+        AND {self._json(tbl='l', col='l_shipinstruct', fields=fields)} = 'DELIVER IN PERSON'
     )
     OR
     (
-        {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
-        AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} = 'Brand#23'
-        AND {self._json(tbl='p', col='p_container', dt=dts['p_container'])} IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
-        AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} BETWEEN 10 AND 20
-        AND {self._json(tbl='p', col='p_size', dt=dts['p_size'])} BETWEEN 1 AND 10
-        AND {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])} IN ('AIR', 'AIR REG')
-        AND {self._json(tbl='l', col='l_shipinstruct', dt=dts['l_shipinstruct'])} = 'DELIVER IN PERSON'
+        {self._json(tbl='p', col='p_partkey', fields=fields)} = {self._json(tbl='l', col='l_partkey', fields=fields)}
+        AND {self._json(tbl='p', col='p_brand', fields=fields)} = 'Brand#23'
+        AND {self._json(tbl='p', col='p_container', fields=fields)} IN ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
+        AND {self._json(tbl='l', col='l_quantity', fields=fields)} BETWEEN 10 AND 20
+        AND {self._json(tbl='p', col='p_size', fields=fields)} BETWEEN 1 AND 10
+        AND {self._json(tbl='l', col='l_shipmode', fields=fields)} IN ('AIR', 'AIR REG')
+        AND {self._json(tbl='l', col='l_shipinstruct', fields=fields)} = 'DELIVER IN PERSON'
     )
     OR
     (
-        {self._json(tbl='p', col='p_partkey', dt=dts['p_partkey'])} = {self._json(tbl='l', col='l_partkey', dt=dts['l_partkey'])}
-        AND {self._json(tbl='p', col='p_brand', dt=dts['p_brand'])} = 'Brand#34'
-        AND {self._json(tbl='p', col='p_container', dt=dts['p_container'])} IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
-        AND {self._json(tbl='l', col='l_quantity', dt=dts['l_quantity'])} BETWEEN 20 AND 30
-        AND {self._json(tbl='p', col='p_size', dt=dts['p_size'])} BETWEEN 1 AND 15
-        AND {self._json(tbl='l', col='l_shipmode', dt=dts['l_shipmode'])} IN ('AIR', 'AIR REG')
-        AND {self._json(tbl='l', col='l_shipinstruct', dt=dts['l_shipinstruct'])} = 'DELIVER IN PERSON'
+        {self._json(tbl='p', col='p_partkey', fields=fields)} = {self._json(tbl='l', col='l_partkey', fields=fields)}
+        AND {self._json(tbl='p', col='p_brand', fields=fields)} = 'Brand#34'
+        AND {self._json(tbl='p', col='p_container', fields=fields)} IN ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
+        AND {self._json(tbl='l', col='l_quantity', fields=fields)} BETWEEN 20 AND 30
+        AND {self._json(tbl='p', col='p_size', fields=fields)} BETWEEN 1 AND 15
+        AND {self._json(tbl='l', col='l_shipmode', fields=fields)} IN ('AIR', 'AIR REG')
+        AND {self._json(tbl='l', col='l_shipinstruct', fields=fields)} = 'DELIVER IN PERSON'
     );
 
     """

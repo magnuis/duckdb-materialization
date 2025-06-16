@@ -6,8 +6,8 @@ class Q13(Query):
     Twitter Query 13
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -17,37 +17,31 @@ class Q13(Query):
         -------
         str
         """
-        dts = self._get_field_types(fields=fields)
-        acs = self._get_field_accesses(fields=fields)
 
         return f"""
         SELECT
-            {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])}                                               AS original_tweet_id,
-            COUNT(DISTINCT {self._json(col='idStr', tbl='rt', dt=dts['idStr'], acs=acs['idStr'])})                                   AS num_retweets,
-            COUNT(DISTINCT {self._json(col='idStr', tbl='rep', dt=dts['idStr'], acs=acs['idStr'])})                                  AS num_replies
+            {self._json(col='delete_status_userIdStr', tbl='d1', fields=fields)} AS deleted_user_id,
+            (MAX(TRY_CAST({self._json(col='delete_timestampMs', tbl='d1', fields=fields)} AS BIGINT))
+             - MIN(TRY_CAST({self._json(col='delete_timestampMs', tbl='d1', fields=fields)} AS BIGINT))) AS delete_time_diff_ms
         FROM
-            test_table AS orig
-            LEFT JOIN test_table AS rt
-                ON {self._json(col='retweetedStatus_idStr', tbl='rt', dt=dts['retweetedStatus_idStr'], acs=acs['retweetedStatus_idStr'])} = {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])}
-                AND LOWER({self._json(col='text', tbl='rt', dt=dts['text'], acs=acs['text'])}) LIKE '%bad%'
-            LEFT JOIN test_table AS rep
-                ON {self._json(col='inReplyToUserIdStr', tbl='rep', dt=dts['inReplyToUserIdStr'], acs=acs['inReplyToUserIdStr'])} = {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])}
+            test_table AS d1,
+            test_table AS d2
         WHERE
-            {self._json(col='lang', tbl='orig', dt=dts['lang'], acs=acs['lang'])} = 'en'
-            AND TRY_CAST({self._json(col='user_followersCount', tbl='orig', dt=dts['user_followersCount'], acs=acs['user_followersCount'])} AS INT) > 75
+            {self._json(col='delete_status_userIdStr', tbl='d1', fields=fields)}
+                = {self._json(col='delete_status_userIdStr', tbl='d2', fields=fields)}
         GROUP BY
-            {self._json(col='idStr', tbl='orig', dt=dts['idStr'], acs=acs['idStr'])}
+            {self._json(col='delete_status_userIdStr', tbl='d1', fields=fields)}
+        HAVING
+            delete_time_diff_ms > 0
         ORDER BY
-            num_retweets DESC,
-            num_replies DESC
-        LIMIT 25;
+            delete_time_diff_ms DESC;
         """
 
     def no_join_clauses(self) -> int:
         """
         Returns the number of join clauses in the query
         """
-        return 2
+        return 0
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """
@@ -66,43 +60,27 @@ class Q13(Query):
         """
         return {
             'select': [
-                'idStr',
-                'idStr',
-                'idStr'
+                'delete_status_userIdStr',
+                'delete_timestampMs',
+                'delete_timestampMs'
             ],
             'where': [
-                'lang',
-                'user_followersCount',
-                'text'
             ],
             'group_by': [
-                'idStr'
+                'delete_status_userIdStr'
             ],
             'order_by': [
             ],
             'join': {
-                'retweetedStatus_idStr': ['idStr'],
-                'inReplyToUserIdStr': ['idStr'],
-                'idStr': ['retweetedStatus_idStr', 'inReplyToUserIdStr']
+                'delete_status_userIdStr': ['delete_status_userIdStr']
             }
         }
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
-        lang_weight = 1 * self.GOOD_FIELD_WEIGHT
-        if field == 'lang' and 'user_followersCount' in prev_materialization:
-            lang_weight = 1 * self.POOR_FIELD_WEIGHT
-
-        user_followersCount_weight = 1 * self.GOOD_FIELD_WEIGHT
-        if field == 'user_followersCount' and 'lang' in prev_materialization:
-            user_followersCount_weight = 1 * self.POOR_FIELD_WEIGHT
 
         field_map = {
-            "idStr": 6*self.POOR_FIELD_WEIGHT,
-            "lang": lang_weight,
-            "user_followersCount": user_followersCount_weight,
-            "text": 1*self.GOOD_FIELD_WEIGHT,
-            "retweetedStatus_idStr": 1*self.POOR_FIELD_WEIGHT,
-            "inReplyToUserIdStr": 1*self.GOOD_FIELD_WEIGHT
+            "delete_status_userIdStr": 2*self.good_field_weight + 2*self.poor_field_weight,
+            "delete_timestampMs": 1*self.poor_field_weight
 
         }
         if field not in field_map:
@@ -115,19 +93,7 @@ class Q13(Query):
         Query-specific implementation: number of times the WHERE field
         can be applied directly if materialized into a regular column.
         """
-        if field == 'lang' and 'user_followersCount' in prev_materialization:
-            return 0
-        if field == 'user_followersCount' and 'lang' in prev_materialization:
-            return 0
-
-        field_map = {
-            'lang': 1,
-            'user_followersCount': 1,
-            'text': 0
-        }
-        if field not in field_map:
-            raise ValueError(f"{field} not a WHERE field")
-        return field_map[field]
+        raise ValueError(f"{field} not a WHERE field")
 
     def get_join_field_has_no_direct_filter(self, field: str) -> int:
         """
@@ -136,9 +102,7 @@ class Q13(Query):
         predicates on that table.
         """
         field_map = {
-            'retweetedStatus_idStr': 0,
-            'inReplyToUserIdStr': 1,
-            'idStr': 0
+            'delete_status_userIdStr': 2
         }
         if field not in field_map:
             raise ValueError(f"{field} not a JOIN field")

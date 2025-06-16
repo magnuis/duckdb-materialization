@@ -6,8 +6,8 @@ class Q22(Query):
     TPC-H Query 22
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, dataset: str):
+        super().__init__(dataset=dataset)
 
     def get_query(self, fields: list[tuple[str, dict, bool]]) -> str:
         """
@@ -18,8 +18,6 @@ class Q22(Query):
         str
         """
 
-        dts = self._get_field_accesses(fields=fields)
-
         return f"""
 SELECT
     cntrycode,
@@ -28,20 +26,20 @@ SELECT
 FROM
     (
         SELECT
-            SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) AS cntrycode,
-            {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} AS c_acctbal
+            SUBSTRING({self._json(tbl='c', col='c_phone', fields=fields)} FROM 1 FOR 2) AS cntrycode,
+            {self._json(tbl='c', col='c_acctbal', fields=fields)} AS c_acctbal
         FROM
             test_table c
         WHERE
-            SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
-            AND {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} > (
+            SUBSTRING({self._json(tbl='c', col='c_phone', fields=fields)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+            AND {self._json(tbl='c', col='c_acctbal', fields=fields)} > (
                 SELECT
-                    AVG({self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])})
+                    AVG({self._json(tbl='c', col='c_acctbal', fields=fields)})
                 FROM
                     test_table c
                 WHERE
-                    {self._json(tbl='c', col='c_acctbal', dt=dts['c_acctbal'])} > 0.00
-                    AND SUBSTRING({self._json(tbl='c', col='c_phone', dt=dts['c_phone'])} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
+                    {self._json(tbl='c', col='c_acctbal', fields=fields)} > 0.00
+                    AND SUBSTRING({self._json(tbl='c', col='c_phone', fields=fields)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
             )
             AND NOT EXISTS (
                 SELECT
@@ -49,7 +47,7 @@ FROM
                 FROM
                     test_table o
                 WHERE
-                    {self._json(tbl='o', col='o_custkey', dt=dts['o_custkey'])} = {self._json(tbl='c', col='c_custkey', dt=dts['c_custkey'])}
+                    {self._json(tbl='o', col='o_custkey', fields=fields)} = {self._json(tbl='c', col='c_custkey', fields=fields)}
             )
     ) AS custsale
 GROUP BY

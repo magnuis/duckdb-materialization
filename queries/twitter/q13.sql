@@ -1,22 +1,15 @@
 SELECT
-  (orig.raw_json->>'id_str')                                               AS original_tweet_id,
-  COUNT(DISTINCT (rt.raw_json->>'id_str'))                                   AS num_retweets,
-  COUNT(DISTINCT (rep.raw_json->>'id_str'))                                  AS num_replies
-FROM
-  test_table AS orig
-  LEFT JOIN test_table AS rt
-    ON (rt.raw_json->'retweeted_status'->>'id_str') 
-       = (orig.raw_json->>'id_str')
-    AND LOWER(rt.raw_json->>'text') LIKE '%bad%'
-  LEFT JOIN test_table AS rep
-    ON (rep.raw_json->>'in_reply_to_user_id_str') 
-       = (orig.raw_json->>'id_str')
-WHERE
-  (orig.raw_json->>'lang') = 'en'
-  AND TRY_CAST((orig.raw_json->'user'->>'followers_count') AS INT) > 75
-GROUP BY
-  (orig.raw_json->>'id_str')
-ORDER BY
-  num_retweets DESC,
-  num_replies DESC
-LIMIT 25;
+    (d1.raw_json->'delete'->'status'->>'user_id_str')                                  AS deleted_user_id,
+    (MAX(TRY_CAST((d1.raw_json->'delete'->>'timestamp_ms') AS BIGINT))
+     - MIN(TRY_CAST((d1.raw_json->'delete'->>'timestamp_ms') AS BIGINT)))              AS delete_time_diff_ms
+  FROM
+    test_table AS d1,
+    test_table AS d2
+  WHERE
+    (d1.raw_json->'delete'->'status'->>'user_id_str')= (d2.raw_json->'delete'->'status'->>'user_id_str')
+  GROUP BY
+    (d1.raw_json->'delete'->'status'->>'user_id_str')
+  HAVING
+     delete_time_diff_ms > 0
+  ORDER BY
+    delete_time_diff_ms DESC;
