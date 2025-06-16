@@ -81,7 +81,15 @@ class Q1(Query):
             'join': {}
         }
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
+        field_map = {
+            'lang': self.good_field_weight
+        }
+        if field not in field_map:
+            raise ValueError(f"{field} not a query field")
+        return field_map.get(field, 0)
+
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """

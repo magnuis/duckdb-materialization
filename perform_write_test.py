@@ -1,17 +1,17 @@
+# pylint: disable=E0401
 import shutil
 import os
 import ast
-import pandas as pd
 import string
 import time
-from typing import List, Dict
+from typing import Dict
 from datetime import datetime
 import random
-import duckdb
+import pandas as pd
+import duckdb  # type: ignore
 
-from prepare_database import prepare_database, get_db_size
+from utils.prepare_database import prepare_database, get_db_size
 import testing.tpch.setup as tpch_setup
-from queries.query import Query
 
 CHARS = string.ascii_letters + string.digits + " "
 LINES_TO_INSERT = 5000
@@ -25,7 +25,7 @@ DATASETS = {
         "standard_tests": tpch_setup.STANDARD_SETUPS,
         "column_map": tpch_setup.COLUMN_MAP,
         "no_queries": len(tpch_setup.QUERIES),
-        "results_path": BASE_PATH + "/results/load-based-v2/tpch/2025-06-04-16H"
+        "results_path": BASE_PATH + "/results/load-based/tpch/"
     }
 }
 
@@ -68,19 +68,19 @@ def _generate_json(seed: int, dataset: str, orig_table: str = None):
     random_gen = random.Random()
     random_gen.seed(seed)
 
-    def _rand_int(min: int = 0, max: int = 1000000):
-        return random_gen.randint(min, max)
+    def _rand_int(minimum: int = 0, maximum: int = 1000000):
+        return random_gen.randint(minimum, maximum)
 
     def _rand_float():
         return _rand_int() + random_gen.random()
 
     def _rand_varchar(str_length: int = None):
         if str_length is None:
-            str_length = _rand_int(min=10, max=50)
+            str_length = _rand_int(minimum=10, maximum=50)
         return "".join(random_gen.choice(CHARS) for _ in range(str_length))
 
     def _rand_date():
-        return f"{_rand_int(min=1990, max=2025)}-{_rand_int(min=1, max=12):02d}-{_rand_int(min=1, max=28):02d}"
+        return f"{_rand_int(minimum=1990, maximum=2025)}-{_rand_int(minimum=1, maximum=12):02d}-{_rand_int(minimum=1, maximum=28):02d}"
 
     table_structures: Dict[str, Dict] = {
         "tpch": {
@@ -182,7 +182,7 @@ def _update_query(fields: list[tuple[str, dict, bool]], row_id: int):
     if not has_materialization:
         return None
 
-    stringified_fields = [f"'{field}'" for field in materialize_fields.keys()]
+    stringified_fields = [f"'{field}'" for field in materialize_fields]
 
     update_assigns = []
     for idx, (field, data_type) in enumerate(materialize_fields.items(), start=1):
@@ -251,7 +251,7 @@ def main():
 
     results_path = config["results_path"]
 
-    loads_df = pd.read_csv(results_path + "/load9_results.csv")
+    loads_df = pd.read_csv(results_path + "/phase_1.csv")
     loads_df = loads_df[["Load", "Test", "Materialization"]]
 
     timed_loads = dict()
@@ -295,7 +295,7 @@ def main():
 
         else:
             # Create new db connection
-            db_connection, db_path = _create_connection(dataset=dataset)
+            db_connection, _ = _create_connection(dataset=dataset)
 
             # Create the field-materialization setup for this test
             fields = []
@@ -309,7 +309,6 @@ def main():
             prepare_time = prepare_database(con=db_connection, fields=fields)
 
             # Get db size before materialization
-            # FIXME @herman3h se over og se om dette er gjort riktig
             db_size_after = get_db_size(db_connection)
 
             # Run test

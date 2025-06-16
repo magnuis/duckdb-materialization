@@ -38,7 +38,7 @@ WHERE
 
     def columns_used_with_position(self,) -> dict[str, list[str]]:
         """
-        Get the columns used in TPC-H Query 1 along with their position in the query 
+        Get the columns used in TPC-H Query 1 along with their position in the query
         (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -67,7 +67,7 @@ WHERE
             'join': {}
         }
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """

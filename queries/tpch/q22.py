@@ -38,7 +38,8 @@ FROM
                 FROM
                     test_table c
                 WHERE
-                    {self._json(tbl='c', col='c_acctbal', fields=fields)} > 0.00
+                    {self._json(tbl='c', col='c_acctbal',
+                                fields=fields)} > 0.00
                     AND SUBSTRING({self._json(tbl='c', col='c_phone', fields=fields)} FROM 1 FOR 2) IN ('13', '31', '23', '29', '30', '18', '17')
             )
             AND NOT EXISTS (
@@ -64,7 +65,7 @@ ORDER BY
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """
-        Get the underlying column names used in the query along with their position 
+        Get the underlying column names used in the query along with their position
         in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -114,7 +115,7 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """

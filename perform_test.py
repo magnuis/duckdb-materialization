@@ -14,7 +14,7 @@ import testing.twitter.setup as twitter_setup
 
 from queries.query import Query
 # from queries.twitter_queries import
-from prepare_database import prepare_database, get_db_size
+from utils.prepare_database import prepare_database, get_db_size
 
 if not os.path.isdir("./results"):
     os.mkdir("./results")
@@ -155,7 +155,7 @@ def compare_query_results(dfs: list[pd.DataFrame]):
 
 def _create_fresh_db(dataset: str):
     db_path = f"./data/db/{dataset}.duckdb"
-    backup_path = f"./data/backup/{dataset}_medium"
+    backup_path = f"./data/backup/{dataset}_tiny"
 
     if os.path.exists(db_path):
         os.remove(db_path)

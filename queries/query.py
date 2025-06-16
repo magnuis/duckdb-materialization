@@ -12,6 +12,7 @@ class Query:
 
     def __init__(self, dataset: str):
         self.poor_field_weight = 1
+        self.dataset = dataset
         if dataset == 'tpch':
 
             self.good_field_weight = 36
@@ -137,43 +138,10 @@ class Query:
         return self.columns_used_with_position()["where"]
 
     def get_field_weight(self, field: str, prev_materialization: list[str]) -> int:
+        """
+        Get the weight of field given previous materializations
+        """
         raise NotImplementedError("Subclass must implement this method")
-
-    # def _get_field_accesses(self, fields: list[tuple[str, dict, bool]]) -> dict:
-
-    #     used_columns = self.columns_used()
-
-    #     if fields is None:
-    #         return {col: None for col in used_columns}
-
-    #     data_types = dict()
-
-    #     for col, access_query, materialized in fields:
-    #         if col in used_columns:
-    #             if materialized:
-    #                 data_types[col] = None
-    #             else:
-    #                 data_types[col] = access_query["access"]
-
-    #     return data_types
-
-    # def _get_field_types(self, fields: list[tuple[str, dict, bool]]) -> dict:
-
-    #     used_columns = self.columns_used()
-
-    #     if fields is None:
-    #         return {col: None for col in used_columns}
-
-    #     data_types = dict()
-
-    #     for col, access_query, materialized in fields:
-    #         if col in used_columns:
-    #             if materialized:
-    #                 data_types[col] = None
-    #             else:
-    #                 data_types[col] = access_query["type"]
-
-    #     return data_types
 
     def _get_field_type(self, field: str, fields: list[tuple[str, dict, bool]]) -> dict:
         if fields is None:
@@ -230,37 +198,47 @@ class Query:
 
         return f"TRY_CAST({tbl}.{access} AS {data_type})"
 
-    def get_column_weights(self, prev_materialization: list[str], only_freq=False):
+    def get_column_weights(self, prev_materialization: list[str], iteration: int, only_freq=False):
 
+        # Assign weights
+        weights = dict()
+
+        # If only consider frequency (Test Phase 1)
         if only_freq:
             weights = {field: 1 for field in set(self.columns_used())}
             if 's_nationkey' in weights:
                 weights['s_nationkey'] = 0
             return weights
 
+        # TPC-H only has iteration 1
+        if self.dataset == 'tpch':
+            iteration = 1
+
+        # Iteration 1 of Test Phase 3
+        if iteration == 1:
+            weights = {field: self.poor_field_weight for field in set(
+                self.columns_used())}
+            for clause, col_list in self.columns_used_with_position().items():
+                if clause == "join":
+                    for field in col_list.keys():
+                        weights[field] += self.good_field_weight * \
+                            self.get_join_field_has_no_direct_filter(field)
+                elif clause == "where":
+                    for field in col_list:
+
+                        weights[field] += self.good_field_weight * \
+                            self.get_where_field_has_direct_filter(
+                                field, prev_materialization=prev_materialization)
+
         # Assign weights
+        elif iteration == 2:
+            columns_used = self.columns_used()
+            for field in set(columns_used):
+                weights[field] = self.get_field_weight(
+                    field=field, prev_materialization=prev_materialization)
 
-        weights = dict()
-        columns_used = self.columns_used()
-        for field in set(columns_used):
-            weights[field] = self.get_field_weight(
-                field=field, prev_materialization=prev_materialization)
-
-        # weights = {field: self.poor_field_weight for field in set(
-        #     self.columns_used())}
-
-        # for clause, col_list in self.columns_used_with_position().items():
-        #     if clause == "join":
-        #         for field in col_list.keys():
-        #             weights[field] += self.good_field_weight * \
-        #                 self.get_join_field_has_no_direct_filter(field)
-        #     elif clause == "where":
-        #         for field in col_list:
-
-        #             weights[field] += self.good_field_weight * \
-        #                 self.get_where_field_has_direct_filter(
-        #                     field, prev_materialization=prev_materialization)
-
+        # Never prioritize s_nationkey
         if 's_nationkey' in weights:
             weights['s_nationkey'] = 0
+
         return weights

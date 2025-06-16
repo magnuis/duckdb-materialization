@@ -35,7 +35,8 @@ GROUP BY
 HAVING
     SUM({self._json(tbl='ps', col='ps_supplycost', fields=fields)} * {self._json(tbl='ps', col='ps_availqty', fields=fields)}) > (
         SELECT
-            SUM({self._json(tbl='ps', col='ps_supplycost', fields=fields)} * {self._json(tbl='ps', col='ps_availqty', fields=fields)}) * 0.0001
+            SUM({self._json(tbl='ps', col='ps_supplycost', fields=fields)} * \
+                {self._json(tbl='ps', col='ps_availqty', fields=fields)}) * 0.0001
         FROM
             test_table ps,
             test_table s,
@@ -58,7 +59,7 @@ ORDER BY
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """
-        Get the underlying column names used in the query along with their position 
+        Get the underlying column names used in the query along with their position
         in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -112,7 +113,7 @@ ORDER BY
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """

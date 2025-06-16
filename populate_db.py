@@ -1,15 +1,18 @@
+# pylint: disable=E0401
 import json
-import duckdb
-import time
 import os
 import shutil
+import duckdb  # type: ignore
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 CONFIG = {
     "tpch": {
-        "json_path": './data/tpch/bigbigger_tpch_json.json',
+        "json_path": './data/tpch/tpch.json',
+    },
+    "twitter": {
+        "json_path": './data/twitter/twitter.json',
     }
 }
 
@@ -107,7 +110,7 @@ def _prepare_dirs(dataset: str):
     if not os.path.isdir(DB_PATH):
         os.mkdir(DB_PATH)
 
-    backup_path = f"{BACKUP_PATH}/{dataset}_bigbigger"
+    backup_path = f"{BACKUP_PATH}/{dataset}_medium"
     try:
         os.mkdir(backup_path)
     except FileExistsError:
@@ -123,7 +126,7 @@ def populate_db():
     """
     dataset = 'tpch'  # TODO dynamic/take from args
     config = CONFIG[dataset]
-    backup_path = f"{BACKUP_PATH}/{dataset}_bigbigger"
+    backup_path = f"{BACKUP_PATH}/{dataset}_medium"
     db_path = f"{DB_PATH}/{dataset}.db"
 
     # Prepare db and backup directories

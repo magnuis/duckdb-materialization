@@ -41,82 +41,82 @@ STANDARD_SETUPS = {
 
 
 COLUMN_MAP = {
-    'lang': {  # 860217
+    'lang': {
         'access': "raw_json->>'lang'",
         "type": 'VARCHAR',
         "frequency": 860217
     },
-    'text': {  # 860217
+    'text': {
         'access': "raw_json->>'text'",
         "type": 'VARCHAR',
         "frequency": 860217
     },
-    'source': {  # 860217
+    'source': {
         'access': "raw_json->>'source'",
         "type": 'VARCHAR',
         "frequency": 860217
     },
-    "retweetedStatus_user_screenName": {  # 466512
+    "retweetedStatus_user_screenName": {
         'access': "raw_json->'retweeted_status'->'user'->>'screen_name'",
         "type": "VARCHAR",
         "frequency": 466512
     },
-    "retweetedStatus_user_idStr": {  # 466512
+    "retweetedStatus_user_idStr": {
         'access': "raw_json->'retweeted_status'->'user'->>'id_str'",
         "type": "VARCHAR",
         "frequency": 466512
     },
-    "retweetedStatus_retweetCount": {  # 466512
+    "retweetedStatus_retweetCount": {
         'access': "raw_json->'retweeted_status'->>'retweet_count'",
         "type": "INT",
         "frequency": 466512
     },
-    "retweetedStatus_idStr": {  # 466512
+    "retweetedStatus_idStr": {
         'access': "raw_json->'retweeted_status'->>'id_str'",
         "type": "VARCHAR",
         "frequency": 466512
     },
-    "inReplyToUserIdStr": {  # 209563
+    "inReplyToUserIdStr": {
         'access': "raw_json->>'in_reply_to_user_id_str'",
         "type": "VARCHAR",
         "frequency": 209563
     },
-    "idStr": {  # 860217
+    "idStr": {
         'access': "raw_json->>'id_str'",
         "type": "VARCHAR",
         "frequency": 860217
 
     },
-    "user_screenName": {  # 860217
+    "user_screenName": {
         'access': "raw_json->'user'->>'screen_name'",
         "type": "VARCHAR",
         "frequency": 860217
 
     },
-    "user_idStr": {  # 860217
+    "user_idStr": {
         'access': "raw_json->'user'->>'id_str'",
         "type": "VARCHAR",
         "frequency": 860217
 
     },
-    "user_followersCount": {  # 860217
+    "user_followersCount": {
         'access': "raw_json->'user'->>'followers_count'",
         "type": "INT",
         "frequency": 860217
 
     },
-    "user_isTranslator": {  # 860217
+    "user_isTranslator": {
         "access": "raw_json->'user'->>'is_translator'",
         "type": "BOOLEAN",
         "frequency": 860217
 
     },
-    "delete_status_userIdStr": {  # 252502
+    "delete_status_userIdStr": {
         "access": "raw_json->'delete'->'status'->>'user_id_str'",
         "type": "VARCHAR",
         "frequency": 252502
     },
-    "delete_timestampMs": {  # 252502
+    "delete_timestampMs": {
         "access": "raw_json->'delete'->>'timestamp_ms'",
         "type": "BIGINT",
         "frequency": 252502

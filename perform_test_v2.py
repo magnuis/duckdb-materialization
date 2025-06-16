@@ -1,21 +1,22 @@
+# pylint: disable=E0401
 import time
 import os
 from datetime import datetime
 from itertools import combinations
 from typing import Iterator, List
 
-import duckdb
+import duckdb  # type: ignore
 import pandas as pd
 
 import testing.tpch.setup as tpch_setup
 from queries.query import Query
-from prepare_database import prepare_database
+from utils.prepare_database import prepare_database
 
 if not os.path.isdir("./results"):
     os.mkdir("./results")
 
-if not os.path.isdir("./results/single-queries"):
-    os.mkdir("./results/single-queries")
+if not os.path.isdir("./results/phase-2"):
+    os.mkdir("./results/phase-2")
 
 TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 ITERATIONS = 5
@@ -46,15 +47,8 @@ DF_COL_NAMES = [
 ]
 
 
-def _is_relevant_query(query: Query, materialization: list[str], q: str):
+def _is_relevant_query(query: Query, materialization: list[str]):
     query_columns = set(query.columns_used())
-    # if q == 'q3':
-    #     print(query_columns)
-    #     for column_name in materialization:
-    #         if not column_name in query_columns:
-    #             print(f"Would have returned False for {column_name}")
-    #         else:
-    #             print(f"Would have continued for {column_name}")
 
     for column_name in materialization:
         if not column_name in query_columns:
@@ -99,7 +93,6 @@ def _perform_test(
 
 def _create_fresh_db():
     db_path = os.curdir + f"/data/db/{DATASET}_single_query_v2.duckdb"
-    # TODO CHANGE
     test_db_path = os.curdir + f"/data/backup/{DATASET}_tiny"
 
     if os.path.exists(db_path):
@@ -130,7 +123,7 @@ def _gen_combinations(strings: List[str]) -> Iterator[List[str]]:
 def perform_test():
 
     result_dir_path = os.curdir + \
-        f"/results/single-queries/{DATASET}/{TEST_TIME_STRING}"
+        f"/results/phase-2/{DATASET}/{TEST_TIME_STRING}"
     result_path = result_dir_path + '/results.csv'
     if not os.path.exists(result_dir_path):
         os.mkdir(result_dir_path)
@@ -154,8 +147,6 @@ def perform_test():
 
         # Create the field-materialization setup for this test
         fields = []
-        # print(
-        #     f"Generating fields, starting from {fields}. Materialize columns is {materialize_columns}")
         for field, access_query in column_map.items():
             fields.append(
                 (field, access_query, field in materialize_columns))
@@ -165,15 +156,12 @@ def perform_test():
             query = query_obj.get_query(fields=fields)
 
             # Check if the materialization is relevant for the current query
-            if _is_relevant_query(query=query_obj, materialization=materialize_columns, q=query_name):
+            if _is_relevant_query(query=query_obj, materialization=materialize_columns):
                 relevant_queries += 1
                 # Only prepare db if it is not prepared, and there is a relevant query
                 if not prepared_db:
-                    # print(
-                    #     f"Preparing database for materialization {materialize_columns}")
                     prepare_database(con=db_connection, fields=fields)
                     prepared_db = True
-            # print(f"{query_name}, materialize_columns:{materialize_columns}")
             # Run test
                 result = _perform_test(
                     con=db_connection,

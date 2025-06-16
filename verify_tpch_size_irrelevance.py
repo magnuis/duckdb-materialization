@@ -1,66 +1,17 @@
+# pylint: disable=E0401
 import os
 import random
 import time
 import shutil
 from collections import defaultdict
 from datetime import datetime
+import pandas as pd
+import duckdb  # type: ignore
 
 from queries.query import Query
-
-
-import pandas as pd
-import duckdb
-
 import testing.tpch.setup as tpch_setup
-from prepare_database import prepare_database, get_db_size
+from utils.prepare_database import prepare_database
 
-TESTS_TO_INCLUDE = {
-    "q3": {
-        0.75: [0, 2]
-    },
-    "q4": {
-        0.5: [0],
-        0.75: [2]
-    },
-    "q5": {
-        0.25: [1],
-        0.5: [0, 1],
-        0.75: [2]
-    },
-    "q6": {
-        0.5: [0],
-        0.75: [0]
-    },
-    "q7": {
-        0.25: [1],
-        0.5: [0]
-    },
-    "q9": {
-        0.25: [1, 2],
-        0.5: [0, 1],
-        0.75: [0, 2]
-    },
-    "q10": {
-        0.5: [1],
-        0.75: [1]
-    },
-    "q13": {
-        0.25: [0],
-        0.75: [0, 1, 2]
-    },
-    "q14": {
-        0.25: [0],
-        0.75: [0, 1, 2]
-    },
-    "q18": {
-        0.25: [0, 1],
-        0.5: [0]
-    },
-    "q19": {
-        0.5: [0, 2],
-        0.75: [2]
-    },
-}
 
 TEST_TIME_STRING = f"{datetime.now().date()}-{datetime.now().hour}H"
 
@@ -140,7 +91,7 @@ def _generate_materializations(
 
         query_setup = defaultdict(list)
 
-        columns_in_query = set(query_obj.columns_used())
+        columns_in_query = list(set(query_obj.columns_used()))
 
         for treshold in TRESHOLDS_TO_MATERIALIZE:
             no_to_materialize = int(len(columns_in_query) * treshold)
@@ -190,8 +141,6 @@ def _create_connection(db_dir: str) -> tuple[duckdb.DuckDBPyConnection, str]:
     con.execute("SET default_block_size = '16384'")
 
     con.execute("CHECKPOINT;")
-    db_size = os.path.getsize(copy_db_path)
-    # print(f"Fresh database size: {db_size/1024/1024:.6f} MB")
 
     return con, copy_db_path
 
@@ -223,15 +172,8 @@ def _perform_tests(
     global_baseline_result = None
 
     for threshold, field_lists in materializations.items():
-        if query_name not in TESTS_TO_INCLUDE.keys():
-            continue
-        if threshold not in TESTS_TO_INCLUDE[query_name].keys():
-            continue
 
         for index, fields_list in enumerate(field_lists):
-
-            if index not in TESTS_TO_INCLUDE[query_name][threshold]:
-                continue
 
             iteration_time = time.perf_counter()
 
@@ -247,7 +189,7 @@ def _perform_tests(
 
             baseline_result = None  # to store the query result from the first iteration
 
-            con, copy_con = _create_connection(db_dir=db_dir)
+            con, _ = _create_connection(db_dir=db_dir)
             prepare_database(con=con, fields=fields, include_print=False)
 
             execution_times = []
@@ -321,13 +263,11 @@ def main():
     # Extract setup metadata
     config = DATASETS[dataset]
     queries: list = config["queries"]
-    column_map: dict = config["column_map"]
     db_backups: dict = config["db_backups"]
 
     # Generate random materializations for each query
     materializations = _generate_materializations(queries=queries)
 
-    query_results_dfs = dict()  # Query results
     meta_results = []
 
     for db in db_backups:
@@ -349,7 +289,7 @@ def main():
             )
             query_results_list.append(query_results)
             print(
-                f"Finished query {query_name}, scale factor {scale_factor} in time {int(time.perf_counter() - test_time)} seconds")
+                f"Finished query {query_name}, scale factor {scale_factor} in {int(time.perf_counter() - test_time)}s")
 
         merged_query_results = pd.concat(query_results_list, ignore_index=True)
 
@@ -364,7 +304,7 @@ def main():
         meta_results.append(merged_query_results)
 
         print(
-            f"!! Finished with scale factor {scale_factor} in time {int(time.perf_counter() - scale_factor_time)}")
+            f"!! Finished with scale factor {scale_factor} in {int(time.perf_counter() - scale_factor_time)} seconds")
         print("-------------------------------------------")
 
     # Merge all the DataFrames from the db_backups loop into a final shared DataFrame
@@ -378,4 +318,4 @@ if __name__ == "__main__":
     main()
     _clean_up()
 
-    print(f"Finished test in time ~{int(time.perf_counter() - t)*60} minutes")
+    print(f"Finished test in time ~{int(time.perf_counter() - t)/60} minutes")

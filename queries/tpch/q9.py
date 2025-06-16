@@ -31,7 +31,7 @@ class Q9(Query):
                             lp_joined.l_extendedprice * (1 - lp_joined.l_discount) - {self._json(tbl='ps', col='ps_supplycost', fields=fields)} * lp_joined.l_discount AS amount
                     FROM
                             (
-                                    SELECT 
+                                    SELECT
                                             {self._json(tbl='l', col='l_partkey', fields=fields)} AS l_partkey,
                                             {self._json(tbl='l', col='l_suppkey', fields=fields)} AS l_suppkey,
                                             {self._json(tbl='l', col='l_orderkey', fields=fields)} AS l_orderkey,
@@ -73,7 +73,7 @@ class Q9(Query):
 
     def columns_used_with_position(self) -> dict[str, list[str]]:
         """
-        Get the underlying column names used in the query along with their position 
+        Get the underlying column names used in the query along with their position
         in the query (e.g., SELECT, WHERE, GROUP BY, ORDER BY clauses).
 
         Returns
@@ -134,7 +134,7 @@ class Q9(Query):
 
         return field_map.get(field, False)
 
-    def get_where_field_has_direct_filter(self, field: str) -> int:
+    def get_where_field_has_direct_filter(self, field: str, prev_materialization: list[str]) -> int:
         """
         Query specific implementation of the where field has direct filter
         """
