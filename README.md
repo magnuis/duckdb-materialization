@@ -26,7 +26,7 @@ The TPC-H must be generated through a series of steps.
     ```
 
 ### Twitter
-The Twitter dataset is for convenience stored as `data/twitter/twitter.json`.
+The Twitter dataset is for convenience stored as `twitter.json` at [Google Drive](https://drive.google.com/drive/folders/1yOncHm8XNYROIz5QcnLd7crkFhyzDCMm?dmr=1&ec=wgc-drive-globalnav-goto). Download and place it at `data/twitter/twitter.json`.
 
 ## Tests
 ### Dataset Size - 4.2.2
@@ -57,7 +57,7 @@ The tests are run using `perform_write_test.py`.
 The code generating queries using CTE-and-list-extract methods is, unfortunately, not to be found at present. Re-running these tests requires some copy-pasting from the file `perform_load_test.py` and `queries/query.py` from the commit [6a3a017](https://github.com/magnuis/duckdb-materialization/commit/6a3a017b763b81b8e2f4b85a80e8c2a5de65a4e7).
 
 ## Results
-The results are to be found under their highly descriptive folder names nested under `results/`. 
+The results are to be found under their highly descriptive folder names on at [Google Drive](https://drive.google.com/drive/folders/1yOncHm8XNYROIz5QcnLd7crkFhyzDCMm?dmr=1&ec=wgc-drive-globalnav-goto).
 
 ## Visualizations
 The `visualizations/` folder is a mess, and only meant for internal investigation of results. Please disregard the folder!
